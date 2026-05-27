@@ -1,0 +1,72 @@
+<!-- 영어 학습 화면의 몰입감을 높이는 로컬 SVG 시각 자산 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 520" role="img" aria-labelledby="title desc">
+  <title id="title">인터랙티브 영어 학습 스튜디오</title>
+  <desc id="desc">책, 말풍선, 오디오 웨이브, 학습 카드를 조합한 영어 학습용 시각 자산</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#eafffb"/>
+      <stop offset="0.48" stop-color="#d2fbf2"/>
+      <stop offset="1" stop-color="#b6f3ea"/>
+    </linearGradient>
+    <linearGradient id="teal" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#21b7a5"/>
+      <stop offset="1" stop-color="#08776e"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#42e2d1"/>
+      <stop offset="1" stop-color="#0482a0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#06414a" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <rect width="720" height="520" rx="36" fill="url(#bg)"/>
+  <g opacity="0.5">
+    <circle cx="122" cy="96" r="46" fill="#92eadf"/>
+    <circle cx="604" cy="116" r="64" fill="#6ce5da"/>
+    <circle cx="622" cy="404" r="38" fill="#a4f4ec"/>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="84" y="92" width="244" height="156" rx="28" fill="#ffffff"/>
+    <rect x="392" y="86" width="218" height="126" rx="26" fill="#ffffff"/>
+    <rect x="118" y="316" width="226" height="112" rx="24" fill="#ffffff"/>
+    <rect x="386" y="278" width="230" height="150" rx="28" fill="#ffffff"/>
+  </g>
+  <g>
+    <rect x="116" y="126" width="168" height="18" rx="9" fill="#06414a"/>
+    <rect x="116" y="160" width="136" height="12" rx="6" fill="#63b9b1"/>
+    <rect x="116" y="188" width="92" height="12" rx="6" fill="#9de4dc"/>
+    <path d="M284 184c22-18 42-20 60-6 18 15 20 42 4 61-18 20-52 26-80 18 18-16 20-26 16-73z" fill="url(#teal)"/>
+    <circle cx="330" cy="213" r="8" fill="#fff"/>
+    <circle cx="302" cy="209" r="8" fill="#fff"/>
+  </g>
+  <g>
+    <path d="M430 136c0-27 22-49 49-49h44c27 0 49 22 49 49v14h-28v-14c0-12-9-21-21-21h-44c-12 0-21 9-21 21v14h-28v-14z" fill="url(#blue)"/>
+    <rect x="414" y="142" width="36" height="56" rx="18" fill="#06414a"/>
+    <rect x="552" y="142" width="36" height="56" rx="18" fill="#06414a"/>
+    <rect x="472" y="154" width="60" height="14" rx="7" fill="#75e4da"/>
+    <rect x="462" y="180" width="82" height="10" rx="5" fill="#b9f7f0"/>
+  </g>
+  <g>
+    <path d="M142 386c18-34 52-52 88-52 36 0 70 18 88 52-38 22-136 22-176 0z" fill="#d9fbf3"/>
+    <path d="M160 384c14-26 40-40 70-40 29 0 56 14 70 40-31 15-110 15-140 0z" fill="#ffffff"/>
+    <path d="M230 346v58" stroke="#0e8f7f" stroke-width="8" stroke-linecap="round"/>
+    <path d="M164 386c42-16 88-16 132 0" stroke="#0e8f7f" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <g>
+    <rect x="424" y="324" width="154" height="18" rx="9" fill="#06414a"/>
+    <rect x="424" y="358" width="112" height="12" rx="6" fill="#63b9b1"/>
+    <rect x="424" y="384" width="136" height="12" rx="6" fill="#9de4dc"/>
+    <g fill="#0e8f7f">
+      <rect x="472" y="240" width="12" height="38" rx="6"/>
+      <rect x="494" y="224" width="12" height="54" rx="6"/>
+      <rect x="516" y="250" width="12" height="28" rx="6"/>
+      <rect x="538" y="232" width="12" height="46" rx="6"/>
+    </g>
+  </g>
+  <g fill="none" stroke="#06414a" stroke-linecap="round" opacity="0.2">
+    <path d="M120 282c62 22 134 22 218 0"/>
+    <path d="M386 244c64 18 132 16 202-4"/>
+    <path d="M84 452c138 30 324 30 536 0"/>
+  </g>
+</svg>

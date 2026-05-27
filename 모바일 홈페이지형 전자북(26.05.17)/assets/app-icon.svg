@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="강태훈샘 수학 익힘책">
+  <rect width="512" height="512" rx="112" fill="#fff7de"/>
+  <path d="M82 360c69-58 134-52 194-18 58 33 104 24 154-20v94H82z" fill="#168b8f" opacity=".18"/>
+  <rect x="106" y="92" width="300" height="318" rx="38" fill="#fffdf3" stroke="#5d55b7" stroke-width="18"/>
+  <path d="M144 154h224" stroke="#dbcda7" stroke-width="18" stroke-linecap="round"/>
+  <path d="M144 334h224" stroke="#dbcda7" stroke-width="18" stroke-linecap="round"/>
+  <g fill="#243044" font-family="Arial, sans-serif" font-weight="800" text-anchor="middle">
+    <text x="208" y="248" font-size="82">3</text>
+    <text x="306" y="248" font-size="82">5</text>
+  </g>
+  <path d="M166 270h180" stroke="#df654b" stroke-width="20" stroke-linecap="round"/>
+  <circle cx="376" cy="112" r="32" fill="#e6ad35"/>
+</svg>

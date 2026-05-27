@@ -1,0 +1,80 @@
+{
+  "name": "app",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "description": "푸르넷수학 전자북 Windows 앱",
+  "author": "강태훈샘",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "verify": "node scripts/verify.mjs",
+    "onefile": "npm run build && node scripts/bundle-singlefile.mjs",
+    "pages:build": "npm run build",
+    "pages:preview": "npm run build && npx wrangler pages dev dist",
+    "pages:deploy": "npm run build && npx wrangler pages deploy dist --project-name purunet-math-ebook --branch main",
+    "db:backup": "node scripts/backup-d1.mjs",
+    "db:migrate:remote": "npm run db:backup && npx wrangler d1 migrations apply prunet_math_learning_db --remote",
+    "maintenance:deploy": "npx wrangler deploy --config wrangler.maintenance.toml",
+    "smoke:learning-db": "node scripts/smoke-learning-db.mjs",
+    "installer:win": "npm run build && set CSC_IDENTITY_AUTO_DISCOVERY=false&& electron-builder --win nsis --x64"
+  },
+  "dependencies": {
+    "katex": "^0.16.47",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "build": {
+    "appId": "kr.co.prunet.math.ebook",
+    "productName": "푸르넷수학 전자북",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-설치-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "푸르넷수학 전자북"
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.12.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "electron": "^42.1.0",
+    "electron-builder": "^26.8.1",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "playwright": "^1.60.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.59.2",
+    "vite": "^8.0.12"
+  }
+}

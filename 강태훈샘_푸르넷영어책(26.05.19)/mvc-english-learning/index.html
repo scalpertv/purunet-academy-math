@@ -1,0 +1,78 @@
+<!-- 푸르넷 영어 MVC 학습 프로그램의 단일 진입 HTML 문서 -->
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>강태훈 푸르넷 영어 MVC 학습 프로그램</title>
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">PE</span>
+          <div class="top-intro">
+            <p class="eyebrow">TESOL · US/UK · Cloudflare Pages 서버 DB</p>
+            <h1>푸르넷 영어 인터랙티브 스튜디오</h1>
+            <div class="top-meta" aria-label="영어 학습 플랫폼 핵심 상태">
+              <span>16 Tracks</span>
+              <span>D1 Live Sync</span>
+              <span>TESOL Flow</span>
+            </div>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button type="button" class="ghost-btn" data-action="toggle-mode" aria-pressed="false">
+            교사용 보기
+          </button>
+          <button type="button" class="danger-btn" data-action="reset-progress">
+            기록 초기화
+          </button>
+        </div>
+      </header>
+
+      <section id="learner-hero" class="learner-hero" aria-label="오늘의 영어 학습 요약"></section>
+
+      <main class="workspace">
+        <aside class="track-panel" aria-label="영어 학습 트랙">
+          <div class="panel-heading">
+            <h2>16개 영어 트랙</h2>
+            <span id="track-count" class="count-pill">0개</span>
+          </div>
+          <label class="search-box">
+            <span>검색</span>
+            <input id="track-search" type="search" placeholder="파닉스, 듣기, 내신..." autocomplete="off" />
+          </label>
+          <div id="axis-filters" class="axis-filters"></div>
+          <nav id="track-list" class="track-list"></nav>
+        </aside>
+
+        <section class="lesson-panel" aria-live="polite">
+          <div id="lesson-summary"></div>
+          <div id="stage-tabs" class="stage-tabs"></div>
+          <div id="activity-area" class="activity-area"></div>
+        </section>
+
+        <aside class="teacher-panel" aria-label="교사용 운영 대시보드">
+          <div id="progress-dashboard"></div>
+          <div id="teacher-dashboard"></div>
+          <div id="portfolio-panel"></div>
+        </aside>
+      </main>
+    </div>
+
+    <template id="empty-state-template">
+      <div class="empty-state">
+        <h2>학습 트랙을 선택하세요</h2>
+        <p>왼쪽 목록에서 유치원 영어반, 파닉스, 듣기, 말하기, 읽기, 쓰기, 내신 대비반 등을 바로 시작할 수 있습니다.</p>
+      </div>
+    </template>
+
+    <script src="js/data.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/views.js"></script>
+    <script src="js/controllers.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

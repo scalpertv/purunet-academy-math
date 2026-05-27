@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node scripts/deploy-pages.mjs)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}

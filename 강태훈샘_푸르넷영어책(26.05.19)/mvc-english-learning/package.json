@@ -1,0 +1,10 @@
+{
+  "name": "purunet-english-ebook",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "check": "node --check js/data.js && node --check js/models.js && node --check js/views.js && node --check js/controllers.js && node --check js/app.js && node --check functions/api/progress.js",
+    "db:migrate": "npx wrangler d1 execute purunet_english_learning_db --remote --file migrations/0001_english_learning.sql",
+    "pages:deploy": "npx wrangler pages deploy . --project-name purunet-english-ebook --branch main"
+  }
+}

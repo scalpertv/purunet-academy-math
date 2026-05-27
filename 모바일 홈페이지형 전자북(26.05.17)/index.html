@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#168b8f" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="강태훈샘 수학" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta
+      name="description"
+      content="1·2·3·4·5·6학년 3월부터 다음 해 2월까지 수학 기초력 문제와 1·2·3·4·5·6학년 연산 과정을 모바일 홈페이지형으로 학습하는 강태훈샘 수학 익힘책"
+    />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/app-icon.svg" />
+    <link rel="stylesheet" href="styles/mobile-home.css" />
+    <title>강태훈샘 수학 익힘책 모바일</title>
+  </head>
+  <body>
+    <main class="mobile-shell">
+      <header class="top-bar">
+        <img src="assets/app-icon.svg" alt="" class="app-mark" />
+        <div>
+          <span>1·2·3·4·5·6학년 · 1·2·3·4·5·6학년 연산</span>
+          <h1>강태훈샘 수학 익힘책</h1>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div class="hero-visual" aria-hidden="true">
+          <span class="tile fraction"><b>3</b><i></i><b>5</b></span>
+          <span class="tile">×</span>
+          <span class="tile fraction"><b>7</b><i></i><b>12</b></span>
+          <span class="tile">□</span>
+        </div>
+        <p class="status-pill">1·2·3·4·5·6학년 연산 과정</p>
+        <h2>손가락으로 바로 푸는 수학 연습장</h2>
+        <p class="lead">세부 유형마다 10문제씩 구성되고, 학습 현황과 보고서는 기기 안에 저장됩니다.</p>
+        <a class="start-button" href="study.html?grade=6-op">6학년 연산 학습 시작</a>
+        <p class="launch-label">학년 과정</p>
+        <div class="grade-launch-grid" aria-label="학년 과정 바로 시작">
+          <a href="study.html?grade=1">1학년</a>
+          <a href="study.html?grade=2">2학년</a>
+          <a href="study.html?grade=3">3학년</a>
+          <a href="study.html?grade=4">4학년</a>
+          <a href="study.html?grade=5">5학년</a>
+          <a href="study.html?grade=6">6학년</a>
+        </div>
+        <p class="launch-label">연산 과정</p>
+        <div class="operation-launch-grid" aria-label="학년별 연산 바로 시작">
+          <a href="study.html?grade=1-op">1학년 연산</a>
+          <a href="study.html?grade=2-op">2학년 연산</a>
+          <a href="study.html?grade=3-op">3학년 연산</a>
+          <a href="study.html?grade=4-op">4학년 연산</a>
+          <a href="study.html?grade=5-op">5학년 연산</a>
+          <a href="study.html?grade=6-op" class="active">6학년 연산</a>
+        </div>
+      </section>
+
+      <section class="summary-grid" aria-label="학습 요약">
+        <article>
+          <span>학년</span>
+          <strong>12</strong>
+          <small>6개 학년 + 1·2·3·4·5·6학년 연산</small>
+        </article>
+        <article>
+          <span>단원</span>
+          <strong>74</strong>
+          <small>월별 과정 통합</small>
+        </article>
+        <article>
+          <span>기록</span>
+          <strong id="accuracyText">0%</strong>
+          <small id="attemptText">아직 풀이 전</small>
+        </article>
+      </section>
+
+      <section class="quick-menu" aria-label="빠른 메뉴">
+        <a href="study.html?grade=6-op" class="menu-card primary">
+          <span>바로 학습</span>
+          <strong>6학년 연산 열기</strong>
+          <small>입체도형, 비율그래프, 정수, 방정식, 함수가 반영된 연산 과정</small>
+        </a>
+        <button class="menu-card" id="installButton" type="button">
+          <span>홈 화면</span>
+          <strong>앱처럼 추가</strong>
+          <small id="installText">브라우저 메뉴에서 홈 화면에 추가</small>
+        </button>
+      </section>
+
+      <section class="unit-list" aria-label="학습 단원">
+        <h2>학습 단원</h2>
+        <div>
+          <a href="study.html?grade=1">1학년 3월~1학년 2월</a>
+          <a href="study.html?grade=1-op">1학년 수학연산 3월~11월</a>
+          <a href="study.html?grade=2">2학년 3월~2학년 2월</a>
+          <a href="study.html?grade=2-op">2학년 수학연산 3월~2월</a>
+          <a href="study.html?grade=3">3학년 3월~3학년 2월</a>
+          <a href="study.html?grade=3-op">3학년 수학연산 3월~2월</a>
+          <a href="study.html?grade=4">4학년 3월~4학년 2월</a>
+          <a href="study.html?grade=4-op">4학년 수학연산 3월~2월</a>
+          <a href="study.html?grade=5">5학년 3월~6학년 준비 2월</a>
+          <a href="study.html?grade=5-op">5학년 수학연산 3월~2월</a>
+          <a href="study.html?grade=6">6학년 3월~중등 준비 2월</a>
+          <a href="study.html?grade=6-op">6학년 수학연산 3월~2월</a>
+        </div>
+      </section>
+
+      <footer>
+        <span id="updatedText">모바일 최적화 버전</span>
+      </footer>
+    </main>
+
+    <script src="scripts/mobile-home.js"></script>
+  </body>
+</html>

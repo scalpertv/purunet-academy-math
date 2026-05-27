@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(node --version)",
+      "Bash(git rm *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(npm run *)",
+      "Bash(Get-ChildItem -Recurse -Filter \"*.tsx\" \"c:\\\\Users\\\\paten\\\\OneDrive\\\\바탕 화면\\\\강태훈샘 수학 영어_푸르넷_유치원추가_연산추가\\(26.05.26\\) 오후 5시 43분\\\\app\\\\src\")",
+      "Bash(Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Recurse \"c:\\\\Users\\\\paten\\\\OneDrive\\\\바탕 화면\\\\강태훈샘 수학 영어_푸르넷_유치원추가_연산추가\\(26.05.26\\) 오후 5시 43분\\\\app\\\\src\" | Where-Object {!$_.PSIsContainer} | Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Recurse \"c:\\\\Users\\\\paten\\\\OneDrive\\\\바탕 화면\\\\강태훈샘 수학 영어_푸르넷_유치원추가_연산추가\\(26.05.26\\) 오후 5시 43분\\\\app\\\\workers\" | Where-Object {!$_.PSIsContainer} | Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Recurse \"c:\\\\Users\\\\paten\\\\OneDrive\\\\바탕 화면\\\\강태훈샘 수학 영어_푸르넷_유치원추가_연산추가\\(26.05.26\\) 오후 5시 43분\\\\app\\\\functions\" | Where-Object {!$_.PSIsContainer} | Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Recurse \"c:\\\\Users\\\\paten\\\\OneDrive\\\\바탕 화면\\\\강태훈샘 수학 영어_푸르넷_유치원추가_연산추가\\(26.05.26\\) 오후 5시 43분\\\\푸르넷 영어 수학 학원\\(26.05.21\\)\\\\academy-portal\\\\functions\" | Where-Object {!$_.PSIsContainer} | Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Recurse \"c:\\\\Users\\\\paten\\\\OneDrive\\\\바탕 화면\\\\강태훈샘 수학 영어_푸르넷_유치원추가_연산추가\\(26.05.26\\) 오후 5시 43분\\\\푸르넷 영어 수학 학원\\(26.05.21\\)\\\\academy-portal\\\\functions\" | Where-Object {!$_.PSIsContainer} | ForEach-Object { $_.FullName.Split\\('\\\\functions\\\\'\\)[1] })",
+      "PowerShell(Get-ChildItem -Recurse \"c:\\\\Users\\\\paten\\\\OneDrive\\\\바탕 화면\\\\강태훈샘 수학 영어_푸르넷_유치원추가_연산추가\\(26.05.26\\) 오후 5시 43분\\\\푸르넷 영어 수학 학원\\(26.05.21\\)\\\\academy-portal\\\\functions\" | Where-Object {!$_.PSIsContainer} | ForEach-Object { $_.Name })",
+      "PowerShell(Get-ChildItem -Recurse \"c:\\\\Users\\\\paten\\\\OneDrive\\\\바탕 화면\\\\강태훈샘 수학 영어_푸르넷_유치원추가_연산추가\\(26.05.26\\) 오후 5시 43분\\\\푸르넷 영어 수학 학원\\(26.05.21\\)\\\\academy-portal\\\\functions\" | Where-Object {!$_.PSIsContainer} | Select-Object -ExpandProperty FullName)",
+      "Bash(npx wrangler *)"
+    ]
+  }
+}

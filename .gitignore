@@ -1,0 +1,28 @@
+# 의존성
+node_modules/
+.pdf-tools/node_modules/
+
+# 빌드 결과물
+app/dist/
+app/release/
+app/release.zip
+*.zip
+
+# 환경변수 / 시크릿
+.env
+.env.*
+*.env
+wrangler.toml
+
+# OS / 에디터
+.DS_Store
+Thumbs.db
+*.log
+.vscode/settings.json
+
+# 테스트 결과
+test-results/
+
+# ���� ������Ʈ .git ����
+Ǫ���� ���� ���� �п�*/**/.git/
+Ǫ���� ��ġ��*/**/.git/

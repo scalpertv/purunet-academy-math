@@ -1,0 +1,12 @@
+# Cloudflare D1 학습 데이터 정기 유지보수 Worker 배포 설정이다.
+name = "prunet-math-maintenance"
+main = "workers/maintenance.ts"
+compatibility_date = "2026-05-19"
+
+[[d1_databases]]
+binding = "LEARNING_DB"
+database_name = "prunet_math_learning_db"
+database_id = "08743c63-9a74-4215-93a8-c5b01a3cec73"
+
+[triggers]
+crons = ["17 * * * *", "0 18 * * *"]

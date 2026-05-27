@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 280" role="img" aria-labelledby="title desc">
+  <title id="title">original math mentor character</title>
+  <desc id="desc">A friendly fairy-tale math mentor holding a glowing pencil wand.</desc>
+  <defs>
+    <linearGradient id="robe" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#6b5bd6"/>
+      <stop offset="1" stop-color="#2d8d99"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#2c2540" flood-opacity=".2"/>
+    </filter>
+  </defs>
+  <circle cx="140" cy="140" r="130" fill="#fff5cf"/>
+  <circle cx="140" cy="140" r="118" fill="#d9f1ee"/>
+  <g filter="url(#shadow)">
+    <path d="M88 244c5-72 99-72 104 0z" fill="url(#robe)"/>
+    <circle cx="140" cy="104" r="52" fill="#ffd8b2"/>
+    <path d="M84 100c7-62 95-74 116-11-42-4-74-18-116 11z" fill="#503977"/>
+    <circle cx="120" cy="108" r="5" fill="#2d2336"/>
+    <circle cx="160" cy="108" r="5" fill="#2d2336"/>
+    <path d="M126 132c10 9 22 9 32 0" fill="none" stroke="#8d4a52" stroke-width="6" stroke-linecap="round"/>
+    <path d="M94 70l46-52 46 52z" fill="#624cc5"/>
+    <circle cx="140" cy="28" r="9" fill="#f6c84f"/>
+    <path d="M100 166l-44 28M180 166l42-64" stroke="#ffd8b2" stroke-width="16" stroke-linecap="round"/>
+    <rect x="205" y="72" width="18" height="76" rx="9" fill="#f2b84b" transform="rotate(32 205 72)"/>
+    <path d="M216 66l8-20 8 20 20 8-20 8-8 20-8-20-20-8z" fill="#fff08d"/>
+    <path d="M112 166l28 34 28-34" fill="#fff3c7"/>
+  </g>
+</svg>

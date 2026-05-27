@@ -1,0 +1,19 @@
+{
+  "name": "강태훈샘 수학 익힘책 모바일",
+  "short_name": "강태훈샘 수학",
+  "description": "1·2·3·4·5·6학년 수학 익힘책과 1·2·3·4·5·6학년 연산 과정 모바일 홈페이지",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff7de",
+  "theme_color": "#168b8f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "assets/app-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
