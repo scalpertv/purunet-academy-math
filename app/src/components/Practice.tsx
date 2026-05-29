@@ -11,7 +11,7 @@ interface Props {
   title: string;
   accent: string;
   problems: Problem[];
-  problemSetSize: 10 | 20 | 30 | 40 | 50;
+  problemSetSize: 5 | 10 | 20 | 30 | 40 | 50;
   prefs: ReaderPrefs;
   learnerLabel: string;
   onPrefsChange: (prefs: ReaderPrefs) => void;

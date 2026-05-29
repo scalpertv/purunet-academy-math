@@ -2078,6 +2078,90 @@ export async function upsertTeacherLearningAccount(input: {
   return loadLearningAuthSnapshot();
 }
 
+export async function activateAccountWithHash(input: {
+  role: "teacher" | "student";
+  username: string;
+  passwordHash: string;
+  displayName: string;
+  userId: string;
+  learnerId?: string;
+}): Promise<LearningAuthSnapshot> {
+  const now = new Date().toISOString();
+  const username = normalizeUsername(input.username);
+
+  if (input.role === "teacher") {
+    const teacherId = input.userId || `ext-${username}`;
+    const accounts = await readAllIndexed<TeacherAccountRecord>(TEACHER_ACCOUNT_STORE).catch(() => []);
+    const existing = accounts.find((a) => a.username === username) ?? accounts.find((a) => a.teacherId === teacherId);
+    const account: TeacherAccountRecord = {
+      ...(existing ?? {}),
+      id: existing?.id ?? entityId("teacher-account"),
+      role: "teacher",
+      username,
+      passwordHash: input.passwordHash,
+      displayName: normalizeText(input.displayName, "선생님"),
+      teacherId,
+      access: defaultAccountAccess("teacher", now),
+      credentialScheme: "sha256-v1",
+      securityVersion: 2,
+      passwordUpdatedAt: now,
+      updatedAt: now,
+      createdAt: existing?.createdAt ?? now,
+      lastLoginAt: now,
+    };
+    const currentSettings = (await readIndexed<RosterSettingsRecord>(SETTINGS_STORE, ACTIVE_SETTINGS_ID).catch(() => undefined)) ?? defaultRosterSettings();
+    const settings: RosterSettingsRecord = { ...currentSettings, teacherAccountId: account.id, teacherId: account.teacherId, classId: undefined, studentId: undefined, updatedAt: now };
+    try {
+      await writeIndexedRecords([TEACHER_ACCOUNT_STORE, SETTINGS_STORE], (transaction) => {
+        transaction.objectStore(TEACHER_ACCOUNT_STORE).put(account);
+        transaction.objectStore(SETTINGS_STORE).put(settings);
+      });
+    } catch {
+      const auth = readFallbackAuth();
+      auth.teacherAccounts = [account, ...auth.teacherAccounts.filter((a) => a.id !== account.id)];
+      auth.settings = settings;
+      writeFallbackAuth(auth);
+    }
+  } else {
+    const studentId = input.userId || `ext-${username}`;
+    const learnerId = input.learnerId || `ext-${username}`;
+    const accounts = await readAllIndexed<StudentAccountRecord>(STUDENT_ACCOUNT_STORE).catch(() => []);
+    const existing = accounts.find((a) => a.username === username) ?? accounts.find((a) => a.studentId === studentId);
+    const account: StudentAccountRecord = {
+      ...(existing ?? {}),
+      id: existing?.id ?? entityId("student-account"),
+      role: "student",
+      username,
+      passwordHash: input.passwordHash,
+      displayName: normalizeText(input.displayName, "학생"),
+      studentId,
+      learnerId,
+      access: defaultAccountAccess("student", now),
+      credentialScheme: "sha256-v1",
+      securityVersion: 2,
+      passwordUpdatedAt: now,
+      updatedAt: now,
+      createdAt: existing?.createdAt ?? now,
+      lastLoginAt: now,
+    };
+    const currentSettings = (await readIndexed<RosterSettingsRecord>(SETTINGS_STORE, ACTIVE_SETTINGS_ID).catch(() => undefined)) ?? defaultRosterSettings();
+    const settings: RosterSettingsRecord = { ...currentSettings, studentId: account.studentId, studentAccountId: account.id, updatedAt: now };
+    try {
+      await writeIndexedRecords([STUDENT_ACCOUNT_STORE, SETTINGS_STORE], (transaction) => {
+        transaction.objectStore(STUDENT_ACCOUNT_STORE).put(account);
+        transaction.objectStore(SETTINGS_STORE).put(settings);
+      });
+    } catch {
+      const auth = readFallbackAuth();
+      auth.studentAccounts = [account, ...auth.studentAccounts.filter((a) => a.id !== account.id)];
+      auth.settings = settings;
+      writeFallbackAuth(auth);
+    }
+  }
+
+  return loadLearningAuthSnapshot();
+}
+
 export async function updateStudentLearningProgress(input: {
   studentId: string;
   attempted?: number;

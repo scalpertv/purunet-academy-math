@@ -6224,9 +6224,28 @@ button[disabled] {
 .drill-header-right {
   flex: 1;
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 10px;
   overflow: hidden;
 }
+
+.drill-home-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 13px;
+  background: #1e40af;
+  color: #fff;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.drill-home-btn:hover { background: #1d4ed8; }
 
 .drill-tip-badge {
   max-width: 520px;
@@ -7310,3 +7329,20 @@ button[disabled] {
 .prac-bar-tools button:hover { background: rgba(0,0,0,0.05); }
 .prac-bar-tools button.on { color: var(--accent); border-color: var(--accent); }
 .reader-night .prac-bar-tools button { border-color: rgba(255,255,255,0.14); color: #aab; }
+
+/* ── 로그인 게이트 ── */
+.auth-gate { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); }
+.auth-gate-box { width: 100%; max-width: 400px; margin: 0 auto; padding: 48px 36px; background: #fff; border-radius: 20px; box-shadow: 0 8px 40px -8px rgba(0,0,0,0.15); text-align: center; }
+.auth-gate-box h1 { font-size: 24px; font-weight: 900; color: #1e40af; margin: 0 0 8px; }
+.auth-gate-subtitle { font-size: 14px; color: #64748b; margin: 0 0 24px; }
+.auth-gate-loading { font-size: 14px; color: #94a3b8; margin: 24px 0 0; }
+.auth-gate-message { font-size: 13px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 8px 12px; margin: 0 0 16px; }
+.auth-gate-form { display: flex; flex-direction: column; gap: 14px; text-align: left; }
+.auth-gate-field { display: flex; flex-direction: column; gap: 4px; }
+.auth-gate-field label { font-size: 13px; font-weight: 700; color: #374151; }
+.auth-gate-field input { padding: 10px 14px; border: 1.5px solid #d1d5db; border-radius: 10px; font-size: 15px; outline: none; transition: border-color 0.15s; }
+.auth-gate-field input:focus { border-color: #3b82f6; }
+.auth-gate-form .primary-btn { margin-top: 6px; padding: 12px; font-size: 16px; font-weight: 900; border-radius: 10px; background: #1e40af; color: #fff; border: none; cursor: pointer; transition: background 0.15s; }
+.auth-gate-form .primary-btn:hover:not(:disabled) { background: #1d4ed8; }
+.auth-gate-form .primary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.auth-gate-hint { font-size: 12px; color: #94a3b8; margin: 20px 0 0; line-height: 1.5; }

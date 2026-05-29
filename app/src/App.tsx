@@ -51,6 +51,7 @@ import {
   upsertStudentLearningAccount,
   upsertTeacherLearningAccount,
   upsertLearnerDbProfile,
+  activateAccountWithHash,
   ACCOUNT_APPROVAL_PENDING_REASON,
   type AccountRole,
   type AdminLearningSnapshot,
@@ -74,7 +75,7 @@ import {
   type StudyStats,
 } from "./lib/readerPrefs";
 
-type ProblemSetSize = 10 | 20 | 30 | 40 | 50;
+type ProblemSetSize = 5 | 10 | 20 | 30 | 40 | 50;
 
 type Screen =
   | { name: "home" }
@@ -1088,115 +1089,6 @@ function printableTextHtml(value: string) {
     .replace(/\n/g, "<br />");
 }
 
-const PRINT_VISUAL_CSS = `
-          .print-visual { margin: 10px 0 2px; }
-          .print-visual .math-visual { width: min(100%, 340px); margin: 0 auto; padding: 8px 10px 6px; border: 1.5px solid #bfd7dd; border-radius: 7px; background: #f8fafc; color: #111827; }
-          .print-visual .math-visual svg { display: block; width: 100%; height: auto; max-height: 220px; }
-          .print-visual figure { break-inside: avoid; page-break-inside: avoid; }
-          .print-visual figcaption { margin-bottom: 4px; color: #111827; font-size: 13px; font-weight: 900; text-align: center; }
-          .print-visual .table-visual { overflow-x: auto; }
-          .print-visual .table-visual table { width: 100%; border-collapse: separate; border-spacing: 0; color: #111827; font-size: 14px; font-weight: 900; }
-          .print-visual .table-visual th, .print-visual .table-visual td { min-width: 42px; padding: 7px; border-right: 1.5px solid #cbd5e1; border-bottom: 1.5px solid #cbd5e1; text-align: center; }
-          .print-visual .table-visual th { background: #eaf6f8; }
-          .print-visual .table-visual th:first-child, .print-visual .table-visual td:first-child { border-left: 1.5px solid #cbd5e1; }
-          .print-visual .table-visual thead th { border-top: 1.5px solid #cbd5e1; }
-          .print-visual .visual-shape, .print-visual .cuboid-front { fill: #dff3f2; stroke: #2f6f7b; stroke-width: 4; stroke-linejoin: round; }
-          .print-visual .visual-shape.twin { fill: #eef2ff; }
-          .print-visual .visual-cut { fill: #ffffff; stroke: #64748b; stroke-width: 3; stroke-dasharray: 6 5; }
-          .print-visual .visual-guide { stroke: #64748b; stroke-width: 3; stroke-dasharray: 7 5; fill: none; }
-          .print-visual .visual-label { fill: #111827; font-size: 15px; font-weight: 900; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; }
-          .print-visual .cuboid-top { fill: #edf7d8; stroke: #2f6f7b; stroke-width: 4; stroke-linejoin: round; }
-          .print-visual .cuboid-side { fill: #c8e7df; stroke: #2f6f7b; stroke-width: 4; stroke-linejoin: round; }
-          .print-visual .cube-top, .print-visual .cube-left, .print-visual .cube-right { stroke: #475569; stroke-width: 1.8; stroke-linejoin: round; }
-          .print-visual .cube-top { fill: #eff6ff; }
-          .print-visual .cube-left { fill: #bae6fd; }
-          .print-visual .cube-right { fill: #7dd3fc; }
-          .print-visual .chart-axis, .print-visual .coord-axis { stroke: #475569; stroke-width: 3; stroke-linecap: round; }
-          .print-visual .chart-grid-line, .print-visual .coord-grid { stroke: #cbd5e1; stroke-width: 1.5; }
-          .print-visual .chart-reference { stroke: #dc6b5a; stroke-width: 3; stroke-dasharray: 7 5; }
-          .print-visual .chart-bar { fill: #79c7d3; stroke: #2f6f7b; stroke-width: 2; }
-          .print-visual .chart-line, .print-visual .congruent-arrow, .print-visual .rotation-path { fill: none; stroke: #2f6f7b; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
-          .print-visual .chart-point { fill: #ffffff; stroke: #2f6f7b; stroke-width: 4; }
-          .print-visual .chart-reference-label, .print-visual .chart-value, .print-visual .chart-label, .print-visual .chart-unit, .print-visual .coord-label, .print-visual .coin-label { fill: #111827; font-size: 12px; font-weight: 900; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-          .print-visual .chart-value { font-size: 13px; }
-          .print-visual .pictograph-panel { display: grid; gap: 10px; min-width: 250px; padding: 4px 2px 2px; }
-          .print-visual .pictograph-key, .print-visual .pictograph-row { display: grid; grid-template-columns: auto auto auto auto; align-items: center; justify-content: center; gap: 7px; color: #111827; font-size: 13px; font-weight: 900; }
-          .print-visual .pictograph-rows { display: grid; gap: 8px; }
-          .print-visual .pictograph-row { grid-template-columns: minmax(52px, 72px) 1fr; justify-content: stretch; padding: 8px 10px; border: 1.5px solid #cbd5e1; border-radius: 7px; background: #ffffff; }
-          .print-visual .pictograph-label { text-align: center; }
-          .print-visual .pictograph-symbols { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; min-height: 26px; }
-          .print-visual .pictograph-icon { display: inline-grid; place-items: center; flex: 0 0 auto; }
-          .print-visual .pictograph-icon.big { width: 22px; height: 22px; background: #f2b66d; clip-path: polygon(50% 0%, 62% 34%, 98% 34%, 69% 55%, 80% 92%, 50% 70%, 20% 92%, 31% 55%, 2% 34%, 38% 34%); }
-          .print-visual .pictograph-icon.small { width: 12px; height: 12px; border-radius: 999px; background: #69b8c8; box-shadow: inset 0 0 0 2px rgba(70, 51, 36, 0.18); }
-          .print-visual .ten-frame-cell, .print-visual .fraction-cell { fill: #ffffff; stroke: #94a3b8; stroke-width: 2; }
-          .print-visual .ten-frame-counter { fill: #f2b66d; stroke: #475569; stroke-width: 2; }
-          .print-visual .ten-frame-counter.second { fill: #66b7c9; }
-          .print-visual .fraction-cell.shaded { fill: #8bcfd1; }
-          .print-visual .fraction-cut-line { stroke: #dc6b5a; stroke-width: 3; stroke-dasharray: 7 5; }
-          .print-visual .number-bond-line, .print-visual .number-line-axis, .print-visual .number-line-tick { stroke: #475569; stroke-width: 4; stroke-linecap: round; }
-          .print-visual .number-bond-total, .print-visual .number-bond-part { fill: #f8fafc; stroke: #2f6f7b; stroke-width: 4; }
-          .print-visual .number-bond-part.second { fill: #e0f2fe; }
-          .print-visual .number-bond-text, .print-visual .number-line-label { fill: #111827; font-size: 20px; font-weight: 900; }
-          .print-visual .number-line-missing { fill: #ffffff; stroke: #2f6f7b; stroke-width: 3; stroke-dasharray: 6 4; }
-          .print-visual .place-value-rod, .print-visual .base-ten-rod { fill: #f2b66d; stroke: #475569; stroke-width: 1.8; }
-          .print-visual .place-value-rod-tick, .print-visual .base-ten-flat-line, .print-visual .base-ten-rod-line { stroke: rgba(71, 85, 105, 0.28); stroke-width: 1.4; }
-          .print-visual .place-value-one, .print-visual .base-ten-one { fill: #66b7c9; stroke: #475569; stroke-width: 1.8; }
-          .print-visual .base-ten-flat { fill: #bde8ff; stroke: #475569; stroke-width: 1.8; }
-          .print-visual .ratio-strip-left { fill: #69b8c8; stroke: #475569; stroke-width: 2; }
-          .print-visual .ratio-strip-right { fill: #f2b66d; stroke: #475569; stroke-width: 2; }
-          .print-visual .ratio-dot { stroke: #475569; stroke-width: 1.5; }
-          .print-visual .ratio-dot.left { fill: #69b8c8; }
-          .print-visual .ratio-dot.right { fill: #f2b66d; }
-          .print-visual .circle-chart-ring, .print-visual .circle-diagram-base { fill: #ffffff; stroke: #2f6f7b; stroke-width: 4; }
-          .print-visual .circle-chart-wedge { stroke: #475569; stroke-width: 2.2; stroke-linejoin: round; }
-          .print-visual .circle-chart-hole { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; }
-          .print-visual .circle-chart-legend-chip { stroke: #475569; stroke-width: 1.5; }
-          .print-visual .circle-chart-percent { fill: #111827; font-size: 12px; font-weight: 900; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-          .print-visual .circle-area-fill, .print-visual .circle-diagram-fill { fill: #a9d9c6; stroke: #2f6f7b; stroke-width: 4; }
-          .print-visual .circle-square { fill: #fff7d8; stroke: #2f6f7b; stroke-width: 4; }
-          .print-visual .circle-measure-line { stroke: #dc6b5a; stroke-width: 4; stroke-linecap: round; }
-          .print-visual .circle-circumference { fill: none; stroke: #dc6b5a; stroke-width: 4; stroke-dasharray: 8 6; }
-          .print-visual .circle-pattern-center { fill: #fff6c8; stroke: #475569; stroke-width: 3; }
-          .print-visual .circle-pattern-petal { fill: #bde8ff; stroke: #475569; stroke-width: 2.5; }
-          .print-visual .angle-ray, .print-visual .line-type-main { stroke: #2f6f7b; stroke-width: 5; stroke-linecap: round; }
-          .print-visual .angle-arc { fill: none; stroke: #dc6b5a; stroke-width: 4; stroke-linecap: round; }
-          .print-visual .clock-face, .print-visual .ruler-body { fill: #ffffff; stroke: #2f6f7b; stroke-width: 4; }
-          .print-visual .clock-tick { stroke: #64748b; stroke-width: 1.8; stroke-linecap: round; }
-          .print-visual .clock-tick.major { stroke: #334155; stroke-width: 3; }
-          .print-visual .clock-number, .print-visual .ruler-number { fill: #111827; font-size: 13px; font-weight: 900; }
-          .print-visual .clock-hand { stroke-linecap: round; }
-          .print-visual .clock-hand.hour { stroke: #2f6f7b; stroke-width: 7; }
-          .print-visual .clock-hand.minute { stroke: #dc6b5a; stroke-width: 4; }
-          .print-visual .clock-center, .print-visual .ruler-end-dot { fill: #dc6b5a; stroke: #475569; stroke-width: 2; }
-          .print-visual .ruler-tick { stroke: #475569; stroke-linecap: round; }
-          .print-visual .ruler-tick.major { stroke-width: 3; }
-          .print-visual .ruler-tick.minor { stroke-width: 1.6; }
-          .print-visual .ruler-highlight { stroke: #dc6b5a; stroke-width: 6; stroke-linecap: round; }
-          .print-visual .line-arrow, .print-visual .rotation-tip { fill: #2f6f7b; stroke: none; }
-          .print-visual .line-endpoint, .print-visual .array-dot, .print-visual .coord-point { fill: #66b7c9; stroke: #ffffff; stroke-width: 3; }
-          .print-visual .right-angle-marker { fill: none; stroke: #dc6b5a; stroke-width: 4; stroke-linejoin: round; }
-          .print-visual .pattern-triangle, .print-visual .pattern-circle, .print-visual .pattern-square, .print-visual .pattern-color { stroke: #475569; stroke-width: 3; }
-          .print-visual .pattern-triangle { fill: #f2b66d; }
-          .print-visual .pattern-circle { fill: #69b8c8; }
-          .print-visual .pattern-square { fill: #91c788; }
-          .print-visual .pattern-color.red { fill: #f08f74; }
-          .print-visual .pattern-color.blue { fill: #69b8c8; }
-          .print-visual .pattern-color.yellow { fill: #f2d36b; }
-          .print-visual .pattern-placeholder { fill: #ffffff; stroke: #dc6b5a; stroke-width: 3; stroke-dasharray: 7 5; }
-          .print-visual .pattern-question, .print-visual .pattern-label { fill: #111827; font-size: 13px; font-weight: 900; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
-          .print-visual .pattern-question { font-size: 23px; }
-          .print-visual .coord-symmetry { stroke: #dc6b5a; stroke-width: 4; stroke-dasharray: 8 6; }
-          .print-visual .coord-reflected { fill: #e97953; stroke: #ffffff; stroke-width: 3; }
-          .print-visual .bag-shape { fill: #f8fafc; stroke: #2f6f7b; stroke-width: 4; }
-          .print-visual .bag-neck { fill: none; stroke: #2f6f7b; stroke-width: 5; stroke-linecap: round; }
-          .print-visual .prob-ball { stroke: #ffffff; stroke-width: 2; }
-          .print-visual .prob-ball.red { fill: #e86756; }
-          .print-visual .prob-ball.blue { fill: #4e9ed6; }
-          .print-visual .coin-face { stroke: #8a693d; stroke-width: 4; }
-          .print-visual .coin-face.front { fill: #f7d56b; }
-          .print-visual .coin-face.back { fill: #f0bc50; }
-`;
-
 function visualToPrintableText(visual?: Problem["visual"]) {
   if (!visual) return "";
   switch (visual.type) {
@@ -1300,31 +1192,34 @@ function printableVisualHtml(visual?: Problem["visual"]) {
   return `<div class="print-visual" aria-label="${escapeHtml(fallbackLabel)}">${renderToStaticMarkup(<MathVisual visual={visual} />)}</div>`;
 }
 
+const FULL_WIDTH_VISUAL_TYPES = new Set([
+  "data-table", "bar-chart", "line-chart", "pictograph",
+  "coordinate-plane", "congruent-triangles", "symmetry-shape",
+  "rotation-180", "circle-chart", "circle-pattern", "cuboid",
+  "cube-stack", "net-diagram", "solid-shape", "shape-pattern",
+  "object-array", "ruler",
+]);
+
+function problemNeedsFullWidth(problem: Problem): boolean {
+  if (problem.visual && FULL_WIDTH_VISUAL_TYPES.has(problem.visual.type)) return true;
+  if (problem.choices && problem.choices.length >= 4) return true;
+  if (problem.prompt.length > 70) return true;
+  return false;
+}
+
 function printableProblemHtml(problem: Problem, index: number, mode: ProblemSheetMode) {
+  const isFullWidth = problemNeedsFullWidth(problem);
   const choiceHtml = problem.choices?.length
-    ? `<ol class="choice-list">${problem.choices.map((choice) => `<li>${printableTextHtml(choice)}</li>`).join("")}</ol>`
+    ? `<ol class="choice-list${problem.choices.length <= 2 ? " short" : ""}">${problem.choices.map((choice) => `<li>${printableTextHtml(choice)}</li>`).join("")}</ol>`
     : "";
-  const hintHtml = problem.hint ? `<p class="hint-line">입력 안내: ${printableTextHtml(problem.hint)}</p>` : "";
+  const hintHtml = problem.hint ? `<p class="hint-line">※ ${printableTextHtml(problem.hint)}</p>` : "";
   const visualHtml = printableVisualHtml(problem.visual);
   const answerHtml =
     mode === "answer"
-      ? `<div class="answer-box filled"><strong>정답</strong><span>${printableTextHtml(formatAnswer(problem))}</span><p>${printableTextHtml(problem.solution)}</p></div>`
+      ? `<div class="answer-box filled"><strong>정답</strong> <span>${printableTextHtml(formatAnswer(problem))}</span>${problem.solution ? `<p>${printableTextHtml(problem.solution)}</p>` : ""}</div>`
       : `<div class="answer-box"><strong>답</strong><span></span></div>`;
 
-  return `
-    <article class="problem-card">
-      <div class="problem-title">
-        <strong>${index + 1}번</strong>
-        <span>${problem.kind === "choice" ? "선택형" : "입력형"}</span>
-      </div>
-      <p class="prompt">${printableTextHtml(problem.prompt)}</p>
-      <p class="expression">${printableTextHtml(problem.expression)}</p>
-      ${visualHtml}
-      ${choiceHtml}
-      ${hintHtml}
-      ${answerHtml}
-    </article>
-  `;
+  return `<article class="problem-card${isFullWidth ? " fw" : ""}"><div class="pt"><strong>${index + 1}</strong><em>${problem.kind === "choice" ? "선" : "입"}</em></div>${problem.prompt ? `<p class="pq">${printableTextHtml(problem.prompt)}</p>` : ""}${problem.expression ? `<p class="pe">${printableTextHtml(problem.expression)}</p>` : ""}${visualHtml}${choiceHtml}${hintHtml}${answerHtml}</article>`;
 }
 
 function printProblemSheetDocument(meta: ProblemSheetMeta, problems: Problem[], mode: ProblemSheetMode) {
@@ -1335,63 +1230,184 @@ function printProblemSheetDocument(meta: ProblemSheetMeta, problems: Problem[], 
   const modeTitle = mode === "answer" ? "답안지" : "문제지";
   const escapedTitle = escapeHtml(`${meta.title} ${modeTitle}`);
   const problemHtml = problems.map((problem, index) => printableProblemHtml(problem, index, mode)).join("");
+  const fullWidthCount = problems.filter(problemNeedsFullWidth).length;
+  const simpleCount = problems.length - fullWidthCount;
+  const estPages = Math.ceil((fullWidthCount + simpleCount / 2) / 8 + 0.5);
   popup.document.write(`
     <html lang="ko">
       <head>
         <title>${escapedTitle}</title>
         <style>
-          @page { size: A4; margin: 14mm; }
+          @page { size: A4 portrait; margin: 9mm 11mm; }
           * { box-sizing: border-box; }
-          body { margin: 0; background: #ffffff; color: #111827; font-family: "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5; }
-          main { max-width: 900px; margin: 0 auto; padding: 22px; }
-          .sheet-head { display: grid; gap: 12px; padding-bottom: 14px; border-bottom: 3px solid #111827; }
-          .sheet-head h1 { margin: 0; font-size: 25px; line-height: 1.25; }
-          .sheet-meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-          .sheet-meta div { min-height: 54px; padding: 9px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; }
-          .sheet-meta span { display: block; color: #475569; font-size: 11px; font-weight: 800; }
-          .sheet-meta strong { display: block; margin-top: 4px; color: #111827; font-size: 15px; word-break: keep-all; }
-          .sheet-note { margin: 0; color: #475569; font-size: 12px; font-weight: 800; }
-          .problem-list { display: grid; gap: 12px; margin-top: 16px; }
-          .problem-card { break-inside: avoid; page-break-inside: avoid; padding: 12px; border: 1.5px solid #d1d5db; border-radius: 7px; }
-          .problem-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; color: #334155; font-size: 12px; font-weight: 900; }
-          .problem-title strong { color: #111827; font-size: 16px; }
-          .prompt { margin: 0 0 6px; font-size: 15px; font-weight: 800; }
-          .expression { margin: 0; color: #0f172a; font-size: 18px; font-weight: 900; white-space: normal; }
-          .print-mixed { display: inline-flex; align-items: center; gap: 0.16em; vertical-align: middle; }
-          .print-frac { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 1.2em; margin: 0 0.08em; vertical-align: middle; line-height: 1; font-weight: 900; }
-          .print-frac span:first-child { display: block; width: 100%; padding: 0 0.18em 2px; border-bottom: 1.5px solid #111827; text-align: center; }
-          .print-frac span:last-child { display: block; width: 100%; padding: 2px 0.18em 0; text-align: center; }
-          .visual-text { margin: 8px 0 0; padding: 8px; border: 1px dashed #cbd5e1; border-radius: 6px; background: #f8fafc; color: #334155; font-family: inherit; font-size: 13px; white-space: pre-wrap; }
-${PRINT_VISUAL_CSS}
-          .choice-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 14px; margin: 8px 0 0; padding-left: 24px; font-size: 14px; font-weight: 700; }
-          .hint-line { margin: 8px 0 0; color: #475569; font-size: 12px; font-weight: 800; }
-          .answer-box { display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: end; gap: 8px; margin-top: 12px; }
-          .answer-box strong { color: #111827; font-size: 14px; }
-          .answer-box > span { min-height: 24px; border-bottom: 1.5px solid #111827; }
-          .answer-box.filled { display: block; padding-top: 10px; border-top: 1px solid #e5e7eb; }
-          .answer-box.filled > span { display: inline-block; min-width: 180px; margin-left: 8px; border-bottom: 0; color: #0f172a; font-size: 16px; font-weight: 900; }
-          .answer-box.filled p { margin: 6px 0 0; color: #334155; font-size: 13px; font-weight: 700; }
+          body { margin: 0; background: #fff; color: #111827; font-family: "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif; font-size: 13px; line-height: 1.4; }
+          main { margin: 0 auto; padding: 14px 16px 10px; }
+          /* ── 헤더 ── */
+          .sh { display: flex; align-items: stretch; justify-content: space-between; gap: 10px; padding-bottom: 8px; border-bottom: 2.5px solid #111827; margin-bottom: 10px; }
+          .sh-left { flex: 1; }
+          .sh-left h1 { margin: 0 0 6px; font-size: 19px; font-weight: 900; line-height: 1.25; }
+          .sh-meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+          .sh-meta div { padding: 4px 7px; border: 1.5px solid #cbd5e1; border-radius: 5px; }
+          .sh-meta span { display: block; color: #64748b; font-size: 9.5px; font-weight: 800; }
+          .sh-meta strong { display: block; color: #111827; font-size: 13px; font-weight: 900; }
+          .sh-score { display: flex; flex-direction: column; justify-content: center; align-items: center; min-width: 72px; padding: 4px 10px; border: 2px solid #111827; border-radius: 6px; gap: 2px; }
+          .sh-score span { font-size: 9.5px; font-weight: 800; color: #475569; }
+          .sh-score strong { font-size: 22px; font-weight: 900; }
+          .sh-note { margin: 5px 0 0; color: #64748b; font-size: 10.5px; font-weight: 800; }
+          /* ── 문제 그리드: 기본 2열 ── */
+          .pl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; align-items: start; }
+          /* 복잡한 문제: 전체 폭 */
+          .problem-card { break-inside: avoid; page-break-inside: avoid; padding: 7px 9px 6px; border: 1.5px solid #d1d5db; border-radius: 6px; }
+          .problem-card.fw { grid-column: 1 / -1; }
+          /* 문제 제목줄 */
+          .pt { display: flex; align-items: baseline; gap: 5px; margin-bottom: 3px; }
+          .pt strong { color: #111827; font-size: 15px; font-weight: 900; line-height: 1; }
+          .pt em { font-style: normal; font-size: 9.5px; font-weight: 800; color: #64748b; padding: 1px 4px; border: 1px solid #cbd5e1; border-radius: 3px; }
+          /* 문제 본문 */
+          .pq { margin: 0 0 3px; font-size: 12px; font-weight: 700; line-height: 1.45; color: #1e293b; }
+          .pe { margin: 0; font-size: 16px; font-weight: 900; color: #0f172a; line-height: 1.3; }
+          .problem-card.fw .pe { font-size: 17px; }
+          /* 분수 */
+          .print-mixed { display: inline-flex; align-items: center; gap: 0.14em; vertical-align: middle; }
+          .print-frac { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 1.1em; margin: 0 0.06em; vertical-align: middle; line-height: 1; font-weight: 900; }
+          .print-frac span:first-child { display: block; width: 100%; padding: 0 0.15em 1.5px; border-bottom: 1.5px solid #111827; text-align: center; }
+          .print-frac span:last-child { display: block; width: 100%; padding: 1.5px 0.15em 0; text-align: center; }
+          /* 시각 자료 */
+          .print-visual { margin: 4px 0 2px; }
+          .problem-card .print-visual .math-visual { width: min(100%, 210px); margin: 0; padding: 5px 7px 4px; border: 1.5px solid #bfd7dd; border-radius: 6px; background: #f8fafc; color: #111827; }
+          .problem-card.fw .print-visual .math-visual { width: min(100%, 340px); }
+          .print-visual .math-visual svg { display: block; width: 100%; height: auto; max-height: 170px; }
+          .problem-card.fw .print-visual .math-visual svg { max-height: 220px; }
+          .print-visual figure { break-inside: avoid; page-break-inside: avoid; }
+          .print-visual figcaption { margin-bottom: 3px; color: #111827; font-size: 11.5px; font-weight: 900; text-align: center; }
+          .print-visual .table-visual { overflow-x: auto; }
+          .print-visual .table-visual table { width: 100%; border-collapse: separate; border-spacing: 0; color: #111827; font-size: 12px; font-weight: 900; }
+          .print-visual .table-visual th, .print-visual .table-visual td { min-width: 34px; padding: 5px; border-right: 1.5px solid #cbd5e1; border-bottom: 1.5px solid #cbd5e1; text-align: center; }
+          .print-visual .table-visual th { background: #eaf6f8; }
+          .print-visual .table-visual th:first-child, .print-visual .table-visual td:first-child { border-left: 1.5px solid #cbd5e1; }
+          .print-visual .table-visual thead th { border-top: 1.5px solid #cbd5e1; }
+          .print-visual .pictograph-panel { display: grid; gap: 7px; min-width: 200px; padding: 3px 2px 2px; }
+          .print-visual .pictograph-key, .print-visual .pictograph-row { display: grid; grid-template-columns: auto auto auto auto; align-items: center; justify-content: center; gap: 5px; color: #111827; font-size: 11px; font-weight: 900; }
+          .print-visual .pictograph-rows { display: grid; gap: 6px; }
+          .print-visual .pictograph-row { grid-template-columns: minmax(44px, 60px) 1fr; justify-content: stretch; padding: 6px 8px; border: 1.5px solid #cbd5e1; border-radius: 6px; background: #fff; }
+          .print-visual .pictograph-label { text-align: center; }
+          .print-visual .pictograph-symbols { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-height: 20px; }
+          .print-visual .pictograph-icon { display: inline-grid; place-items: center; flex: 0 0 auto; }
+          .print-visual .pictograph-icon.big { width: 18px; height: 18px; background: #f2b66d; clip-path: polygon(50% 0%, 62% 34%, 98% 34%, 69% 55%, 80% 92%, 50% 70%, 20% 92%, 31% 55%, 2% 34%, 38% 34%); }
+          .print-visual .pictograph-icon.small { width: 10px; height: 10px; border-radius: 999px; background: #69b8c8; box-shadow: inset 0 0 0 2px rgba(70,51,36,0.18); }
+          .print-visual .visual-shape,.print-visual .cuboid-front{fill:#dff3f2;stroke:#2f6f7b;stroke-width:4;stroke-linejoin:round}
+          .print-visual .visual-shape.twin{fill:#eef2ff}
+          .print-visual .visual-cut{fill:#fff;stroke:#64748b;stroke-width:3;stroke-dasharray:6 5}
+          .print-visual .visual-guide{stroke:#64748b;stroke-width:3;stroke-dasharray:7 5;fill:none}
+          .print-visual .visual-label{fill:#111827;font-size:14px;font-weight:900;paint-order:stroke;stroke:#fff;stroke-width:5px}
+          .print-visual .cuboid-top{fill:#edf7d8;stroke:#2f6f7b;stroke-width:4;stroke-linejoin:round}
+          .print-visual .cuboid-side{fill:#c8e7df;stroke:#2f6f7b;stroke-width:4;stroke-linejoin:round}
+          .print-visual .cube-top,.print-visual .cube-left,.print-visual .cube-right{stroke:#475569;stroke-width:1.8;stroke-linejoin:round}
+          .print-visual .cube-top{fill:#eff6ff}.print-visual .cube-left{fill:#bae6fd}.print-visual .cube-right{fill:#7dd3fc}
+          .print-visual .chart-axis,.print-visual .coord-axis{stroke:#475569;stroke-width:3;stroke-linecap:round}
+          .print-visual .chart-grid-line,.print-visual .coord-grid{stroke:#cbd5e1;stroke-width:1.5}
+          .print-visual .chart-reference{stroke:#dc6b5a;stroke-width:3;stroke-dasharray:7 5}
+          .print-visual .chart-bar{fill:#79c7d3;stroke:#2f6f7b;stroke-width:2}
+          .print-visual .chart-line,.print-visual .congruent-arrow,.print-visual .rotation-path{fill:none;stroke:#2f6f7b;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+          .print-visual .chart-point{fill:#fff;stroke:#2f6f7b;stroke-width:4}
+          .print-visual .chart-reference-label,.print-visual .chart-value,.print-visual .chart-label,.print-visual .chart-unit,.print-visual .coord-label,.print-visual .coin-label{fill:#111827;font-size:11px;font-weight:900;paint-order:stroke;stroke:#fff;stroke-width:4px}
+          .print-visual .chart-value{font-size:12px}
+          .print-visual .ten-frame-cell,.print-visual .fraction-cell{fill:#fff;stroke:#94a3b8;stroke-width:2}
+          .print-visual .ten-frame-counter{fill:#f2b66d;stroke:#475569;stroke-width:2}
+          .print-visual .ten-frame-counter.second{fill:#66b7c9}
+          .print-visual .fraction-cell.shaded{fill:#8bcfd1}
+          .print-visual .fraction-cut-line{stroke:#dc6b5a;stroke-width:3;stroke-dasharray:7 5}
+          .print-visual .number-bond-line,.print-visual .number-line-axis,.print-visual .number-line-tick{stroke:#475569;stroke-width:4;stroke-linecap:round}
+          .print-visual .number-bond-total,.print-visual .number-bond-part{fill:#f8fafc;stroke:#2f6f7b;stroke-width:4}
+          .print-visual .number-bond-part.second{fill:#e0f2fe}
+          .print-visual .number-bond-text,.print-visual .number-line-label{fill:#111827;font-size:18px;font-weight:900}
+          .print-visual .number-line-missing{fill:#fff;stroke:#2f6f7b;stroke-width:3;stroke-dasharray:6 4}
+          .print-visual .place-value-rod,.print-visual .base-ten-rod{fill:#f2b66d;stroke:#475569;stroke-width:1.8}
+          .print-visual .place-value-rod-tick,.print-visual .base-ten-flat-line,.print-visual .base-ten-rod-line{stroke:rgba(71,85,105,0.28);stroke-width:1.4}
+          .print-visual .place-value-one,.print-visual .base-ten-one{fill:#66b7c9;stroke:#475569;stroke-width:1.8}
+          .print-visual .base-ten-flat{fill:#bde8ff;stroke:#475569;stroke-width:1.8}
+          .print-visual .ratio-strip-left{fill:#69b8c8;stroke:#475569;stroke-width:2}
+          .print-visual .ratio-strip-right{fill:#f2b66d;stroke:#475569;stroke-width:2}
+          .print-visual .ratio-dot{stroke:#475569;stroke-width:1.5}
+          .print-visual .ratio-dot.left{fill:#69b8c8}.print-visual .ratio-dot.right{fill:#f2b66d}
+          .print-visual .circle-chart-ring,.print-visual .circle-diagram-base{fill:#fff;stroke:#2f6f7b;stroke-width:4}
+          .print-visual .circle-chart-wedge{stroke:#475569;stroke-width:2.2;stroke-linejoin:round}
+          .print-visual .circle-chart-hole{fill:#fff;stroke:#cbd5e1;stroke-width:2}
+          .print-visual .circle-chart-legend-chip{stroke:#475569;stroke-width:1.5}
+          .print-visual .circle-chart-percent{fill:#111827;font-size:11px;font-weight:900;paint-order:stroke;stroke:#fff;stroke-width:4px}
+          .print-visual .circle-area-fill,.print-visual .circle-diagram-fill{fill:#a9d9c6;stroke:#2f6f7b;stroke-width:4}
+          .print-visual .circle-square{fill:#fff7d8;stroke:#2f6f7b;stroke-width:4}
+          .print-visual .circle-measure-line{stroke:#dc6b5a;stroke-width:4;stroke-linecap:round}
+          .print-visual .circle-circumference{fill:none;stroke:#dc6b5a;stroke-width:4;stroke-dasharray:8 6}
+          .print-visual .circle-pattern-center{fill:#fff6c8;stroke:#475569;stroke-width:3}
+          .print-visual .circle-pattern-petal{fill:#bde8ff;stroke:#475569;stroke-width:2.5}
+          .print-visual .angle-ray,.print-visual .line-type-main{stroke:#2f6f7b;stroke-width:5;stroke-linecap:round}
+          .print-visual .angle-arc{fill:none;stroke:#dc6b5a;stroke-width:4;stroke-linecap:round}
+          .print-visual .clock-face,.print-visual .ruler-body{fill:#fff;stroke:#2f6f7b;stroke-width:4}
+          .print-visual .clock-tick{stroke:#64748b;stroke-width:1.8;stroke-linecap:round}
+          .print-visual .clock-tick.major{stroke:#334155;stroke-width:3}
+          .print-visual .clock-number,.print-visual .ruler-number{fill:#111827;font-size:12px;font-weight:900}
+          .print-visual .clock-hand{stroke-linecap:round}
+          .print-visual .clock-hand.hour{stroke:#2f6f7b;stroke-width:7}
+          .print-visual .clock-hand.minute{stroke:#dc6b5a;stroke-width:4}
+          .print-visual .clock-center,.print-visual .ruler-end-dot{fill:#dc6b5a;stroke:#475569;stroke-width:2}
+          .print-visual .ruler-tick{stroke:#475569;stroke-linecap:round}
+          .print-visual .ruler-tick.major{stroke-width:3}.print-visual .ruler-tick.minor{stroke-width:1.6}
+          .print-visual .ruler-highlight{stroke:#dc6b5a;stroke-width:6;stroke-linecap:round}
+          .print-visual .line-arrow,.print-visual .rotation-tip{fill:#2f6f7b;stroke:none}
+          .print-visual .line-endpoint,.print-visual .array-dot,.print-visual .coord-point{fill:#66b7c9;stroke:#fff;stroke-width:3}
+          .print-visual .right-angle-marker{fill:none;stroke:#dc6b5a;stroke-width:4;stroke-linejoin:round}
+          .print-visual .pattern-triangle,.print-visual .pattern-circle,.print-visual .pattern-square,.print-visual .pattern-color{stroke:#475569;stroke-width:3}
+          .print-visual .pattern-triangle{fill:#f2b66d}.print-visual .pattern-circle{fill:#69b8c8}.print-visual .pattern-square{fill:#91c788}
+          .print-visual .pattern-color.red{fill:#f08f74}.print-visual .pattern-color.blue{fill:#69b8c8}.print-visual .pattern-color.yellow{fill:#f2d36b}
+          .print-visual .pattern-placeholder{fill:#fff;stroke:#dc6b5a;stroke-width:3;stroke-dasharray:7 5}
+          .print-visual .pattern-question,.print-visual .pattern-label{fill:#111827;font-size:12px;font-weight:900;paint-order:stroke;stroke:#fff;stroke-width:4px}
+          .print-visual .pattern-question{font-size:21px}
+          .print-visual .coord-symmetry{stroke:#dc6b5a;stroke-width:4;stroke-dasharray:8 6}
+          .print-visual .coord-reflected{fill:#e97953;stroke:#fff;stroke-width:3}
+          .print-visual .bag-shape{fill:#f8fafc;stroke:#2f6f7b;stroke-width:4}
+          .print-visual .bag-neck{fill:none;stroke:#2f6f7b;stroke-width:5;stroke-linecap:round}
+          .print-visual .prob-ball{stroke:#fff;stroke-width:2}
+          .print-visual .prob-ball.red{fill:#e86756}.print-visual .prob-ball.blue{fill:#4e9ed6}
+          .print-visual .coin-face{stroke:#8a693d;stroke-width:4}
+          .print-visual .coin-face.front{fill:#f7d56b}.print-visual .coin-face.back{fill:#f0bc50}
+          /* 선택지 */
+          .choice-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px 10px; margin: 5px 0 0; padding-left: 20px; font-size: 12.5px; font-weight: 700; }
+          .choice-list.short { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .choice-list li { line-height: 1.4; }
+          /* 힌트·답 */
+          .hint-line { margin: 4px 0 0; color: #475569; font-size: 10.5px; font-weight: 800; }
+          .answer-box { display: flex; align-items: center; gap: 6px; margin-top: 7px; padding-top: 5px; border-top: 1px solid #e5e7eb; }
+          .answer-box strong { color: #111827; font-size: 11.5px; font-weight: 900; white-space: nowrap; }
+          .answer-box > span { flex: 1; min-height: 18px; border-bottom: 1.5px solid #111827; }
+          .answer-box.filled { display: block; padding-top: 5px; border-top: 1px solid #e5e7eb; margin-top: 6px; }
+          .answer-box.filled strong { font-size: 11.5px; }
+          .answer-box.filled > span { display: inline-block; margin-left: 5px; color: #0f172a; font-size: 15px; font-weight: 900; }
+          .answer-box.filled p { margin: 3px 0 0; color: #334155; font-size: 11px; font-weight: 700; }
           @media print {
-            main { max-width: none; padding: 0; }
-            .sheet-note { display: none; }
+            main { padding: 0; }
+            .sh-note { display: none; }
           }
         </style>
       </head>
       <body>
         <main>
-          <section class="sheet-head">
-            <h1>${escapedTitle}</h1>
-            <div class="sheet-meta">
-              <div><span>선생님 이름</span><strong>${escapeHtml(meta.teacherName)}</strong></div>
-              <div><span>학생 이름</span><strong>${escapeHtml(meta.learnerName)}</strong></div>
-              <div><span>반</span><strong>${escapeHtml(meta.className)}</strong></div>
-              <div><span>문제풀이 날짜</span><strong>${escapeHtml(meta.dateLabel)}</strong></div>
+          <div class="sh">
+            <div class="sh-left">
+              <h1>${escapedTitle}</h1>
+              <div class="sh-meta">
+                <div><span>선생님</span><strong>${escapeHtml(meta.teacherName)}</strong></div>
+                <div><span>학생 이름</span><strong>${escapeHtml(meta.learnerName)}</strong></div>
+                <div><span>반</span><strong>${escapeHtml(meta.className)}</strong></div>
+                <div><span>날짜</span><strong>${escapeHtml(meta.dateLabel)}</strong></div>
+              </div>
+              <p class="sh-note">총 ${problems.length}문제 · 예상 ${estPages}페이지 · 인쇄 창에서 프린터 또는 PDF를 선택하세요.</p>
             </div>
-            <p class="sheet-note">${problemSetSizeLabel(meta.problemSetSize)} · 총 ${problems.length}문제 · 인쇄 창에서 프린터 또는 PDF 저장을 선택하세요.</p>
-          </section>
-          <section class="problem-list">
+            <div class="sh-score"><span>점수</span><strong>&nbsp;&nbsp;&nbsp;&nbsp;</strong><span>/ ${problems.length}</span></div>
+          </div>
+          <div class="pl">
             ${problemHtml}
-          </section>
+          </div>
         </main>
       </body>
     </html>
@@ -1623,6 +1639,10 @@ export default function App() {
   });
   const [authMessage, setAuthMessage] = useState("");
   const [studentPasswordNotice, setStudentPasswordNotice] = useState("");
+  const [authLoaded, setAuthLoaded] = useState(false);
+  const [gateForm, setGateForm] = useState({ username: "", password: "" });
+  const [gateMessage, setGateMessage] = useState("");
+  const [gateLoading, setGateLoading] = useState(false);
   const [classForm, setClassForm] = useState({ id: "", name: "", grade: launchProfile.grade, grades: [launchProfile.grade], teacherId: "" });
   const [studentForm, setStudentForm] = useState({
     id: "",
@@ -2159,16 +2179,72 @@ export default function App() {
       if (!alive) return;
       setRosterSnapshot(snapshot);
       setAuthSnapshot(auth);
+      setAuthLoaded(true);
       syncRosterForms(snapshot);
       const activeStudent = activeStudentForAuth(snapshot, auth);
       if (auth.activeStudentAccount && activeStudent) {
         applyStudentRecordToLearner(activeStudent);
       }
+    }).catch(() => {
+      if (alive) setAuthLoaded(true);
     });
     return () => {
       alive = false;
     };
   }, [applyStudentRecordToLearner, syncRosterForms]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const ssoToken = url.searchParams.get('sso_token');
+    if (!ssoToken) return;
+    url.searchParams.delete('sso_token');
+    window.history.replaceState({}, '', url.toString());
+    setGateLoading(true);
+    setGateMessage('SSO 자동 로그인 처리 중...');
+    fetch('/api/auth/sso-verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: ssoToken }) })
+      .then((r) => r.json() as Promise<{ ok: boolean; username?: string; role?: string; displayName?: string; passwordHash?: string; userId?: string; learnerId?: string; error?: string }>)
+      .then(async (result) => {
+        if (!result.ok || !result.username || !result.role || !result.passwordHash) {
+          setGateMessage(result.error ?? 'SSO 토큰 검증에 실패했습니다.');
+          setGateLoading(false);
+          return;
+        }
+        const nextAuth = await activateAccountWithHash({
+          role: result.role as "teacher" | "student",
+          username: result.username,
+          passwordHash: result.passwordHash,
+          displayName: result.displayName ?? result.username,
+          userId: result.userId ?? result.username,
+          learnerId: result.learnerId,
+        });
+        setAuthSnapshot(nextAuth);
+        setAuthLoaded(true);
+        const nextRoster = await loadLearningRosterSnapshot();
+        setRosterSnapshot(nextRoster);
+        syncRosterForms(nextRoster);
+        if (result.role === "student") {
+          const activeStudent = activeStudentForAuth(nextRoster, nextAuth);
+          if (activeStudent) {
+            applyStudentRecordToLearner(activeStudent);
+          } else {
+            const acc = nextAuth.activeStudentAccount;
+            if (acc && acc.role === "student") {
+              const learnerId = (acc as { learnerId?: string }).learnerId || `ext-${acc.username}`;
+              const next = saveLearnerProfile({ id: learnerId, name: acc.displayName, grade: launchProfile.grade });
+              setLearner(next);
+              setLearnerForm({ name: next.name, grade: next.grade });
+            }
+          }
+        }
+        setGateMessage('');
+        setGateLoading(false);
+      })
+      .catch((e: unknown) => {
+        setGateMessage('SSO 처리 오류: ' + (e instanceof Error ? e.message : '알 수 없는 오류'));
+        setGateLoading(false);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -2248,7 +2324,7 @@ export default function App() {
   }, [canViewAllStudentLearningData, refreshMaintenanceStatus]);
 
   useEffect(() => {
-    document.title = `${activeTeacherName} 수학 익힘책`;
+    document.title = '푸르넷 집중 연산반';
   }, [activeTeacherName]);
 
   const openRosterMenu = useCallback((menu: RosterMenu) => {
@@ -2538,6 +2614,79 @@ export default function App() {
     } catch (error) {
       setAuthMessage(error instanceof Error ? error.message : "로컬 관리자 PIN 저장에 실패했습니다.");
     }
+  };
+
+  const applyGateLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (gateLoading) return;
+    setGateLoading(true);
+    setGateMessage('');
+    const { username, password } = gateForm;
+    try {
+      for (const role of ["teacher", "student"] as const) {
+        try {
+          const nextAuth = await loginLearningAccount(role, username, password);
+          setAuthSnapshot(nextAuth);
+          const nextRoster = await loadLearningRosterSnapshot();
+          setRosterSnapshot(nextRoster);
+          syncRosterForms(nextRoster);
+          if (role === "student") {
+            const activeStudent = activeStudentForAuth(nextRoster, nextAuth);
+            if (activeStudent) {
+              applyStudentRecordToLearner(activeStudent);
+            } else {
+              const acc = nextAuth.activeStudentAccount;
+              if (acc && acc.role === "student") {
+                const learnerId = (acc as { learnerId?: string }).learnerId || `ext-${acc.username}`;
+                const next = saveLearnerProfile({ id: learnerId, name: acc.displayName, grade: launchProfile.grade });
+                setLearner(next);
+                setLearnerForm({ name: next.name, grade: next.grade });
+              }
+            }
+          }
+          setGateMessage('');
+          setGateLoading(false);
+          return;
+        } catch { /* try next role */ }
+      }
+      const res = await fetch('/api/auth/cross-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
+      const result = await res.json() as { ok: boolean; role?: string; username?: string; displayName?: string; passwordHash?: string; userId?: string; learnerId?: string; error?: string };
+      if (!result.ok || !result.role || !result.passwordHash) {
+        setGateMessage(result.error ?? '아이디 또는 비밀번호가 올바르지 않습니다.');
+        setGateLoading(false);
+        return;
+      }
+      const nextAuth = await activateAccountWithHash({
+        role: result.role as "teacher" | "student",
+        username: result.username ?? username,
+        passwordHash: result.passwordHash,
+        displayName: result.displayName ?? username,
+        userId: result.userId ?? username,
+        learnerId: result.learnerId,
+      });
+      setAuthSnapshot(nextAuth);
+      const nextRoster = await loadLearningRosterSnapshot();
+      setRosterSnapshot(nextRoster);
+      syncRosterForms(nextRoster);
+      if (result.role === "student") {
+        const activeStudent = activeStudentForAuth(nextRoster, nextAuth);
+        if (activeStudent) {
+          applyStudentRecordToLearner(activeStudent);
+        } else {
+          const acc = nextAuth.activeStudentAccount;
+          if (acc && acc.role === "student") {
+            const learnerId = (acc as { learnerId?: string }).learnerId || `ext-${acc.username}`;
+            const next = saveLearnerProfile({ id: learnerId, name: acc.displayName, grade: launchProfile.grade });
+            setLearner(next);
+            setLearnerForm({ name: next.name, grade: next.grade });
+          }
+        }
+      }
+      setGateMessage('');
+    } catch (error) {
+      setGateMessage(error instanceof Error ? error.message : '로그인에 실패했습니다.');
+    }
+    setGateLoading(false);
   };
 
   const applyTeacherLogin = async (event: FormEvent<HTMLFormElement>) => {
@@ -3406,6 +3555,59 @@ export default function App() {
     }
   };
 
+  if (!authLoaded || gateLoading) {
+    return (
+      <main className="app auth-gate">
+        <div className="auth-gate-box">
+          <h1>푸르넷 집중 연산반</h1>
+          <p className="auth-gate-loading">{gateLoading ? (gateMessage || '로그인 처리 중...') : '로딩 중...'}</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!studentLoggedIn && !teacherLoggedIn && !adminLoggedIn) {
+    return (
+      <main className="app auth-gate">
+        <div className="auth-gate-box">
+          <h1>푸르넷 집중 연산반</h1>
+          <p className="auth-gate-subtitle">학원 또는 유치원 아이디로 로그인하세요.</p>
+          {gateMessage && <p className="auth-gate-message">{gateMessage}</p>}
+          <form className="auth-gate-form" onSubmit={(e) => { void applyGateLogin(e); }}>
+            <div className="auth-gate-field">
+              <label htmlFor="gate-username">아이디</label>
+              <input
+                id="gate-username"
+                type="text"
+                autoComplete="username"
+                value={gateForm.username}
+                onChange={(e) => setGateForm((prev) => ({ ...prev, username: e.target.value }))}
+                placeholder="아이디 입력"
+                required
+              />
+            </div>
+            <div className="auth-gate-field">
+              <label htmlFor="gate-password">비밀번호</label>
+              <input
+                id="gate-password"
+                type="password"
+                autoComplete="current-password"
+                value={gateForm.password}
+                onChange={(e) => setGateForm((prev) => ({ ...prev, password: e.target.value }))}
+                placeholder="비밀번호 입력"
+                required
+              />
+            </div>
+            <button className="primary-btn" type="submit" disabled={gateLoading}>
+              {gateLoading ? '로그인 중...' : '로그인'}
+            </button>
+          </form>
+          <p className="auth-gate-hint">푸르넷 학원(purunet-academy.pages.dev) 또는 리틀 푸르넷(little-purunet.pages.dev) 계정으로 로그인하세요.</p>
+        </div>
+      </main>
+    );
+  }
+
   if (screen.name === "operation-drill") {
     return (
       <main className="app">
@@ -3422,6 +3624,9 @@ export default function App() {
           }}
           onPrint={(title, generators, size) => {
             printProblemSet(title, buildTopicProblemSet(generators, size), size, "worksheet");
+          }}
+          onPrintAnswer={(title, generators, size) => {
+            printProblemSet(title, buildTopicProblemSet(generators, size), size, "answer");
           }}
           onExit={() => setScreen({ name: "home" })}
         />
@@ -3456,7 +3661,7 @@ export default function App() {
         <header className="reader-top">
           <div>
             <span className="eyebrow">{activeTeacherName} · {activeClassName} · {activeCourseScopeLabel} · {activeLearningLabel}</span>
-            <h1>{activeTeacherName} 수학 익힘책</h1>
+            <h1>푸르넷 집중 연산반</h1>
           </div>
           <div className="reader-actions">
             {adminLoggedIn && (

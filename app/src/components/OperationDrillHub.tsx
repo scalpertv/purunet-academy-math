@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import type { Unit, Problem } from "../lib/types";
 
-type ProblemSetSize = 10 | 20 | 30 | 40 | 50;
+type ProblemSetSize = 5 | 10 | 20 | 30 | 40 | 50;
 type Grade = 1 | 2 | 3 | 4 | 5 | 6;
 type OperationType = "basic" | "mixed";
 type Semester = 1 | 2;
@@ -12,6 +12,7 @@ interface Props {
   units: Unit[];
   onStart: (title: string, accent: string, generators: Array<() => Problem>, size: ProblemSetSize) => void;
   onPrint: (title: string, generators: Array<() => Problem>, size: ProblemSetSize) => void;
+  onPrintAnswer: (title: string, generators: Array<() => Problem>, size: ProblemSetSize) => void;
   onExit?: () => void;
 }
 
@@ -67,6 +68,7 @@ const BRAIN_TIPS = [
 ];
 
 const COUNT_OPTIONS: { value: ProblemSetSize; label: string; desc: string }[] = [
+  { value: 5, label: "5문제", desc: "맛보기" },
   { value: 10, label: "10문제", desc: "빠른 확인" },
   { value: 20, label: "20문제", desc: "충분 연습" },
   { value: 30, label: "30문제", desc: "집중 반복" },
@@ -74,7 +76,7 @@ const COUNT_OPTIONS: { value: ProblemSetSize; label: string; desc: string }[] = 
   { value: 50, label: "50문제", desc: "완전 정복" },
 ];
 
-export default function OperationDrillHub({ units, onStart, onPrint }: Props) {
+export default function OperationDrillHub({ units, onStart, onPrint, onPrintAnswer }: Props) {
   const [grade, setGrade] = useState<Grade>(1);
   const [opType, setOpType] = useState<OperationType>("basic");
   const [semester, setSemester] = useState<Semester>(1);
@@ -163,6 +165,21 @@ export default function OperationDrillHub({ units, onStart, onPrint }: Props) {
     onPrint(`${cfg.label} ${semester}학기 혼합 연산`, gens, problemCount);
   }
 
+  function handleBasicPrintAnswer() {
+    if (!activeUnit) return;
+    const gens = activeTopic ? [activeTopic.generate] : activeUnit.topics.map((t) => t.generate);
+    const title = activeTopic
+      ? `${activeUnit.label ?? activeUnit.subtitle} ${activeTopic.title}`
+      : `${activeUnit.label ?? activeUnit.subtitle} 전체 연산`;
+    onPrintAnswer(title, gens, problemCount);
+  }
+
+  function handleMixedPrintAnswer() {
+    const gens = shuffle(semesterUnits.flatMap((u) => u.topics.map((t) => t.generate)));
+    if (!gens.length) return;
+    onPrintAnswer(`${cfg.label} ${semester}학기 혼합 연산`, gens, problemCount);
+  }
+
   const canStart = opType === "basic" ? !!activeUnit : semesterUnits.length > 0;
   const tip = BRAIN_TIPS[tipIdx % BRAIN_TIPS.length]!;
 
@@ -182,6 +199,13 @@ export default function OperationDrillHub({ units, onStart, onPrint }: Props) {
           </div>
           <div className="drill-header-right">
             <span className="drill-tip-badge">{tip.icon} {tip.text}</span>
+            <a
+              href="https://purunet-academy.pages.dev"
+              className="drill-home-btn"
+              title="푸르넷 아카데미 홈으로"
+            >
+              🏠 학원 홈
+            </a>
           </div>
         </div>
       </header>
@@ -372,6 +396,20 @@ export default function OperationDrillHub({ units, onStart, onPrint }: Props) {
               </svg>
               학습지 출력하기
               <small>문제지 인쇄</small>
+            </button>
+
+            {/* 해답 출력 버튼 */}
+            <button
+              className="drill-print-btn"
+              style={{ ["--g-color" as string]: cfg.color }}
+              disabled={!canStart}
+              onClick={opType === "basic" ? handleBasicPrintAnswer : handleMixedPrintAnswer}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+              </svg>
+              해답 출력하기
+              <small>정답지 인쇄</small>
             </button>
 
           </aside>
