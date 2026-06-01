@@ -1439,3 +1439,13 @@
 - 학생 정보수정 폼에는 회원 아이디 읽기 전용 표시와 수강 과목 체크박스를 추가했고, 학생 등록 폼에서도 초기 수강 과목을 선택해 저장할 수 있게 했다.
 - `functions/api/account.js`와 `functions/api/snapshot.js`는 화면용 필드와 D1 컬럼용 필드를 함께 정규화해서 저장·조회하도록 변경했다.
 - 검증 결과 `node --check`, `npm.cmd run build`, 로컬 Playwright, 운영 URL Playwright가 통과했다. 배포 프리뷰는 `https://1e5a0223.purunet-academy.pages.dev`이다.
+
+## 송다영중3 3과 학습 진도 저장 점검 (2026-06-01)
+- 운영 D1 조회 결과 `thdekdud13`의 학생 ID는 `acct-1780304342718`이고 수강 과목에는 `middle3-english-chunjae-lee-3`이 포함되어 있다.
+- 같은 학생의 `student_progress`에는 `module_id='m3-english-chunjae-lee-3'` 레코드가 있으나 `percent=0`, `completed_topics=[]`, `subject_id='middle3-english-exam-prep'`로 저장되어 있었다.
+- 3과 페이지는 어휘 SRS 저장 시에만 `/api/progress`를 호출하고, 본문 확인·대화문 확인·문법·기출 등 대부분의 활동 상태는 localStorage 또는 메모리에만 남아 관리센터 학습현황으로 올라가지 않는 구조였다.
+- 수정 방향은 3과 페이지에 중앙 진도 동기화 함수를 두고, 기존 localStorage 상태와 현재 세션 활동을 합산해 `subject_id='middle3-english-chunjae-lee-3'`로 저장하는 것이다.
+- 구현 후 3과 페이지는 탭 전환, 문법, 기출, 빈칸·서술형, 독해, 본문 분석, 본문 확인, 본문 영작·어순·번역, 대화문 분석·확인·영작·어순·번역 활동을 합산해 `/api/progress`로 저장한다.
+- 기존 `m3ec:vocab`, `m3ec:gram`, `m3ec:bc`, `m3ec:dc` localStorage 값은 페이지 재방문 시 한 번 자동 동기화된다. 따라서 송다영중3이 같은 브라우저로 3과 페이지를 다시 열면 오늘 남아 있는 로컬 학습 흔적이 서버로 올라간다.
+- 로컬과 운영 Playwright에서 `student_id='acct-1780304342718'`, `module_id='m3-english-chunjae-lee-3'`, `subject_id='middle3-english-chunjae-lee-3'`, `percent>0` 저장 요청을 확인했다. 운영 검증은 API를 가로채 실제 학생 DB를 오염시키지 않았다.
+- 배포 프리뷰는 `https://97bd468c.purunet-academy.pages.dev`이며 운영 URL `/middle3-english-chunjae-lee-3`에도 반영됐다.
