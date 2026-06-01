@@ -1449,3 +1449,12 @@
 - 기존 `m3ec:vocab`, `m3ec:gram`, `m3ec:bc`, `m3ec:dc` localStorage 값은 페이지 재방문 시 한 번 자동 동기화된다. 따라서 송다영중3이 같은 브라우저로 3과 페이지를 다시 열면 오늘 남아 있는 로컬 학습 흔적이 서버로 올라간다.
 - 로컬과 운영 Playwright에서 `student_id='acct-1780304342718'`, `module_id='m3-english-chunjae-lee-3'`, `subject_id='middle3-english-chunjae-lee-3'`, `percent>0` 저장 요청을 확인했다. 운영 검증은 API를 가로채 실제 학생 DB를 오염시키지 않았다.
 - 배포 프리뷰는 `https://97bd468c.purunet-academy.pages.dev`이며 운영 URL `/middle3-english-chunjae-lee-3`에도 반영됐다.
+
+## 중3 영어 천재 이재영 02·04·05과 중앙 진도 동기화 적용 (2026-06-01)
+- 목표는 3과에 넣은 중앙 진도 동기화 흐름을 2과, 4과, 5과에도 과별 `module_id`와 `subject_id`로 적용해 아카데미 학습현황에 올라가게 하는 것이다.
+- 2과와 5과는 브라우저 localStorage 저장 없이 DOM 상호작용 상태만 있으므로, 앞으로의 클릭·채점·정답보기·어순 배치 활동을 서버 저장 트리거로 삼는다.
+- 4과는 `m3c4:vocab`, `m3c4:gram` localStorage 기반 어휘 SRS와 문법 상태가 있으므로, 기존 로컬 상태도 페이지 재방문 시 서버 동기화 대상에 포함한다.
+- 검증은 학생 DB를 직접 오염시키지 않도록 Playwright에서 `/api/progress` 요청을 가로채고, `module_id`, `subject_id`, `student_id`, `percent>0` payload를 확인하는 방식으로 진행한다.
+- 구현 후 2과는 `m3-english-chunjae-lee-2`와 `middle3-english-chunjae-lee-2`, 4과는 `m3-english-chunjae-lee-4`와 `middle3-english-chunjae-lee-4`, 5과는 `m3-english-chunjae-lee-5`와 `middle3-english-chunjae-lee-5`로 저장한다.
+- 검증 결과 `node --check`, `npm.cmd run build`, 로컬 Playwright, 운영 URL Playwright가 통과했다. 운영 검증은 `/api/progress`를 가로채 실제 학생 DB를 오염시키지 않았다.
+- Cloudflare Pages 배포 프리뷰는 `https://be39f986.purunet-academy.pages.dev`이며 운영 URL `/middle3-english-chunjae-lee-2.html`, `/middle3-english-chunjae-lee-4.html`, `/middle3-english-chunjae-lee-5.html`에서도 서버 진도 payload를 확인했다.
