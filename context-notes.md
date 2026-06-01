@@ -1429,3 +1429,13 @@
 - Cloudflare Pages는 `middle3-english-chunjae-lee-2.html`을 확장자 없는 `/middle3-english-chunjae-lee-2`로 자동 제공한다.
 - `_redirects`에 02과 rewrite를 추가하면 리다이렉트 루프가 생겨 제거했고, 제거 후 운영 URL이 정상 렌더링됐다.
 - 최종 검증 기준은 운영 URL HTTP 200, 콘솔 오류 0개, 탭·어휘·본문·대화문 수 정상, 모바일 overflow 0이었다.
+
+## 푸르넷 아카데미 교사용 관리센터 수강 연동 점검 (2026-06-01)
+- 목표는 교사용 관리센터의 학생 관리, 학생 등록, 수강관리, 아카데미 학습현황이 같은 학생 계정·클래스·수강 과목 데이터를 보도록 맞추는 것이다.
+- 확인 결과 화면은 `enrolledClass`, `selectedTeacherId`를 주로 쓰고 D1 저장 테이블은 `class_name`, `teacher_id`, `subject_id`를 함께 갖고 있어, 기존 저장값이 화면에서 `없음`처럼 보일 수 있다.
+- 학생 정보수정에서 비밀번호를 새로 입력하지 않으면 기존 비밀번호가 저장 payload에서 빠질 수 있는 흐름이 있어, 회원가입 또는 교사 등록 계정의 로그인 연동도 함께 보존해야 한다.
+- 검증은 계정 API 문법 검사, 포털 빌드, Playwright로 교사용 학생 관리·수강관리·학습현황 렌더링을 확인하는 방식으로 진행한다.
+- 구현은 학생·클래스 helper를 통해 `enrolledClass`와 `class_name`, `selectedTeacherId`와 `teacher_id`, `classId`와 `class_id`를 같은 값으로 해석하도록 맞췄다.
+- 학생 정보수정 폼에는 회원 아이디 읽기 전용 표시와 수강 과목 체크박스를 추가했고, 학생 등록 폼에서도 초기 수강 과목을 선택해 저장할 수 있게 했다.
+- `functions/api/account.js`와 `functions/api/snapshot.js`는 화면용 필드와 D1 컬럼용 필드를 함께 정규화해서 저장·조회하도록 변경했다.
+- 검증 결과 `node --check`, `npm.cmd run build`, 로컬 Playwright, 운영 URL Playwright가 통과했다. 배포 프리뷰는 `https://1e5a0223.purunet-academy.pages.dev`이다.
