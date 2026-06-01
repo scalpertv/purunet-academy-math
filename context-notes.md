@@ -1,1400 +1,1431 @@
-# 컨텍스트 노트 — 결정과 근거
-
-## 중3 수학 연산 PDF 기반 학습 페이지 제작 (2026-05-24)
-- 요청 목표는 업로드된 `바빠수학(중3)연산1권 본책(미리보기 1~30).pdf`, `바빠수학(중3)연산2권 본책(미리보기 1~31).pdf`, `바빠중3도형 (1~38).pdf`를 참고해 중학교 3학년 수학 연산 학습 페이지를 만드는 것이다.
-- 저작권 보호를 위해 PDF 지면, 문항, 해설을 그대로 복제하지 않고 목차·유형 흐름만 확인해 새 문제 생성 루틴과 학습 UI를 만든다.
-- 기존 `academy-portal`에는 사용자 변경으로 보이는 `elem-vocab.html`, `assets/elem-vocab.css`, `js/elem-vocab.js` 변경이 있으므로 이번 작업에서는 건드리지 않는다.
-
-## Supertonic TTS 설치 (2026-05-24)
-- 요청 목표는 TTS를 `supertone-inc/supertonic`으로 대체하기 위해 해당 GitHub 저장소를 로컬에 설치하는 것이다.
-- 설치 위치는 사용자 홈의 `C:\Users\paten\supertonic`으로 두고, 프로젝트 앱과 충돌하지 않도록 별도 Python 가상환경을 사용한다.
-- 공식 README 확인 결과 Python SDK는 `pip install supertonic` 방식이 권장되고, 서버 용도는 `pip install 'supertonic[serve]'` 후 `supertonic serve --host 127.0.0.1 --port 7788`로 실행한다.
-- 설치 완료: `C:\Users\paten\supertonic`에 저장소를 clone했고, `C:\Users\paten\supertonic\supertonic-env` Python 3.11 가상환경에 `supertonic[serve]==1.3.1`을 설치했다.
-- 검증 완료: `from supertonic import TTS` import 성공, `supertonic --help`는 `PYTHONIOENCODING=utf-8` 환경에서 정상 출력, 첫 실행 모델 26개 파일 자동 다운로드 후 샘플 음성 `C:\Users\paten\supertonic\supertonic_test_en.wav` 생성 성공.
-- 서버 검증 완료: `supertonic serve --host 127.0.0.1 --port 7788` 실행 후 `http://127.0.0.1:7788/docs`가 HTTP 200과 Swagger UI로 응답함을 확인했고, 테스트 서버 프로세스는 종료했다.
-
-## 초등 영단어·영문법 실제 AI 이미지·TTS 자산 생성 및 배포 (2026-05-24)
-- 요청 목표는 초등 영문법과 초등 영단어용 AI 이미지와 AI TTS를 실제 파일로 생성해 로컬과 Cloudflare Pages 운영 사이트에 저장하는 것이다.
-- 대표 생성 대상으로 초등 필수 영단어 첫 단원 `가족과 나`와 초등 영문법 첫 패턴 `명사와 관사`를 먼저 선택한다. 이유는 방금 업그레이드한 AI 제작실의 첫 진입 경로라서 운영 검증과 사용자 확인이 가장 빠르기 때문이다.
-- 로컬 저장 경로는 `푸르넷 영어 수학 학원(26.05.21)/academy-portal/assets/ai-elementary/`로 둔다. Cloudflare Pages는 이 폴더를 정적 자산으로 그대로 배포한다.
-- 이미지는 무료 온라인 AI 이미지 생성 엔드포인트에서 JPEG로 내려받고, TTS는 로컬 설치된 Coqui XTTS-v2 CLI로 WAV를 생성한다.
-- 이후 TTS 엔진 요청이 Supertonic으로 변경되어, Coqui CLI 방식 대신 `supertonic serve --host 127.0.0.1 --port 7788` 서버를 띄우고 `POST /v1/tts`를 호출하는 방식으로 전환했다.
-- 분리 기준: 초등 영단어는 12개 단원을 `초급 1~4단원`, `중급 5~8단원`, `고급 9~12단원`으로 나누고, 초등 영문법 12개 패턴도 `초급 1~4`, `중급 5~8`, `고급 9~12`로 나누었다.
-- 현재 앱에 내장된 초등 필수 영단어 대표 세트는 240개이며, 교육청 전체 800개 원문 목록은 아직 프로젝트 안에 없다. 따라서 현재 실제 생성 범위는 앱 내장 240개 전체와 초등 영문법 12개 전체다.
-- Supertonic 서버 방식 TTS 완료: `assets/ai-elementary/words/...` 아래 단어 WAV 240개, `assets/ai-elementary/grammar/...` 아래 문법 WAV 12개, 총 252개 생성 완료. WAV 합계는 약 115,214,120 bytes다.
-- 이미지 생성은 무료 이미지 서버 응답 지연으로 부분 진행 상태다. 현재 단어 이미지 15개, 문법 이미지 0개가 저장되어 있고, 대표 샘플 이미지 2개는 `assets/ai-elementary/` 루트에 남아 있다.
-
-## 초등 영단어·영문법 AI 전자북 업그레이드 (2026-05-24)
-- 요청 목표는 `초등 단어 학원 전자북 제작 루트(26.0524).md`를 기준으로 초등 영단어와 초등 영문법을 인터랙티브, 이미지, TTS, 게임화, 학습 추적이 결합된 고품질 전자북형 학습으로 업그레이드하는 것이다.
-- 기존 `academy-portal`에는 `js/english-core-sites.js` 기반 초등 필수 영단어와 초등 영문법 과목이 이미 있고, `js/views.js`의 `renderEnglishCoreLab`, `renderVocabLab`, `renderGrammarLab`이 실제 학습실 UI를 렌더링한다.
-- 무료 온라인 AI 이미지는 키 없이 URL 기반으로 호출할 수 있는 Pollinations 계열 이미지 생성 엔드포인트를 사용하고, 로컬 이미지는 이미 설치된 Stable Diffusion WebUI/DirectML에 붙여 넣을 수 있는 프롬프트와 부정 프롬프트를 제공하는 방향으로 설계한다.
-- 무료 TTS는 브라우저 Web Speech API `SpeechSynthesis`를 기존 `actions.speakText`와 연결하고, 로컬 고품질 TTS는 설치된 Coqui XTTS-v2 CLI용 명령 큐를 화면에 제공하는 방향으로 설계한다.
-- 구현 완료: `js/views.js`의 초등 영어 코어 학습실에 `elementary-ai-studio`를 추가했다. 초등 영단어는 현재 단어 6개 기반 웹툰형 장면 프롬프트를 만들고, 초등 영문법은 문법 패턴과 예문 기반 장면 프롬프트를 만든다.
-- 구현 완료: 화면에는 무료 AI 이미지 열기, 브라우저 TTS 듣기, 이미지 프롬프트 복사, Coqui 명령 복사 버튼과 Stable Diffusion Prompt, Negative Prompt, Coqui XTTS-v2 PowerShell 큐가 표시된다.
-- 구현 완료: `assets/styles.css`에 AI 제작실 반응형 레이아웃을 추가했고, 390px 모바일에서도 가로 overflow가 없도록 1열로 전환한다.
-- 검증 완료: `node --check js/views.js`, `node --check js/english-core-sites.js`, `npm run build` 통과. Pollinations 이미지 엔드포인트는 HTTP 200 및 `image/jpeg`로 응답했다.
-- 배포 완료: `npm run deploy`로 Cloudflare Pages에 반영했고 preview URL은 `https://8378007c.purunet-academy.pages.dev`다. 운영 URL `https://purunet-academy.pages.dev/`에서 초등 필수 영단어 U1과 초등 영문법 G1의 AI 제작실, Pollinations 이미지, 모바일 overflow 0, 콘솔 오류 0을 확인했다.
-
-## Cloudflare 실제 로그인 후 푸르넷 영어·수학 진행사항 재검증 (2026-05-24)
-- 요청 목표는 Cloudflare에 실제 로그인한 상태에서 운영 `purunet-academy`의 푸르넷 영어·수학 진행사항을 다시 검증하는 것이다.
-- 현재 기본 PATH에는 Node/npm/npx가 없어서 프로젝트 `.node-version`에 맞춘 Node `22.16.0` ZIP 실행 환경을 `C:\Users\paten\node-v22.16.0-win-x64`에 준비했다.
-- `npx wrangler@latest login` OAuth 플로우가 성공했고, `wrangler whoami` 결과 `scalpertv@gmail.com` OAuth 토큰으로 로그인되어 있으며 계정은 `Scalpertv@gmail.com's Account`, Account ID는 `419eed7ea1fec882ca2358aab66bf815`다.
-- Pages 프로젝트 목록에서 `purunet-academy`와 도메인 `purunet-academy.pages.dev`가 확인되었다.
-- 원격 D1은 `purunet_academy_learning_db`, database ID `373856c5-aed3-46d6-b55d-37dec2c4479a`이며, `wrangler d1 execute ... --remote`로 직접 조회했다.
-- 원격 D1 테이블 수량은 학생 2명, 교사 0명, 클래스 0개, 진행 기록 1건이다.
-- 학생은 `Test Student`와 `Academy E2E 1779348652370` 2명이며 둘 다 payload 기준 승인 완료, 수학·영어·진도·문제지 권한이 켜져 있고 contentEdit 권한은 꺼져 있다.
-- 진행 기록은 `guest` 학생의 `math:g1-m03` 1건뿐이며 subject는 `math`, 진행률은 11%, 스티커는 1개, 완료 토픽은 `g1-op-m03-picture-add`, 갱신 시각은 `2026-05-20T21:46:40.306Z`다.
-- `student_progress`에서 `subject_id='english'` 또는 `module_id LIKE 'english:%'` 조건으로 조회한 영어 진행 기록은 0건이다.
-- 운영 API `https://purunet-academy.pages.dev/api/snapshot`도 HTTP 200이며 D1 직접 조회와 동일하게 교사 0명, 클래스 0개, 학생 2명, 진행 1건, 수학 1건, 영어 0건을 반환했다.
-
-## Cloudflare 푸르넷 영어·수학 진행사항 점검 (2026-05-24)
-- 요청 목표는 Cloudflare에 로그인한 뒤 운영 URL `https://purunet-academy.pages.dev`의 푸르넷 영어·수학 학습 진행사항을 확인하는 것이다.
-- 우선 로컬 Wrangler 인증 세션과 `academy-portal`의 D1 바인딩, sync API, 스키마를 확인한 뒤 운영 D1 데이터를 직접 조회한다.
-- 현재 PowerShell 세션은 기본 PATH에 `npx`가 없어 `C:\Program Files\nodejs`를 PATH 앞에 붙여 Wrangler 명령을 실행해야 한다.
-- 로컬 `.wrangler/cache/wrangler-account.json`에는 `Scalpertv@gmail.com's Account` 계정 캐시가 남아 있었다.
-- 현재 PC에는 Node/npm/npx 실행 파일이 PATH와 일반 설치 경로에서 확인되지 않아 Wrangler CLI 직접 조회 대신 운영 Pages Function `/api/snapshot`을 호출했다.
-- 대상 D1은 `purunet_academy_learning_db`, 바인딩은 `ACADEMY_DB`이다.
-- `/api/snapshot` 응답 기준 교사 0명, 클래스 0개, 학생 2명, 진행 기록 1건이 있다.
-- 학생 2명은 `Test Student`, `Academy E2E 1779348652370`이며 둘 다 승인 완료, 수학·영어·진도저장 권한이 켜져 있다.
-- 진행 기록은 `guest` 학생의 `math:g1-m03` 1건뿐이며 subject는 `math`, 진행률은 11%, 스티커는 1개, 완료 토픽은 `g1-op-m03-picture-add`, 갱신 시각은 `2026-05-20T21:46:40.306Z`이다.
-- 영어 subject인 `english` 및 중등·초등·고등 영어 계열 진행 기록은 운영 스냅샷에 없다.
-
-## Fish Speech 로컬 설치 (2026-05-24)
-- 요청 목표는 Fish Speech를 현재 Windows PC에 로컬 설치하는 것이다.
-- 공식 문서 기준 Fish Speech는 Python 3.12 환경을 권장하고, CPU 설치는 `pip install -e .[cpu]`로 가능하나 GPU 대비 매우 느린 테스트용 경로다.
-- 현재 PC는 AMD Radeon RX 570으로 CUDA 가속을 사용할 수 없고, Fish Speech의 공식 고속 실행 기준인 NVIDIA GPU 환경과 맞지 않는다.
-- 설치는 CPU 기준으로 분리된 `C:\Users\paten\fish-speech` 폴더와 별도 가상환경에 진행한다.
-
-## Wan2GP 로컬 설치 (2026-05-24)
-- 요청 목표는 Wan2GP를 현재 Windows PC에 설치하는 것이다.
-- 공식 저장소는 `deepbeepmeep/Wan2GP`이며, 문서상 Windows 원클릭 스크립트 또는 수동 설치를 지원한다.
-- 공식 AMD Windows 설치 문서는 Python 3.11과 TheRock ROCm PyTorch 휠을 사용하며, 지원 GPU는 RDNA2 이상 계열 중심이다.
-- 현재 PC는 Radeon RX 570 Series로 확인되어 공식 AMD Windows 지원 목록의 RDNA2/RDNA3/RDNA4 계열에 포함되지 않는다.
-- 따라서 설치는 저장소와 Python 환경, 의존성 확인까지 진행하되, GPU 가속 실행 검증에서 미지원이 확인될 가능성이 높다.
-
-## Coqui TTS XTTS-v2 로컬 설치 (2026-05-24)
-- 요청 목표는 Coqui TTS의 XTTS-v2 모델을 현재 Windows PC에서 로컬 실행할 수 있게 설치하는 것이다.
-- 공식 Coqui 문서 기준 XTTS-v2 모델명은 `tts_models/multilingual/multi-dataset/xtts_v2`이며, 한국어 `ko`를 포함한 다국어 TTS와 음성 복제를 지원한다.
-- 현재 PC는 AMD Radeon RX 570이므로 CUDA 가속 대신 CPU 실행 기준으로 설치한다.
-- Stable Diffusion 검증 도중 남아 있던 Python 프로세스는 새 작업과 충돌하지 않도록 종료했다.
-- XTTS-v2 모델은 Coqui Public Model License를 따르므로 첫 다운로드와 실행 시 약관 동의 처리가 필요할 수 있다.
-- 설치 위치는 `C:\Users\paten\coqui-xtts-v2`이며, Python 3.10 가상환경은 `venv` 하위 폴더에 만들었다.
-- 설치 패키지는 `coqui-tts==0.27.5`, `torch==2.8.0+cpu`, `torchaudio==2.8.0+cpu`, `transformers==4.57.1` 조합으로 고정했다.
-- `transformers` 5.x는 `isin_mps_friendly` import 호환성 문제가 있었고, PyTorch 2.12는 `torchcodec`/FFmpeg 의존성이 강해 Windows CPU 환경에서 불안정하여 2.8 CPU 조합으로 낮췄다.
-- 검증 결과 `tts --model_name tts_models/multilingual/multi-dataset/xtts_v2 --list_language_idxs`가 성공했고, 언어 목록에 `ko`가 포함됨을 확인했다.
-- 한국어 샘플 생성 검증을 완료했고 결과 파일은 `C:\Users\paten\coqui-xtts-v2\xtts_v2_ko_test.wav`이다.
-
-## Stable Diffusion 1.5 로컬 설치 (2026-05-24)
-- 요청 목표는 현재 Windows 작업 환경에 Stable Diffusion 1.5를 로컬에서 실행할 수 있게 설치하는 것이다.
-- 설치 방식은 범용성이 높은 AUTOMATIC1111 Stable Diffusion WebUI 기준으로 진행한다.
-- 초기 점검 결과 기본 PATH의 Python은 Microsoft Store 실행 별칭처럼 보이며 정상 실행되지 않았고, Git은 PATH에서 찾을 수 없었다.
-- 설치에는 Python 3.10.x, Git, WebUI 저장소, Stable Diffusion 1.5 체크포인트 모델 파일이 필요하다.
-- 네트워크 다운로드와 프로그램 설치는 샌드박스 밖 권한 승인이 필요할 수 있다.
-
-## 수학 단계별 생성 방식 교과서식·STEM 응용 보강 (2026-05-21)
-- 요청 목표는 현재 수학 학습의 `개념`, `유형`, `고난이도` 단계가 단순 연산식 중심으로 느껴지지 않도록 단계별 문항 표현과 학습 의도를 강화하는 것이다.
-- 현재 앱 구조에서는 `learningArea`가 주로 단원·목차 필터로 쓰이고, 실제 문항은 `topic.generate()`가 반환한 `Problem`을 학습 화면과 문제지 출력에 그대로 전달한다.
-- 수천 줄의 기존 생성기를 직접 수정하면 회귀 범위가 커지므로, 생성된 `Problem`을 학습 영역별로 변환하는 공통 경로를 `App.tsx`에 두고 학습 시작과 문제지 출력이 같은 보강 결과를 쓰도록 한다.
-- 검증 기준은 `app/`에서 `npm run lint`, `npm run verify`, `npm run onefile`을 통과시키고, 단일 HTML과 모바일 `study.html` 산출물을 최신 빌드로 반영하는 것이다.
-- 구현 결과 `개념`은 교과서식 개념 설명, 스토리텔링 수학, STEM 연결, 교과서 예제 구조로 변환된다. `유형`은 정보 표시, 관계식 세우기, 계산, 검산의 중간 단계 풀이 전략을 붙이고, `고난이도`는 현실 조건을 수학 모델로 바꾸는 스토리텔링 STEM 미션으로 변환된다.
-- 학습 화면 시작과 선택 문제지 출력 모두 `buildTopicProblemSet()`의 동일한 보강 경로를 거치도록 연결했다. 기존 정답, 보기, 시각 자료, 채점 방식은 그대로 유지한다.
-- 검증 완료: `npm run lint`, `npm run verify`, `npm run onefile` 통과. 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고, 세 HTML의 SHA256은 `95E58925F2DECDB252561821535941571A4BD01A73394EB50ABF60FE00366ED2`로 동일하다.
-- 모바일 서비스 워커 캐시는 `codex-math-mobile-v81`로 갱신했다.
-
-## 유치원 학습 놀이터 회원가입과 교사용 3D 모니터링 (2026-05-20)
-- 요청 목표는 프로그램 제목을 `푸르넷 유치원`으로 바꾸고, 학생용·교사용 회원가입과 역할 분기를 만들며, 교사용 화면에서 등록 클래스와 학생 학습 내용을 실시간으로 모니터링하게 만드는 것이다.
-- 기존 큰 수학 앱의 교사용 모니터링은 클래스 요약과 학생별 진행 행을 중심으로 구성되어 있었다. 이번 유치원 앱은 단일 HTML 구조이므로 같은 개념을 localStorage roster와 학생별 진행 스냅샷으로 축소 구현했다.
-- 학생용은 기존 365일 학습 놀이터를 유지한다. 학생 계정으로 학습하면 `currentDay`, `currentWeek`, 완료 활동, 스티커, 최근 활동 시간이 학생 record에 동기화된다.
-- 교사용 화면은 `teacher-dashboard`로 분리했다. 클래스·학생 등록, 클래스 필터, 요약 카드, 학생별 진행 카드, 3D 진행률 막대를 포함한다.
-- 검증 결과는 `kindergarten-learning-playground`에서 `npm run check`, `npm run smoke` 통과다. Edge 기반 파일 실행 점검에서도 회원가입, 교사용 대시보드, 학생 등록, 3D 캔버스, 모바일 overflow 없음이 확인됐다.
-
-## 유치원 학습 놀이터 365일 코스와 학습지도 모니터링 (2026-05-20)
-- 요청 목표는 `푸르넷 유치원(26.05.20)/kindergarten-learning-playground`의 기존 52주 코스를 365일 기준으로 확장하고, 현재 학습 위치와 진행 상황을 모니터링할 수 있게 만드는 것이다.
-- 구현 방향은 52주 테마 데이터를 삭제하지 않고 `js/data.js`에서 365일 일차 계획을 생성하는 방식이다. 365일차는 52주차 입학 준비 발표회로 두고 5종 활동을 모두 연결했다.
-- `js/models.js`는 `currentDay`를 추가해 일차 중심으로 이동하고, `currentWeek`는 현재 일차에서 자동 계산하도록 했다. 완료 기록에는 완료 당시 일차와 주차를 저장한다.
-- `js/views.js`는 교실 화면에 일차 슬라이더, 주차 바로 이동, 365일 학습지도, 오늘 목표와 주차·전체 진행률, 가정 미션과 교사 체크 문구를 표시한다. 보상 정원에도 선택 교실의 365일 진행 요약을 표시한다.
-- 현재 앱 폴더에 검증용 `package.json`과 `scripts/smoke.mjs`가 없어 복구했다. 검증은 `npm run check`, `npm run smoke`, Edge 기반 `file://` Playwright 점검을 통과했다.
-
-## Cloudflare 서버와 PC 설치 프로그램 업데이트 (2026-05-20)
-- 요청 목표는 직전 교사용 roster 범위 제한 변경을 Cloudflare Pages 운영 서버와 Windows PC 설치 프로그램에 반영하는 것이다.
-- 작업 기준은 `app` 패키지의 `npm run pages:deploy`로 Cloudflare Pages production 배포를 실행하고, 운영 URL의 HTTP 응답과 참조 asset을 확인한 뒤 `npm run installer:win`으로 Windows 설치 파일을 다시 만드는 것이다.
-- 설치 배포 묶음도 기존 루틴처럼 `app/release.zip`으로 다시 압축하고, 설치 EXE·blockmap·app.asar·release.zip SHA256을 기록한다.
-- Cloudflare Pages 배포 완료: `npm run pages:deploy` 성공. 새 preview URL은 `https://01c5414d.purunet-math-ebook.pages.dev`이고 운영 URL `https://purunet-math-ebook.pages.dev/`는 HTTP 200이며 `assets/index-BMrGLTPt.js`를 참조한다. 운영 JS SHA256은 로컬 빌드와 같은 `C494DE4CF8AAD721A69045DDEA76DEA7F35581B672777BB2E2F58A52397E7638`이고 `담당 교사 범위`, `담당 학습자 실시간 진도맵` 문자열을 확인했다.
-- Windows 설치 파일 갱신 완료: `npm run installer:win` 성공 후 `app/release.zip`도 최신 `app/release` 기준으로 다시 압축했다. 설치 EXE 크기는 `102797013` bytes, `release.zip` 크기는 `250557183` bytes다.
-- 최신 설치 산출물 SHA256: 설치 EXE `A1D5369042A86058C59E3437E2FAE8F58DEA317B2BC7363DC3D2F079EDC665B7`, blockmap `273E67341B439EE4CFB42C90DBCD3A6C00BF29DAC98060A5E1ED085E0E57F25B`, app.asar `2EDBDE3D8C978B9988858A0165222A3DB7828FE5D4557DDF8667F2E4C0B9771E`, release.zip `F03549A6BACD36E7FD8C7D4216AE30F19060EBFEB3B2B75EC018D58CD57BBF27`이다.
-- 설치본 `app.asar` 내부에서 `dist/index.html`, `assets/index-BMrGLTPt.js`, `assets/index-CZIj7P0w.css`, `electron/main.cjs` 포함을 확인했다. Electron Builder의 앱 아이콘 fallback 경고, Vite 큰 번들 경고, DEP0190 경고는 기존과 같은 비차단 경고다.
-
-## 교사용 로그인 roster 범위 제한 (2026-05-20)
-- 요청 목표는 교사용 계정으로 로그인했을 때 해당 선생님이 만든 클래스와 그 클래스에 등록된 학생만 보이고, 다른 선생님의 클래스나 같은 이름의 학생이 섞여 노출되지 않게 하는 것이다.
-- 현재 구조에서는 `loadLearningRosterSnapshot()`이 전체 교사·클래스·학생 목록을 반환하고, `App.tsx`의 등록/관리/모니터링 UI가 이 목록을 그대로 순회하는 경로가 있다. 따라서 교사용 로그인 상태에서는 `activeTeacherAccount.teacherId`를 기준으로 화면용 목록을 한 번 더 좁히는 것이 가장 작은 변경이다.
-- 이전 로그인이나 관리자 대리 사용으로 다른 교사의 `classId`와 `studentId`가 settings에 남아 있을 수 있으므로, roster snapshot을 만들 때 active class와 active student가 active teacher 범위 안에 있는지도 함께 확인한다.
-- 검증 기준은 `npm run lint`, `npm run verify`, `npm run onefile` 통과와 단일 HTML 산출물 반영이다.
-- 구현 완료: `App.tsx`에서 교사용 로그인 상태의 `teacherId`를 `teacherScopedId`로 잡고, 화면용 선생님·클래스·학생·학생 계정·진도 목록을 이 범위로 제한했다. 학생 관리, 클래스 관리, 등록 스트립, 모니터링 패널, 학생 계정 조회도 같은 목록을 사용한다.
-- 구현 완료: 클래스 선택, 학생 선택, 클래스 수정, 학생 수정, 비밀번호 초기화 핸들러에 교사 범위 밖 데이터 선택 방어를 추가했다. 교사용 모니터링 문구도 `담당 교사 범위`로 바꿔 관리 범위를 명확히 표시한다.
-- 구현 완료: `learnerDb.ts`에서 교사 로그인 시 남아 있던 다른 클래스·학생 선택값을 비우고, roster snapshot 생성 시 active class와 active student가 active teacher와 일치할 때만 유지하도록 보강했다. `loadAllLearningProgress()`는 선택적으로 `teacherId`를 받아 담당 학생 진도만 계산할 수 있게 했다.
-- 검증 완료: `npm run lint`, `npm run verify`, `npm run onefile` 통과. 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고, 모바일 서비스 워커 캐시는 `codex-math-mobile-v80`으로 올렸다. 단일 HTML 3개 파일 SHA256은 모두 `6DBC132F57D4A2235E32750A53531AAFF2059D3B80D498F42D5CCED0219BA507`이다.
-
-## 기존 Cloudflare 주소 최신 출력본 동기화 (2026-05-20)
-- 점검 결과 신규 운영 주소 `https://purunet-math-ebook.pages.dev/`는 최신 `assets/index-BmUNbY-V.js`를 참조하고 `print-visual`, `renderToStaticMarkup` 코드가 포함되어 있었다.
-- 기존 주소 `https://prunet-math-ebook.pages.dev/`도 아직 HTTP 200으로 살아 있으나 예전 `assets/index-DJ_DOl9Q.js`를 참조하고 있었다. 사용자가 기존 주소로 접속하면 문제지·답안지 출력 변경이 전혀 보이지 않는 것이 정상적인 증상이다.
-- 조치 방향은 공식 주소는 `purunet`으로 유지하되, 기존 북마크와 설치/안내 잔존 사용자를 위해 기존 `prunet-math-ebook` Pages 프로젝트에도 같은 최신 빌드를 배포하는 것이다.
-- 기존 주소 동기화 완료: `npx wrangler pages deploy dist --project-name prunet-math-ebook --branch main` 성공. 새 preview URL은 `https://51cd49fe.prunet-math-ebook.pages.dev`다.
-- 최종 검증 완료: `https://purunet-math-ebook.pages.dev/`, `https://prunet-math-ebook.pages.dev/`, `https://51cd49fe.prunet-math-ebook.pages.dev/` 모두 HTTP 200이고 `assets/index-BmUNbY-V.js`, `assets/index-CZIj7P0w.css`를 참조한다. 양쪽 JS SHA256은 모두 `4F6A1B1FD2EE6DB600141537378493E7E5F9C909578FB7259CCBA7996F15DA4C`이며 `print-visual`, `renderToStaticMarkup` 포함을 확인했다.
-
-## 시각 자료 출력 보정본 서버·설치 파일 반영 (2026-05-20)
-- 요청 목표는 문제지·답안지 출력에서 벡터 이미지와 도표·그래프·도형이 보이도록 수정한 최신 앱을 Cloudflare Pages 운영 서버와 Windows 설치 파일까지 반영하는 것이다.
-- 배포 기준은 `app/`에서 기존 `npm run pages:deploy`를 사용해 `purunet-math-ebook` production `main` 브랜치에 올리고, 설치 파일은 `npm run installer:win` 후 최신 `app/release` 기준으로 `app/release.zip`을 다시 압축하는 것이다.
-- 검증 기준은 Cloudflare 운영 URL HTTP 200, 운영 HTML의 최신 asset 참조 확인, Windows 설치 EXE·blockmap·app.asar·release.zip SHA256 기록이다.
-- Cloudflare Pages 배포 완료: `npm run pages:deploy` 성공. 새 preview URL은 `https://d119d65b.purunet-math-ebook.pages.dev`이고 운영 URL `https://purunet-math-ebook.pages.dev/`는 HTTP 200이며 `assets/index-BmUNbY-V.js`, `assets/index-CZIj7P0w.css`를 참조한다. 운영 JS SHA256은 로컬 빌드와 같은 `4F6A1B1FD2EE6DB600141537378493E7E5F9C909578FB7259CCBA7996F15DA4C`이고 `print-visual`, `renderToStaticMarkup` 문자열을 확인했다.
-- Windows 설치 파일 갱신 완료: `npm run installer:win` 성공 후 `app/release.zip`도 최신 `app/release` 기준으로 다시 압축했다. 설치 EXE 크기는 `102796617` bytes, `release.zip` 크기는 `250556548` bytes다.
-- 최신 설치 산출물 SHA256: 설치 EXE `0F49900588A19B4F7AECDA63AB082DF3DC3021A09DAF713145F0500DF25C4830`, blockmap `E0820BFE8286EBCD7D1BE042A53FCD5B8D6C3D4386DBC3C3BEC35131714FDF48`, app.asar `FC1B0AD66875EBA3EE5531F966B1F967AA3F9D081CA6B6E782106A004E33B559`, release.zip `556BB950CBA44DBCEDE04D4109CEC319E41DBDC354B409FEC37CA4A3F23476A4`다.
-- 참고: Electron Builder의 앱 아이콘 fallback 경고, Vite 큰 번들 경고, DEP0190 경고는 기존과 같은 비차단 경고이며 설치 파일 생성과 배포는 정상 완료됐다.
-
-## 문제지·답안지 출력 시각 자료 표시 보정 (2026-05-20)
-- 요청 목표는 문제지 출력과 답안지 출력에서 벡터 이미지, 도표, 그래프, 도형 같은 모든 문제 시각 자료가 실제 그림으로 보이게 하는 것이다.
-- 현재 인쇄 경로는 `Problem.visual`을 `visualToPrintableText`로 설명 문장만 출력한다. 학습 화면에서는 `MathVisual` 컴포넌트가 같은 데이터를 SVG와 표로 이미 렌더링하므로, 인쇄 HTML에서는 해당 컴포넌트를 정적 마크업으로 변환해 재사용하는 것이 가장 작고 누락이 적다.
-- 검증 기준은 `npm run lint`, `npm run verify`, `npm run onefile`, 단일 HTML 및 모바일 `study.html` 반영, 모바일 서비스 워커 캐시 버전 갱신이다.
-- 구현 완료: `app/src/App.tsx`에서 `MathVisual`을 `renderToStaticMarkup`으로 인쇄 HTML에 넣고, 팝업 문서에 SVG·표·그래프용 `.print-visual` CSS를 추가했다. 같은 `printableProblemHtml` 경로를 쓰므로 문제지와 답안지 모두 적용된다.
-- 검증 완료: `npm run lint`, `npm run verify`, `npm run onefile` 통과. 단일 HTML 3개 파일 SHA256은 모두 `B9359EFC82EE367700A354F0B5AE5A7A43CE13A9236CCA6FC425745C265C561B`이고, 모바일 서비스 워커 캐시는 `codex-math-mobile-v79`로 올렸다.
-
-## 문제지 출력 분수·나눗셈 표기 보정 (2026-05-20)
-- 요청 목표는 문제지 출력에서 분수나 나눗셈 표현에 `/`가 보이는 것을 수학 표기답게 바꾸는 것이다.
-- 적용 범위는 문제지·답안지 팝업 HTML 생성 경로다. 학습 화면의 `MathText` 렌더링과 문제 생성 원본 데이터는 그대로 두고, 인쇄용 HTML 변환 단계에서만 표시를 보정하는 것이 가장 작고 안전하다.
-- 구현 기준은 `1/2`, `2 1/3`, `\\frac{1}{2}` 같은 분수 표기는 인쇄에서 분수 막대로 보이게 하고, 공백을 둔 나눗셈 slash는 `÷`로 바꾸는 것이다. 학생 입력 안내와 정답 데이터 자체는 바꾸지 않는다.
-- 검증 기준은 `npm run lint`, `npm run verify`, `npm run onefile`, 단일 HTML 및 모바일 `study.html` 반영, 모바일 서비스 워커 캐시 버전 갱신이다.
-- 구현 완료: `app/src/App.tsx`의 문제지·답안지 인쇄용 HTML 변환 함수에서 일반 분수, 대분수, LaTeX `\\frac{}{}` 표기를 인쇄용 분수 막대 HTML로 바꾸고 공백을 둔 `/` 나눗셈은 `÷`로 표시하게 했다.
-- 검증 완료: `npm run lint`, `npm run verify`, `npm run onefile` 통과. 단일 HTML 3개 파일 SHA256은 모두 `7495B1CFBAA6E62D61123C9EBAEF1D48E918C8FFF9CF5B6E76A9876CAE4291AD`이고, 모바일 서비스 워커 캐시는 `codex-math-mobile-v78`로 올렸다.
-
-## Cloudflare 수학 익힘책 운영 주소 변경 (2026-05-20)
-- 요청 목표는 수학 익힘책 운영 주소를 기존 `https://prunet-math-ebook.pages.dev`에서 신규 `https://purunet-math-ebook.pages.dev`로 변경하고, 현재 프로젝트 파일의 서버 주소 참조도 같은 값으로 맞추는 것이다.
-- 변경 범위는 Pages 프로젝트명, 배포 스크립트, Electron 라이브 URL, OAuth 안내 문구다. D1 데이터베이스 이름 `prunet_math_learning_db`는 실제 원격 DB 식별자와 백업/마이그레이션 명령에 연결되어 있으므로 주소 표기 변경과 분리해 유지한다.
-- 검증 기준은 `npm run lint`, `npm run verify`, `npm run onefile`, 단일 HTML 및 모바일 `study.html` 반영, 모바일 서비스 워커 캐시 버전 갱신, 신규 Pages 운영 URL HTTP 200 확인, Electron 설치 파일 재생성 여부 확인이다.
-- 구현 완료: `wrangler.toml`, `app/wrangler.toml`, `app/package.json`, `app/electron/main.cjs`, `app/main.cjs`, `app/src/App.tsx`의 현재 운영 주소 참조를 `purunet-math-ebook` 기준으로 변경했다.
-- 검증 완료: `npm run lint`, `npm run verify`, `npm run onefile` 통과. 단일 HTML은 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고 모바일 캐시는 `codex-math-mobile-v77`로 올렸다.
-- Cloudflare Pages 신규 프로젝트 `purunet-math-ebook` 생성 후 production `main` 배포 완료. 새 배포 URL은 `https://e9b59731.purunet-math-ebook.pages.dev`이고 운영 URL `https://purunet-math-ebook.pages.dev/`는 HTTP 200이다.
-- 운영 검증 완료: 운영 HTML은 `assets/index-jWjpvSDu.js`를 참조하고, 운영 JS SHA256은 로컬 `dist/assets/index-jWjpvSDu.js`와 같은 `08AF59391C0DA31E724079B32D99F7923D16883005023F73AB08A54F0179CEEA`다. `/api/learning/snapshot`도 새 도메인에서 HTTP 200으로 응답해 기존 D1 바인딩 연결을 확인했다.
-- Windows 설치 파일 갱신 완료: `npm run installer:win` 통과 후 `app/release.zip`을 최신 `app/release` 기준으로 다시 압축했다. `app.asar` 내부 `electron/main.cjs`도 `https://purunet-math-ebook.pages.dev/`를 우선 로드하고 기존 주소는 포함하지 않는다.
-- 최신 산출물 SHA256: 설치 EXE `FDED0534483A5FAC5D74C59BD88E30D7D17F8BC0DB354D959815D15B78E259EF`, blockmap `3EA6E879DF34C179D2BCB7503E62D60280F7688266972F07E702842CD521905A`, app.asar `A0CFE6F2F774AE1DCB90C22B4BB3ACC47B45956B10755D57C132503130E1665D`, release.zip `5BE030FB565F77C7E144B3BB19F31E31DD6A5219D8546A48FAF80FEA4E05635F`다.
-
-## 문제 세트 선택과 출력 기능 추가 (2026-05-20)
-- 요청 목표는 단원·세부 단원 문제 생성 수를 기존 10문제에서 20문제, 30문제까지 선택할 수 있게 하고, 학생과 교사가 선택한 세트를 문제지와 답안지로 출력할 수 있게 하는 것이다.
-- 기존 구조에서는 `App.tsx`의 `PROBLEMS_PER_TOPIC`과 `buildTopicProblemSet()`이 세부 유형 생성기를 10회 호출한다. 생성기 자체를 복제하기보다 세트 크기 설정을 저장하고 같은 생성기를 선택한 횟수만큼 호출하도록 바꾸는 방식이 가장 작고 안전하다.
-- 문제지·답안지는 브라우저 팝업 인쇄 방식으로 구현한다. 상단에는 현재 활성 선생님, 학습자, 반, 날짜를 자동으로 넣고, 답안지는 같은 문제 배열에서 정답과 풀이를 출력해 문제지와 불일치하지 않도록 한다.
-- Git 저장소가 아니므로 완료 시 커밋 대신 변경 파일과 검증 결과를 보고한다.
-- 구현 완료: `LearningSettings`에 `problemSetSize`를 추가해 10·20·30문제 세트를 저장하고, `buildTopicProblemSet()`이 선택된 개수만큼 세부 유형 생성기를 호출하게 했다.
-- 구현 완료: 학생·교사 공용 학습 선택 메뉴에 `문제 세트` 콤보박스와 `문제지 출력`, `답안지 출력` 버튼을 추가했다. 단원 전체 선택 시에는 각 세부 내용마다 선택한 세트 수만큼 생성한다.
-- 구현 완료: 출력 팝업은 선생님 이름, 학생 이름, 반, 문제풀이 날짜를 자동 표시한다. 문제지와 답안지는 같은 문제 배열을 재사용하며, 답안지에는 정답과 풀이가 함께 표시된다.
-- 검증 완료: `npm run lint`, `npm run verify`, `npm run onefile` 통과. Playwright와 설치된 Chrome으로 20문제 문제지 팝업 20문항, 30문제 답안지 팝업 30문항 및 자동 메타데이터 표시를 확인했다.
-- 산출물 반영 완료: 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 복사했고, 모바일 서비스 워커 캐시를 `codex-math-mobile-v76`으로 올렸다.
-
-## 문제 세트 선택 기능 서버·설치 파일 반영 (2026-05-20)
-- 요청 목표는 방금 구현한 10·20·30문제 세트 선택, 문제지 출력, 답안지 출력 기능을 Cloudflare 운영 서버와 Windows 설치 파일까지 반영하는 것이다.
-- 배포 기준은 기존 프로젝트 스크립트 그대로 `npm run pages:deploy`를 사용하고, 설치 파일은 `npm run installer:win` 후 `app/release.zip`을 최신 `app/release` 폴더 기준으로 다시 압축한다.
-- Cloudflare Pages 배포 완료: `npm run pages:deploy` 성공. 새 preview URL은 `https://f2ad7607.prunet-math-ebook.pages.dev`이고 운영 URL `https://prunet-math-ebook.pages.dev/`도 HTTP 200이다.
-- 운영 서버 확인 완료: 운영 HTML이 `index-DJ_DOl9Q.js`, `index-CZIj7P0w.css`를 참조하고, `curl`로 내려받은 운영 JS SHA256이 로컬 `dist/assets/index-DJ_DOl9Q.js`와 같은 `F00722EB60B8F31BBAC438A38B3F6615FC75A87C3CCB49704215426AC0661462`이다. 운영 JS 안에서 `문제 세트`, `문제지 출력`, `답안지 출력`, `20문제 세트`, `30문제 세트` 문자열을 확인했다.
-- Windows 설치 파일 갱신 완료: `npm run installer:win` 성공. 아이콘 파일 미지정 경고와 Vite 큰 번들 경고는 기존 성격의 경고이며 빌드와 NSIS 생성은 완료됐다.
-- 최신 산출물 해시: 설치 EXE `B5618FAE4827F8DF3535991BFB0C4A52C84BB05F70B950493222D960F99B8628`, blockmap `3E9F79D4585D510E598BCC0264FE3460C8DD19938137B5F93235CC22F178F028`, app.asar `B840489B09297B52F3B8C1DF4435AFE1E261AACB91EBA49A3B90A2613E67484C`, release.zip `E13C4F95D5480EA54C209431A4A08D797A323C671B7F5961C55A31AAFD0856B2`이다.
-
-## 푸르넷 영어 모바일 버튼 가독성 보강 (2026-05-20)
-- 요청 목표는 모바일 화면에서 팝업성 버튼과 학습 버튼의 글씨가 활성화 전에도 보이도록 가독성을 높이는 것이다.
-- 진단 결과 라이트 모드는 큰 문제가 없었고, 다크 모드에서 `primary`, `danger`, 활성 stage/axis 버튼은 배경이 너무 밝아 흰 글씨 대비가 낮았으며 비활성 stage/axis 버튼은 글자색과 어두운 배경이 거의 붙어 보였다.
-- 구현 완료: 다크 모드 `--teal`, `--blue`, `--coral`을 각각 `#087b72`, `#0b6e8a`, `#b93a30`으로 깊게 조정하고, 비활성 `axis-btn`, `stage-btn`, `choice-btn`은 `#123f3a` 배경과 `var(--ink)` 글자색으로 분리했다.
-- 구현 완료: 모바일 폭에서 주요 버튼의 `font-weight`를 950으로 강화하고 `text-shadow`를 제거해 작은 화면에서도 번짐 없이 읽히게 했다.
-- 검증 완료: `npm run check` 통과. 정적 대비 계산에서 다크 primary 5.14:1, active 5.81:1, danger 5.66:1, inactive 11.2:1로 확인했고, Edge 채널 Playwright 모바일 다크 스크린샷에서 버튼 글자가 보이는 것을 확인했다.
-- 운영 배포 완료: `npm run pages:deploy` 성공. 최신 preview URL은 `https://9f1b6274.purunet-english-ebook.pages.dev`이고 운영 URL `https://purunet-english-ebook.pages.dev/`는 HTTP 200, 운영 CSS에서 새 다크 버튼 토큰과 모바일 글자 두께 규칙 반영을 확인했다.
-
-## 푸르넷 영어 에머랄드 팔레트 가독성 보정 (2026-05-20)
-- 요청 목표는 에머랄드 바다빛 팔레트 적용 후 일부 요소의 글씨 가독성이 떨어진 문제를 바로잡는 것이다.
-- 진단 기준은 Playwright로 실제 DOM을 렌더링한 뒤 텍스트 색과 배경색 대비를 계산하고, 4.5:1 미만 후보를 우선 보정하는 것이다.
-- 1차 진단에서 흰 글씨가 올라가는 primary 버튼, 활성 단계 버튼, 트랙 코드, 위험 버튼, 일부 muted label이 기준보다 약하게 나왔다. gradient 배경 추정 한계가 있는 요소도 있었지만, 실제 사용자 시야에서 약해질 수 있는 색은 함께 보정한다.
-- 구현 기준은 에머랄드 바다빛 방향은 유지하면서 `--teal`, `--blue`, `--coral`, `--focus`, `--muted`를 더 깊게 낮추고, hero 내부 secondary 버튼은 별도 규칙으로 어두운 hero 배경과 구분되게 만드는 것이다.
-- 구현 완료: `--muted`를 `#335f5b`, `--teal`을 `#00786f`, `--blue`를 `#086f8c`, `--coral`을 `#bd3f34`, `--focus`를 `#005d56`으로 조정했다. hero gradient도 더 깊은 바다빛으로 낮추고 `.learner-hero .secondary-btn`은 `#004f48` 텍스트와 밝은 아쿠아 배경으로 분리했다.
-- 검증 완료: Playwright 대비 점검에서 4.5:1 미만 후보가 0개로 줄었다. `npm run check` 통과, 데스크톱·390px 모바일에서 hero와 16개 트랙이 렌더링되고 가로 overflow가 없는 것도 확인했다.
-- 운영 배포 완료: `npm run pages:deploy` 성공. 최신 preview URL은 `https://f0b6662e.purunet-english-ebook.pages.dev`이고 운영 URL `https://purunet-english-ebook.pages.dev/`는 HTTP 200, 운영 CSS에서 대비 보정 토큰과 hero 버튼 보정 규칙 반영을 확인했다.
-
-## 푸르넷 영어 에머랄드 바다빛 팔레트 전환 (2026-05-20)
-- 요청 목표는 영어 학습 화면의 색상을 에머랄드 바다빛 색상들이 많이 들어가도록 바꾸는 것이다.
-- 구현 기준은 기존 레이아웃과 Cloudflare D1 기능을 유지하면서 CSS 디자인 토큰, body 배경, topbar 배지, hero 배경, 트랙 카드, 진행률, 보조 패널, SVG 시각 자산까지 에머랄드·아쿠아·바다 청록 계열이 주색으로 보이게 만드는 것이다.
-- 의미색은 최소화한다. 위험·오답 의미의 coral은 남기되, 일반 강조색과 진행 색은 베이지·노랑·남색 중심에서 emerald sea palette로 교체한다.
-- 검증 기준은 `npm run check`, Playwright 렌더링에서 hero와 SVG가 정상 로딩되고 가로 overflow가 없는지 확인, Cloudflare Pages production 재배포, 운영 CSS와 SVG 반영 확인이다.
-- 구현 완료: `assets/styles.css`의 기본 팔레트를 `--bg: #e7fbf8`, `--teal: #009b8e`, `--blue: #0c8fb3`, `--amber: #22c6b5`, `--lime: #4ed7b2` 중심으로 바꾸고, body 배경·hero·배지·버튼·진행률·읽기/단어/문법 패널 보조색을 emerald sea 계열로 조정했다.
-- 구현 완료: `assets/learning-studio.svg`의 배경 stop, 원형 포인트, 헤드셋, 텍스트 라인, 그래프 색에서 기존 노랑·파랑 포인트를 제거하고 emerald·aqua 계열로 다시 칠했다.
-- 검증 완료: `npm run check` 통과. Playwright에서 데스크톱 팔레트 토큰 `#e7fbf8`, `#009b8e`, `#0c8fb3`, `#22c6b5`, hero 존재, SVG 로딩, 16개 진행률 바, 데스크톱·모바일 가로 overflow 없음이 확인됐다.
-- 운영 배포 완료: `npm run pages:deploy` 성공. 최신 preview URL은 `https://4e1aadf3.purunet-english-ebook.pages.dev`이고 운영 URL `https://purunet-english-ebook.pages.dev/`는 HTTP 200, 운영 CSS와 SVG의 emerald sea palette 반영을 확인했다.
-
-## 푸르넷 영어 좌우 패널 스크롤바 최소화 (2026-05-20)
-- 요청 목표는 왼쪽 제어 패널의 세로 스크롤바를 투명하고 최소 굵기로 바꾸고, 오른쪽 스크롤바도 같은 패턴으로 맞추는 것이다.
-- 구현 기준은 `track-panel`과 `teacher-panel`에 Firefox용 `scrollbar-width: thin`, `scrollbar-color`, Chromium/WebKit용 `::-webkit-scrollbar` 4px, transparent track, 약한 opacity thumb, hover 시에만 조금 더 보이는 thumb을 적용하는 것이다.
-- 오른쪽 패널은 데스크톱에서 sticky 내부 스크롤을 사용하고, 1280px 이하에서는 전체폭 그리드로 내려가므로 sticky와 internal scroll을 해제해 모바일 흐름을 깨지 않게 한다.
-- 검증 기준은 `npm run check`, 브라우저에서 좌우 패널의 scrollbar CSS 계산값 확인, Cloudflare Pages production 재배포, 운영 CSS 반영 확인이다.
-- 구현 완료: `assets/styles.css`에서 `track-panel`과 `teacher-panel`에 `scrollbar-width: thin`, transparent track, 4px WebKit scrollbar, 약한 teal thumb, hover opacity 증가를 적용했다. 오른쪽 `teacher-panel`은 데스크톱에서 `position: sticky`, `max-height: calc(100vh - 112px)`, `overflow: auto`로 맞췄고 1280px 이하에서는 `position: static`, `overflow: visible`로 되돌린다.
-- 검증 완료: `npm run check` 통과. Playwright 계산값에서 데스크톱 `track-panel`과 `teacher-panel` 모두 `overflow-y: auto`, `scrollbar-width: thin`으로 확인됐고, 900px 폭에서는 오른쪽 패널이 `position: static`, `overflow-y: visible`로 확인됐다.
-- 운영 배포 완료: `npm run pages:deploy` 성공. 최신 preview URL은 `https://80c261cd.purunet-english-ebook.pages.dev`이고 운영 URL `https://purunet-english-ebook.pages.dev/`는 HTTP 200, 운영 CSS에서 좌우 패널 scrollbar selector와 transparent thin 설정 반영을 확인했다.
-
-## 푸르넷 영어 학습 사이트 전면 리디자인 (2026-05-20)
-- 요청 목표는 직전 리프레시가 여전히 정적이고 학습자 친화적이지 않다는 평가를 반영해, 영어 학습용 사이트의 웹 디자인을 부분 수정이 아니라 전체 구조 기준으로 다시 바꾸는 것이다.
-- 이번 개편은 기능 로직과 Cloudflare D1 API는 유지하고, 화면 경험을 `상단 브랜드 바 → 학습자 hero cockpit → 트랙 진행률 레일 → 중앙 수업 카드 → 오른쪽 코칭·포트폴리오 패널`로 재구성한다.
-- 학습자 친화성 기준은 첫 화면에서 오늘 학습 목표, 현재 TESOL 단계, 모델 음성 듣기, 단계 완료, 완료율, 학습 증거, 단어·문법 정확도, 서버 저장 상태가 즉시 보이도록 하는 것이다.
-- 시각 자산 기준은 외부 의존 없이 `assets/learning-studio.svg`를 로컬 자산으로 추가해 책, 말풍선, 오디오 웨이브, 학습 카드가 보이는 학습 스튜디오 분위기를 만든다.
-- 디자인 기준은 bento형 정보 구조, 목적 있는 microinteraction, accessible contrast, 모바일 단일 열 전환, dark mode, reduced-motion 대응이다. 장식만 있는 랜딩 페이지가 아니라 실제 학습 조작을 첫 화면에서 바로 할 수 있게 유지한다.
-- 검증 기준은 `npm run check`, 데스크톱·모바일 Playwright 렌더링에서 hero 존재, SVG 로딩, 16개 트랙, 16개 진행률 바, 가로 overflow 없음 확인, Cloudflare Pages production 재배포, 운영 URL 반영 확인이다.
-- 구현 완료: `index.html`의 브랜드명을 `푸르넷 영어 인터랙티브 스튜디오`로 바꾸고 `learner-hero` 영역을 추가했다. `views.js`는 선택 트랙 기반 hero cockpit, hero action, floating status, hero stats, 트랙별 진행률을 렌더링하도록 확장했다.
-- 구현 완료: `assets/learning-studio.svg`를 추가하고 `assets/styles.css`를 새 디자인 시스템으로 전면 교체했다. 새 CSS는 학습자 hero, SVG float motion, 진행률 트랙 카드, 단계 완료 표시, 코칭 패널 accent, dark mode, reduced-motion, 1280px·900px·560px 반응형을 포함한다.
-- 검증 완료: `npm run check` 통과. 로컬 Playwright와 운영 URL Playwright 모두 데스크톱과 390px 모바일에서 hero 존재, SVG 로딩, 16개 트랙, 16개 진행률 바, 가로 overflow 없음이 확인됐다.
-- 운영 배포 완료: `npm run pages:deploy` 성공. 최신 preview URL은 `https://84836731.purunet-english-ebook.pages.dev`이고 운영 URL `https://purunet-english-ebook.pages.dev/`는 HTTP 200, 새 hero 구조와 CSS, `assets/learning-studio.svg` 로딩을 확인했다.
-
-## 푸르넷 영어 학습 사이트 최신 UI 디자인 개선 (2026-05-20)
-- 요청 목표는 `mvc-english-learning` 영어 학습용 사이트 화면이 오래된 스타일로 보이는 문제를 해결하고 최신 홈페이지·학습 플랫폼 트렌드에 맞게 개선하는 것이다.
-- 2026년 UI 흐름은 bento형 모듈 배치, 절제된 translucent surface, 다크 모드 성숙도, 명확한 정보 위계, 접근성 우선 대비, 모바일 우선 반응형이 핵심이다. 이번 작업은 장식형 랜딩 페이지가 아니라 실제 학습 화면의 생산성을 유지하는 앱형 홈페이지 리프레시로 진행한다.
-- 수정 범위는 `index.html`의 상단 상태 배지와 `assets/styles.css`의 전체 디자인 토큰·레이아웃·컴포넌트 스타일이다. 학습 데이터, MVC 로직, Cloudflare D1 API 구조는 바꾸지 않는다.
-- 검증 기준은 `npm run check`, 브라우저에서 16개 트랙과 서버 DB 저장 버튼 렌더링 확인, 모바일 폭 레이아웃 확인, Cloudflare Pages production 재배포와 운영 URL HTTP 200 확인이다.
-- 구현 완료: 상단 헤더를 앱형 command bar로 정리하고 `16 Tracks`, `D1 Live Sync`, `TESOL Flow` 상태 배지를 추가했다. CSS는 밝은 테마·다크 테마, translucent panel, 모듈형 트랙 목록, 현대적 버튼 hover, 명확한 focus, 모바일 단일 열 흐름, reduced-motion 대응으로 교체했다.
-- 검증 완료: `npm run check` 통과. Playwright 렌더링 점검에서 데스크톱과 390px 모바일 모두 16개 트랙이 렌더링되고 가로 overflow가 없는 것을 확인했다.
-- 운영 배포 완료: `npm run pages:deploy` 성공. 최신 preview URL은 `https://ae1a7ff7.purunet-english-ebook.pages.dev`이고 운영 URL `https://purunet-english-ebook.pages.dev/`는 HTTP 200, `D1 Live Sync` 문구, `assets/styles.css`의 `top-meta`, dark mode, dark chip 대비 보정, reduced-motion 스타일 반영을 확인했다.
-
-## 푸르넷 영어 Cloudflare Pages와 D1 서버 DB 전환 (2026-05-19)
-- 요청 목표는 독립 영어 MVC 학습 프로그램을 Cloudflare Pages 프로젝트 `purunet-english-ebook`로 운영하고, 접속 주소를 `https://purunet-english-ebook.pages.dev`로 고정하며, 학습 데이터 저장소를 Cloudflare D1 서버 DB로 확장하는 것이다.
-- 기존 수학 전자북 Pages 프로젝트 `prunet-math-ebook`과 D1 DB `prunet_math_learning_db`는 유지하고, 영어 앱은 `강태훈샘_푸르넷영어책(26.05.19)/mvc-english-learning` 안에 별도 `wrangler.toml`, Pages Function, D1 migration을 둔다.
-- Cloudflare 계정은 Wrangler OAuth 로그인 상태로 확인됐고, 새 D1 데이터베이스 `purunet_english_learning_db`를 APAC 리전에 생성했다. database_id는 `e0d4cb13-db16-4272-846b-6515ac3bc2ab`이다.
-- D1 스키마는 학습 증거, 포트폴리오, 성찰, 영단어 숙련도, 영문법 숙련도, 전체 진행 스냅샷을 저장하도록 구성한다. 클라이언트는 localStorage를 계속 오프라인 캐시로 쓰고, 운영 Pages 주소에서는 `/api/progress`로 서버 DB에 업서트한다.
-- 검증 기준은 `npm run check`, `npm run db:migrate`, Cloudflare Pages production 배포, 운영 URL HTTP 200, `/api/progress` D1 저장·조회 확인이다.
-- 구현 완료: `wrangler.toml`, `migrations/0001_english_learning.sql`, `functions/api/progress.js`, 영어 MVC의 Model·View·Controller, `package.json`, `README.md`를 갱신했다. 화면에는 `Cloudflare D1 서버 DB` 상태와 `서버 DB 저장` 버튼이 추가됐다.
-- 검증 완료: `npm run check` 통과, `npm run db:migrate`로 remote D1에 12개 SQL 쿼리 적용, Pages 프로젝트 `purunet-english-ebook` 생성, production `main` 배포 완료. 새 preview URL은 `https://b7807dc4.purunet-english-ebook.pages.dev`이고 운영 URL은 `https://purunet-english-ebook.pages.dev`다.
-- 운영 확인: `https://purunet-english-ebook.pages.dev/`는 HTTP 200이고 HTML title은 `강태훈 푸르넷 영어 MVC 학습 프로그램`이다. `/api/progress?learnerId=local-demo`는 D1 binding을 통해 HTTP 200으로 응답했고, POST smoke에서 학습 증거·포트폴리오·성찰·단어·문법·스냅샷 저장을 확인했다.
-
-## Cloudflare Pages와 Windows 설치 파일 최신 낭독 코드 반영 (2026-05-19)
-- 이번 요청은 새 기능 추가가 아니라 직전 낭독 수학 기호 읽기 보정본을 Cloudflare Pages 운영 배포와 Windows 설치 파일까지 반영하는 배포 작업이다.
-- Cloudflare 배포 기준은 `app/`에서 검증과 빌드를 다시 통과시킨 뒤 `npm run pages:deploy`로 `prunet-math-ebook` production `main` 브랜치에 올리는 것이다.
-- 설치 파일 기준은 `npm run installer:win`으로 `app/release`를 다시 만들고, 최신 `app/release` 기준으로 `app/release.zip`도 다시 압축하는 것이다.
-- 검증은 로컬 `dist`와 설치본 `app.asar` 안에서 낭독 보정 코드 또는 대표 문자열을 확인하는 방식으로 마무리한다.
-- `npm run lint`, `npm run verify`, `npm run smoke:learning-db`, `npm run onefile`을 통과했고 단일 HTML, 루트 HTML, 모바일 `study.html` 해시는 모두 같았다.
-- Cloudflare Pages는 `npm run pages:deploy`로 재배포했고 배포 URL은 `https://c650d33a.prunet-math-ebook.pages.dev`다. 운영 URL `https://prunet-math-ebook.pages.dev/`는 HTTP 200과 새 번들 참조를 확인했다.
-- `npm run installer:win`으로 Windows 설치 파일을 다시 만들고 `app/release.zip`을 재압축했다. 설치 파일 SHA256은 `F0B04147B733AEDB15B23BD5610D8FB2674407EB82760D9A6A80CB19F72318D5`, `release.zip` SHA256은 `2B872966476CA464D4BD2A73BE93D78CC845E77B653D6630F6BE21704FC85187`이다.
-- `dist`와 설치본 `app.asar`에서 `voiceschanged`, `문제 식은`, `더하기` 문자열을 확인해 최신 낭독 보정 코드가 배포 산출물 양쪽에 포함된 것을 검증했다.
-
-## 낭독 음성 품질, 학습 화면 스크롤바, 클래스 삭제 접근 개선 (2026-05-19)
-- 목표는 기존 학습 흐름을 유지하면서 낭독 음성을 더 자연스럽게 고르고, 오른쪽 학습 화면의 스크롤바 시각 노출을 줄이고, 클래스 등록 화면에서 삭제 동선을 바로 제공하는 것이다.
-- 낭독은 무료 조건을 유지해야 하므로 외부 유료 TTS API를 붙이지 않고 브라우저 `speechSynthesis`에서 제공하는 한국어 자연/신경망 계열 음성을 우선 선택한다.
-- 클래스 삭제는 이미 있는 `removeClassRecord`와 클래스 관리 삭제 흐름을 재사용해 DB 스키마를 바꾸지 않는다.
-- 검증 기준은 `npm run lint`, `npm run verify`, `npm run onefile` 통과와 루트 단일 HTML, 모바일 `study.html`, 모바일 서비스워커 캐시 버전 갱신이다.
-- 구현 결과 `AI 낭독` 버튼이 한국어 자연음 후보를 우선 선택하고, 페이지와 연습 화면 스크롤바가 4px 투명 계열로 정리되었다.
-- 클래스 등록 화면의 `새 클래스` 옆에 `클래스 삭제` 버튼을 추가했고, 저장된 클래스 칩에는 클래스 등록 화면에서 바로 쓰는 `삭제` 버튼을 붙였다.
-- `npm run lint`, `npm run verify`, `npm run onefile`을 모두 통과했고 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 복사했다.
-- 모바일 서비스워커 캐시 버전은 `codex-math-mobile-v74`로 올렸다.
-
-## 낭독 수학 기호 읽기 보정 (2026-05-19)
-- 문제 원인은 음성 모델 선택만이 아니라 `+`, `-`, `×`, `÷`, `/`, `=` 같은 수식 기호가 원문 그대로 TTS에 전달되는 것이다.
-- 무료 조건은 유지하되, 유료 외부 TTS API를 붙이지 않고 브라우저 자연음 후보를 계속 사용한다.
-- 해결 방향은 낭독 전용 문자열에서 사칙연산, 등호, 비교, 분수, 빈칸 기호를 한국어 문장으로 변환한 뒤 `SpeechSynthesisUtterance`에 전달하는 것이다.
-- 검증 기준은 `npm run lint`, `npm run verify`, `npm run onefile` 통과와 단일 HTML, 모바일 `study.html`, 서비스워커 캐시 버전 갱신이다.
-- 구현 결과 `3 + 4`, `36 ÷ 12 × 13`, `3/5`, `□` 같은 낭독 원문을 `더하기`, `나누기`, `곱하기`, `5분의 3`, `빈칸`처럼 읽도록 바꿨다.
-- `speechSynthesis.getVoices()`가 처음에 빈 배열을 반환하는 브라우저를 위해 `voiceschanged`를 최대 450ms 기다린 뒤 자연음 후보를 고르게 했다.
-- `npm run lint`, `npm run verify`, `npm run onefile`을 통과했고 단일 HTML을 루트와 모바일 `study.html`에 복사했다.
-- 모바일 서비스워커 캐시 버전은 `codex-math-mobile-v75`로 올렸다.
-
-## 무엇을 만드는가
-업로드한 PDF(푸르넷수학 5학년 3월 플러스북 해답)의 학습 내용을 바탕으로
-한 인터랙티브 수학 연습 웹앱. 현대적 전자북 스타일.
-
-## 사용자 선택 (질문 응답)
-- 결과물: **React 웹앱 프로젝트** (Vite + React + TypeScript)
-- 콘텐츠 범위: **두 단원 핵심 + 샘플** — 1단원(자연수의 혼합 계산),
-  2단원(약수와 배수)의 대표 유형을 자동 생성형으로 구현
-- 핵심 기능: **자동 채점 + 즉시 피드백**
-
-## 설계 결정
-- **자동 생성형 문제**: PDF의 고정 문항을 그대로 옮기지 않고, 같은 유형의
-  문제를 난수로 생성. "비슷한 내용으로 수정" 요구에 부합하며 무한 연습 가능.
-- **정수 보장**: 워크북은 자연수 범위. 나눗셈은 항상 나누어떨어지도록,
-  중간/최종값이 음수가 되지 않도록 거부 표본추출(retry) + 안전 폴백.
-- **연산 순서 평가기**: 사칙연산 혼합은 구조화된 식 템플릿 + 정수 평가기로
-  연산 순서를 검증해 정답을 산출(직접 파싱 대신 템플릿 기반이라 안전).
-- **즉시 피드백 우선**: 오답 시 정답 + 한 줄 풀이 표시. 단계별 애니메이션
-  해설/진도 저장은 사용자가 선택하지 않아 범위에서 제외(단순성 우선).
-- **세션 점수**: 정답/전체 카운트만. 새로고침 시 초기화(저장 미선택).
-- **의존성 최소화**: Vite/React/TS 외 추가 라이브러리 없음. 애니메이션은
-  CSS 전환/키프레임으로 처리.
-- **디자인 톤**: 원본 책 색감(민트·코랄)을 계승한 현대적 전자북 UI.
-  Pretendard 웹폰트, 글래스/그라데이션 카드, 반응형.
-
-## 폴더
-- 프로젝트 루트: `app/` (한글/공백 경로 회피 위해 ASCII 하위폴더)
-
-## 원클릭 실행 (추가 요청)
-- Vite 일반 빌드는 JS가 별도 모듈 파일이라 `file://` 더블클릭 시
-  브라우저의 모듈 CORS 정책으로 빈 화면 → **모든 자산을 인라인한
-  단일 HTML**로 합쳐 해결 (`app/scripts/bundle-singlefile.mjs`,
-  `npm run onefile`). 결과: 루트의 `푸르넷수학-연습.html`.
-- 바탕화면에 `푸르넷수학 연습.lnk` 바로가기 생성 → 더블클릭으로 실행.
-- Pretendard 폰트는 CDN 링크 유지(온라인 시 적용, 오프라인 시 시스템
-  한글 폰트로 자동 대체) — 글꼴 파일까지 인라인하지는 않음.
-- **버그/학습**: `String.replace(s, 치환문자열)`은 치환문자열의
-  `` $` ``·`$&`·`$'`가 특수 패턴으로 해석됨. 압축 JS를 인라인할 때
-  head가 23번 복제되는 원인이었음 → 치환을 **함수 콜백**(`() => ...`)으로
-  바꿔 해결. 압축 코드 삽입 시 항상 함수 치환을 쓸 것.
-
-## 4·5월 단원 추가 (2026-05-17)
-- 사용자 선택: **기존과 동일한 자동 생성형**, **3·4·5단원 모두**.
-- 4월 = 3단원(대응 관계) + 4단원(약분과 통분), 5월 = 5단원(분수의
-  덧셈과 뺄셈). 단원별 대표 5유형씩 난수 생성.
-- **분수 채점 인프라 신설**: 기존 채점기는 정수/수의 집합만 지원 →
-  `frac.ts`(분수 파싱·약분·통분·대분수)와 답 종류
-  `fraction`/`fractionPair`/`compare` 추가. 값(교차곱) 동치로 채점하되,
-  - 기약분수 유형은 `requireReduced`로 기약형만 정답,
-  - 크기가 같은 분수 유형은 `requireDenominator`로 분모 강제,
-  - 통분 유형은 `commonDenominator`(=두 분모 최소공배수)로 분모 강제.
-  → "약분/통분을 실제로 수행"하는 학습 의도를 채점에 반영.
-- 표시/값 분리: `answerText`(선택)로 오답 시 보여줄 표기를 풀이와 일치.
-- **3단원 검증 가능성**: 대응 관계는 문장형이라 식 평가가 어려움 →
-  풀이를 항상 `식: a × b = r` 형식으로 끝내고 verify가 이 줄을 파싱·평가.
-  (학생 풀이에도 대응 관계 식을 보여주어 교재 의도와도 부합.)
-- verify.mjs는 앱 코드를 import하지 않고 **독립 분수 구현**으로 교차검증
-  (기존 철학 유지). 단원 prefix(topicId)로 분기.
-
-## CLAUDE.md 작업 기준 적용 (2026-05-17)
-- 루트 `CLAUDE.md`를 현재 프로젝트의 공통 작업 기준으로 유지한다.
-- Codex가 바로 인식할 수 있도록 루트 `AGENTS.md`를 추가해 `CLAUDE.md` 참조를 명시했다.
-- 새 프로젝트에는 `scripts/apply-claude-standard.ps1`로 `CLAUDE.md`, `AGENTS.md`, 기본 `checklist.md`, 기본 `context-notes.md`를 적용한다.
-- 이 폴더는 Git 저장소가 아니므로 의미 단위 커밋 규칙은 현재 변경에는 적용하지 못했다. 대신 변경 파일과 검증 결과를 보고에 남긴다.
-
-## 6학년 3월~다음 해 2월 과정 추가 (2026-05-17)
-- 업로드된 6학년 PDF 12종을 월별로 대조해 3월 분수의 나눗셈부터 다음 해 2월 일차방정식 준비까지 흐름을 잡았다.
-- 6학년 학습자가 적용되면 6학년 단원만 보이도록 기존 4학년/5학년 필터에 `6학년` 분기를 추가했다.
-- 첫 실행 화면은 기본 학습자를 `6학년`으로 잡고, 모바일 첫 페이지에는 4·5·6학년 바로 시작 버튼을 둔다.
-- `study.html?grade=6`처럼 URL로 들어온 학년값을 읽어 처음 열 때 해당 학년 과정으로 바로 진입하도록 했다.
-- 준비 학년 표기는 별도 과정으로 두지 않고 4학년 1~2월 학습으로 표시한다. URL의 `grade=pre5`나 직접 입력한 준비 학년 값도 4학년으로 정규화한다.
-- 문제는 PDF 원문을 그대로 복제하지 않고 같은 학습 목표의 자동 생성형으로 구성했다. 월별 6개 세부 체계, 전체 72개 유형을 등록했다.
-- 그래프·공간·원 단원은 앱의 수학 렌더링 정책에 맞춰 텍스트 계산식과 벡터 기반 보조 표시가 결합될 수 있도록 topicId를 분리했다.
-- 배포 기준은 `npm run lint`, `npm run verify`, `npm run onefile` 통과 후 단일 HTML을 루트와 모바일 전용 폴더에 동기화하는 방식으로 유지한다.
-
-## 6학년 시각 자료 고도화 (2026-05-17)
-- 6학년 PDF를 다시 확인해 3월·7월·9월 분수 막대, 5월·8월 비율 띠, 6월 원그래프, 10월 쌓기나무, 11월 원 도형을 앱 문제에 직접 연결했다.
-- `MathVisual`에 `fraction-strip`, `ratio-strip`, `circle-chart`, `circle-diagram`을 추가해 외부 이미지 없이 SVG 벡터로 렌더링한다.
-- 6학년 생성기는 숫자만 내보내지 않고, 해당 단원에서 필요한 보조 도형을 `visual` 필드로 함께 반환하도록 보강했다.
-
-## 학습 단계·문제 수준 필터 (2026-05-17)
-- 학년 아래에 `초급/중급/고급` 학습 단계 메뉴와 `기초연산/개념/유형/고난이도` 문제 수준 메뉴를 추가했다.
-- 현재까지 작성한 4·5·6학년 PDF 기반 문제는 모두 기본 `초급`으로 지정한다. 중급·고급은 이후 자료가 들어오면 같은 메타데이터로 분리된다.
-- 문제 수준은 topicId, 제목, 설명의 키워드를 바탕으로 자동 분류한다. 명시 메타데이터가 있으면 `Topic.learningArea`를 우선하고, 없으면 기초연산/개념/유형/고난이도 중 하나로 판정한다.
-- 선택한 단계·문제 수준은 localStorage에 저장되어 다음 학습 때도 유지된다.
-
-## 6학년 연산 과정 추가 (2026-05-17)
-- 업로드 폴더에서 6학년 수학연산 PDF는 3월, 4월, 5월, 6월, 8월, 9월, 10월, 12월, 1월, 2월 총 10종을 확인했다. 7월과 11월 PDF는 현재 폴더에 없어서 교과 흐름 보완 단원으로 구성했다.
-- `6학년 연산`은 일반 6학년 과정과 분리된 학습자 선택값으로 둔다. URL은 `study.html?grade=6-op`를 사용한다.
-- 12개월 각각 6개 세부 유형을 등록해 전체 72개 연산 유형을 구성했다. 기존 정책대로 세부 유형 하나당 10문제 학습 흐름을 유지한다.
-- 생성기는 기존 6학년 수학 표현과 시각 자료를 재사용한다. 분수 나눗셈, 소수 나눗셈, 비율·백분율, 띠그래프·원그래프, 쌓기나무, 원주·원의 넓이, 소인수분해, 일차방정식 유형을 연산 과정에 연결했다.
-- 모바일 첫 화면, 설치 매니페스트, 서비스워커 캐시 버전을 함께 갱신했다.
-- 결과 보고서는 `6학년_수학연산_PDF_대조_추가_보고서(26.05.17).md`에 남겼다.
-- 검증은 `npm run lint`, `npm run verify`, `npm run onefile` 순서로 통과했고, 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 다시 복사했다.
-
-## 6학년 수학연산 PDF 재대조와 시각 자료 보강 (2026-05-17)
-- 6학년 수학연산 PDF를 다시 대조해 기존 6학년 연산 월별 배치가 실제 PDF 흐름과 다른 부분을 수정했다.
-- 3월은 각기둥·각뿔과 전개도, 4월은 분수÷분수와 소수 나눗셈, 5월은 비율과 원주, 6월은 원의 넓이와 직육면체 겉넓이·부피로 재배치했다.
-- 8월은 띠그래프·원그래프·정비례·반비례, 9월은 쌓기나무와 비례배분, 10월은 원기둥·원뿔·구와 원그래프로 재배치했다.
-- 12월부터 다음 해 2월까지는 소인수분해, 정수 수직선, 정수 연산, 문자식, 등식, 방정식, 좌표평면, 함수 그래프 흐름을 반영했다.
-- `MathVisual`에 `solid-shape`를 추가해 각기둥, 각뿔, 원기둥, 원뿔, 구를 외부 이미지 없이 SVG 벡터로 표시한다.
-- 6학년 연산 72개 토픽의 생성기 연결을 확인했고 누락은 없었다.
-- `npm run verify`에서 반비례 문장제의 후보 없음 난수 조합을 발견해 후보가 있는 조합만 생성하도록 고쳤다.
-- `npm run lint`, `npm run verify`, `npm run onefile`을 통과했고 단일 HTML을 루트와 모바일 전용 `study.html`에 반영했다.
-
-## 초기 실행화면 6학년 연산 보강 (2026-05-17)
-- 새로 실행하는 기본 학습자 과정을 `6학년 연산`으로 변경했다.
-- 모바일 홈페이지의 대표 시작 버튼과 빠른 학습 카드가 `study.html?grade=6-op`로 바로 진입하도록 변경했다.
-- 모바일 연산 과정 그리드에서는 `6학년 연산`을 기본 강조 항목으로 표시한다.
-- `npm run lint`, `npm run verify`, `npm run onefile` 통과 후 생성 HTML을 루트와 모바일 학습 파일에 반영하고 모바일 캐시를 v48로 갱신했다.
-
-## Windows 설치 파일 배포 (2026-05-18)
-- 요청 목표는 프로젝트를 Windows에서 설치 가능한 독립 실행 앱으로 만들고, 설치 후 바탕화면 바로가기에서 실행되게 하는 것이다.
-- 기존 앱은 Vite React 웹앱이므로 Electron으로 `dist/index.html`을 감싸고, `electron-builder`의 NSIS 설치 프로그램을 사용한다.
-- 설치 바로가기는 수동 스크립트 대신 NSIS 설정의 `createDesktopShortcut`, `createStartMenuShortcut`, `shortcutName`으로 처리한다.
-- 생성 산출물은 `app/release/` 아래 Windows 설치 파일로 둔다.
-- 현재 PC에 `C:\Program Files\nodejs`가 없어 `winget`으로 Node.js LTS 24.15.0과 npm 11.12.1을 설치한 뒤 작업했다.
-- `winCodeSign` 압축 해제 중 심볼릭 링크 권한 오류가 발생해 `win.signAndEditExecutable=false`와 `CSC_IDENTITY_AUTO_DISCOVERY=false`를 적용했다. 앱 실행과 NSIS 설치 파일 생성에는 영향이 없고, 코드 서명만 하지 않는 구성이다.
-- 설치 파일은 `app/release/푸르넷수학 전자북-설치-1.0.0.exe`로 생성되었다. 설치하면 바탕화면과 시작 메뉴에 `푸르넷수학 전자북` 바로가기가 생성된다.
-- 검증은 `npm run installer:win`, `npm run lint`, `npm run verify`, `npm run onefile`을 통과했다.
-
-## 1학년 문제 정답 숨김 (2026-05-18)
-- 요청 목표는 1학년 과정에서 문제와 함께 노출되는 정답을 학생 풀이 화면에서 숨기는 것이다.
-- 채점 로직과 오답 피드백에서 쓰는 정답 데이터는 유지하고, 문제 본문이나 보조 시각 자료에 섞여 보이는 정답만 제거하는 방향으로 확인한다.
-- 수정 후 프로젝트 기본 검증인 `npm run lint`, `npm run verify`, `npm run onefile`을 실행하고 단일 HTML 산출물을 루트와 모바일 파일에 반영한다.
-- 원인은 1학년 생성기 일부가 `object-array`, `ten-frame`, 자리값 블록, 계산 결과 막대그래프에 정답 숫자 라벨을 함께 넣는 구조였다.
-- `GENERATORS` 반환 직후 1학년 문제만 후처리해 시각 자료의 정답 숫자 라벨을 끄고, 채점용 `answer`와 오답 피드백용 표시 값은 유지한다.
-- `verify.mjs`에는 1학년 시각 자료가 다시 정답 숫자 라벨을 켜면 실패하는 회귀 검증을 추가했다.
-- 새 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영하고, 모바일 캐시 버전을 `v49`로 올렸다.
-
-## 1학년 정답 숨김 설치 파일 반영 (2026-05-18)
-- 기존 `app/release/푸르넷수학 전자북-설치-1.0.0.exe`는 2026-05-18 오후 2시 산출물이라 이번 수정이 들어가지 않은 상태였다.
-- `npm run installer:win`으로 Electron/NSIS 설치 파일을 다시 생성해 현재 앱 코드가 설치본에 포함되도록 한다.
-- 재생성 결과 `app/release/푸르넷수학 전자북-설치-1.0.0.exe`는 2026-05-18 오후 9:48, 102,737,377바이트가 되었다.
-- `app/release.zip`도 현재 `release` 폴더 기준으로 다시 압축해 2026-05-18 오후 9:48, 250,396,890바이트가 되었다.
-
-## 선생님·클래스·학생 영구 등록과 진도 모니터링 (2026-05-18)
-- 목표는 앱 내용 업데이트 후에도 학생별 풀이 기록, 오답 기록, 등록 정보가 유지되도록 데이터베이스를 확장하는 것이다.
-- 기존 `learnerDb.ts`는 이미 `kang-taehoon-math-learner-db` IndexedDB와 localStorage 대체 저장을 사용한다. 이번 수정은 DB 버전을 올려 저장소와 인덱스만 추가하고, 기존 `attempts` 기록은 삭제하지 않는다.
-- 선생님, 클래스, 학생 등록 정보는 콘텐츠 DB와 분리해 학습 기록 DB에 저장한다. 학생의 실제 학습자 ID는 기존 `readerPrefs` 학습자 ID 규칙을 재사용해 기존 단원별 통계와 연결한다.
-- 상단 메뉴바는 등록 진입점을 빠르게 노출하는 용도이고, 실제 모니터링은 클래스 보드에서 담당 선생님, 학생별 진도, 코칭 문구, 진도맵을 한 번에 확인하도록 구성한다.
-- `learnerDb.ts`의 DB 버전을 2로 올리고 `teachers`, `classes`, `students`, `settings` 저장소를 추가했다. 업그레이드는 저장소와 인덱스 추가만 수행하므로 기존 풀이 기록은 유지된다.
-- 풀이 기록에는 `teacherId`, `teacherName`, `classId`, `className`을 함께 저장한다. 예전 기록은 학생의 `learnerId`로 다시 읽기 때문에 등록 이후에도 같은 학생의 기존 진도와 오답 기록을 클래스 보드에서 볼 수 있다.
-- 선생님 이름을 바꾸면 이미 연결된 클래스와 학생 레코드의 선생님 이름도 같이 갱신한다. 클래스 이름이나 담당 선생님을 바꾸면 해당 클래스 학생의 클래스명과 담당 선생님도 같이 맞춘다.
-- 상단에 `선생님 이름 등록`, `클래스 등록`, `학생 등록` 메뉴바를 추가했고, 등록된 선생님 이름은 메인 제목과 브라우저 제목, 학습 화면 라벨에 반영된다.
-- 클래스 모니터링 패널은 등록 학생 수, 클래스 누적 풀이, 평균 정답률, 코칭 필요 학생 수를 보여주고 학생별 정답률, 오답률, 진도맵, 다음 추천 학습을 표시한다.
-- 검증은 `npm run lint`, `npm run verify`, `npm run onefile`을 통과했다. 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영하고 모바일 캐시를 `v50`으로 올렸다.
-
-## 교사용·학생용 로그인 분리와 계정 관리 (2026-05-18)
-- 목표는 교사용 관리 모드와 학생용 학습 모드를 분리하고, 교사용 아이디/비밀번호와 학생용 아이디/비밀번호를 별도 데이터베이스 저장소로 관리하는 것이다.
-- 기존 학생 풀이 기록은 그대로 유지해야 하므로 `attempts`, `teachers`, `classes`, `students` 저장소를 삭제하거나 재작성하지 않고, 계정 저장소만 추가하는 IndexedDB 업그레이드로 처리한다.
-- 로컬 전자북 구조라 서버 인증은 없다. 비밀번호는 평문 저장을 피하고 브라우저 Web Crypto SHA-256 해시를 우선 사용하며, Web Crypto가 없는 실행 환경에서는 로컬 해시 대체값을 저장한다.
-- 회원가입은 상단 메뉴에서 역할을 고르게 하고 약관 동의 후 생성한다. 교사용 가입은 선생님 레코드와 연결하고, 학생용 가입은 선택한 클래스의 학생 레코드와 연결한다.
-- `learnerDb.ts`의 DB 버전을 3으로 올리고 `teacherAccounts`, `studentAccounts` 저장소를 추가했다. 기존 학습 기록과 등록 정보 저장소는 유지한다.
-- 교사용 로그인은 `teacherAccountId`, 학생용 로그인은 `studentAccountId`로 `settings`에 따로 저장한다. 학생용 로그인은 연결된 학생 레코드를 활성 학습자로 전환한다.
-- 상단 메뉴바는 `교사용 로그인`, `학생용 로그인`, `회원가입/약관`, `선생님 이름 등록`, `클래스 등록`, `학생 등록`으로 확장했다.
-- 학생용 로그인이 없으면 학습 시작 함수가 학생 로그인 메뉴로 돌려보내고 학습을 시작하지 않는다. 교사용 로그인이 없으면 선생님/클래스/학생 관리와 클래스 모니터링은 잠금 안내를 표시한다.
-- 회원가입 패널에는 역할 선택, 아이디, 비밀번호, 비밀번호 확인, 이름, 학생 클래스/학년, 약관 보기, 약관 동의 체크를 넣었다.
-- 검증은 `npm run lint`, `npm run verify`, `npm run onefile`을 통과했다. 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영하고 모바일 캐시를 `v51`로 올렸다.
-
-## 교사용·학생용 로그인 분리 설치 파일 반영 (2026-05-18)
-- 요청 목표는 교사용·학생용 로그인 분리와 회원가입/약관 UI가 Windows 설치 파일에도 들어가도록 `app/release` 산출물을 다시 만드는 것이다.
-- 기존 `app/release/푸르넷수학 전자북-설치-1.0.0.exe`는 2026-05-18 오후 9:48 산출물이므로 오후 10:32 이후 반영된 로그인 분리 변경이 들어가지 않은 상태다.
-- `npm run installer:win`으로 Electron/NSIS 설치 파일을 다시 생성하고, `app/release.zip`도 현재 `release` 폴더 기준으로 다시 압축한다.
-- 재생성 결과 `app/release/푸르넷수학 전자북-설치-1.0.0.exe`는 2026-05-18 오후 10:38, 102,744,107바이트가 되었다.
-- `app/release/푸르넷수학 전자북-설치-1.0.0.exe.blockmap`은 2026-05-18 오후 10:38, 106,548바이트가 되었다.
-- `app/release.zip`은 현재 `release` 폴더 기준으로 다시 압축해 2026-05-18 오후 10:39, 250,411,663바이트가 되었다.
-- `app/dist/assets/index-mFZOYMcP.js`에서 `교사용 로그인`, `학생용 로그인`, `회원가입/약관`, `teacherAccounts`, `studentAccounts` 문구가 확인되었고, `app/release/win-unpacked/resources/app.asar`에 같은 `dist` 빌드 파일이 포함되어 있다.
-
-## 학생 등록 옆 클래스 관리 (2026-05-18)
-- 요청 목표는 상단 등록 메뉴에서 `학생 등록` 옆에 `클래스 관리` 버튼을 노출하고, 등록된 클래스를 별도 패널에서 바로 관리할 수 있게 하는 것이다.
-- 기존에는 `클래스 등록` 폼과 하단 클래스 칩 선택만 있었으므로, 새 패널은 저장소를 새로 만들지 않고 기존 `classes`, `students`, `settings` 데이터와 `registerClassRecord`, `selectLearningRosterClass` 흐름을 재사용한다.
-- 클래스 관리는 교사용 관리 기능이므로 교사용 로그인이 없을 때는 로그인 안내를 보여주고, 로그인 후에는 클래스별 학생 수와 담당 선생님을 확인하면서 선택, 수정, 학생 추가로 이동할 수 있게 한다.
-- 상단 메뉴 순서는 `학생 등록` 다음에 `클래스 관리`가 오도록 확장했다. 클래스 관리 카드의 `선택`은 현재 클래스 전환, `수정`은 기존 클래스 등록 폼에 해당 클래스 값을 채워 이동, `학생 추가`는 학생 등록 폼에 해당 클래스와 학년을 채워 이동한다.
-- 검증은 `npm run lint`, `npm run verify`, `npm run onefile` 순서로 통과했다. 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영하고 모바일 캐시 버전을 `v52`로 올렸다.
-
-## 클래스 관리 설치 파일 반영 (2026-05-18)
-- 요청 목표는 `학생 등록` 옆 `클래스 관리` 버튼과 관리 로직이 Windows 설치 파일에도 포함되도록 `app/release` 산출물을 다시 만드는 것이다.
-- 기존 `app/release/푸르넷수학 전자북-설치-1.0.0.exe`는 2026-05-18 오후 10:38 산출물이므로 오후 10:51 이후 반영된 클래스 관리 변경이 들어가지 않은 상태였다.
-- `npm run installer:win`으로 Electron/NSIS 설치 파일을 다시 생성하고, `app/release.zip`도 현재 `release` 폴더 기준으로 다시 압축했다.
-- 재생성 결과 `app/release/푸르넷수학 전자북-설치-1.0.0.exe`는 2026-05-18 오후 10:55, 102,742,731바이트가 되었다.
-- `app/release/푸르넷수학 전자북-설치-1.0.0.exe.blockmap`은 2026-05-18 오후 10:55, 106,591바이트가 되었다.
-- `app/release.zip`은 현재 `release` 폴더 기준으로 다시 압축해 2026-05-18 오후 10:55, 250,411,556바이트가 되었다.
-- `app/dist`와 `app/release/win-unpacked/resources/app.asar`에서 `클래스 관리`, `classManage`, `class-management` 문구가 확인되어 설치본에 새 UI가 포함된 것을 확인했다.
-
-## Cloudflare Pages 서버 운영 최적화 (2026-05-18)
-- 요청 목표는 현재 전자북을 별도 Node 서버 없이 Cloudflare Pages 정적 호스팅 기준으로 운영하기 쉽게 만드는 것이다.
-- 공식 문서 기준으로 Pages는 빌드 출력 디렉터리를 정적 자산으로 서빙하고, `_headers` 파일은 빌드 산출물 안에 있을 때 정적 응답 헤더로 적용된다.
-- 현재 앱은 Vite React 정적 앱이므로 서버 코드를 만들지 않고 `app/dist`를 Pages 출력물로 고정하는 방식이 가장 작다.
-- `wrangler.toml`은 현재 폴더를 프로젝트 루트로 보는 직접 배포와 CI 배포에서 `app/dist`를 사용하도록 루트에 둔다.
-- Cloudflare Pages v3 빌드 이미지의 기본 Node.js는 `22.16.0`이고 현재 Vite 8 엔진 조건도 `^20.19.0 || >=22.12.0`이므로, 루트와 `app`에 `.node-version`을 두어 빌드 재현성을 맞춘다.
-- `app/public/_headers`는 Vite 빌드 때 `dist/_headers`로 복사된다. 해시가 붙는 `/assets/*`는 1년 immutable 캐시를 주고, `/`와 `/*.html`은 즉시 재검증하도록 하여 새 배포가 오래 묶이지 않게 한다.
-- CSP는 현재 React 컴포넌트가 인라인 style 속성을 여러 곳에서 쓰고 외부 Pretendard CSS를 로드하므로, 이번 작업에서는 기능을 깨지 않는 보안 헤더만 적용했다.
-- Cloudflare Pages 프로젝트 루트가 현재 폴더라면 빌드 명령은 `cd app && npm ci && npm run pages:build`, 출력 디렉터리는 `app/dist`다. 프로젝트 루트가 `app`이라면 빌드 명령은 `npm ci && npm run pages:build`, 출력 디렉터리는 `dist`다.
-- 검증은 `npm run lint`, `npm run verify`, `npm run onefile` 순서로 통과했다. `onefile`의 Vite 빌드에서 500kB 초과 청크 경고는 기존 단일 번들 크기 경고이며 빌드 실패는 아니다.
-- 빌드 후 `app/dist/_headers`가 생성되어 Pages 산출물에 캐시와 보안 헤더 정책이 포함되는 것을 확인했다.
-- 단일 HTML 산출물 `CODEX 수학 익힘북 전자북(26.05.17)/CODEX-수학-익힘북-전자북.html`, `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html`의 SHA256이 모두 `9C25EA7D105ADED1B34EDB993267E5B4D76ADEE9F3F3D427B654E1AC08E760DA`로 같아서 별도 복사 갱신은 필요하지 않았다.
-
-## Cloudflare Pages 서버 등록과 첫 배포 (2026-05-18)
-- Wrangler OAuth 로그인을 완료했고, Cloudflare Pages 프로젝트 `prunet-math-ebook`을 생성했다.
-- 프로젝트는 Git 연결 없이 직접 업로드 방식으로 등록되었고, 도메인은 `prunet-math-ebook.pages.dev`다.
-- `npm run pages:build`로 `app/dist`를 다시 생성한 뒤 `npx wrangler pages deploy dist --project-name prunet-math-ebook --branch main`으로 production 배포했다.
-- 실제 배포 명령과 맞추기 위해 `npm run pages:deploy`도 `--branch main`을 포함하도록 갱신했다.
-- 첫 배포 ID는 `7cbad7e8-2665-44b9-a9c4-ddb53ea59bf2`이고, Wrangler가 반환한 배포 URL은 `https://7cbad7e8.prunet-math-ebook.pages.dev`다.
-- 운영 URL `https://prunet-math-ebook.pages.dev/`는 HTTP 200으로 응답했고 HTML title은 `강태훈샘 수학 익힘책`으로 확인했다.
-- `https://prunet-math-ebook.pages.dev/`의 `Cache-Control`은 `public, max-age=0, must-revalidate`로 확인했다.
-- `https://prunet-math-ebook.pages.dev/assets/index-BhqB9KXi.js`의 `Cache-Control`은 `public, max-age=31536000, immutable`로 확인했다.
-- Windows Schannel에서 버전별 배포 URL HEAD 요청은 TLS 오류가 났지만, production Pages URL과 asset URL은 정상 응답했다.
-
-## 학습 DB·회원가입·클래스·학생 관리 점검 (2026-05-18)
-- 요청 목표는 학습용 IndexedDB/localStorage 저장 경로가 실제 화면 흐름에서 동작하는지, 회원가입과 클래스 관리, 학생 관리가 깨지지 않는지 확인하는 것이다.
-- 점검 범위는 교사용 회원가입, 교사용 로그인 상태, 클래스 등록, 클래스 관리의 선택·수정·학생 추가 이동, 학생 등록, 학생용 회원가입, 학생용 로그인, 학습 기록 저장이다.
-- Browser Use 플러그인 지침을 확인했지만 현재 세션에 Node REPL 브라우저 제어 도구가 노출되지 않아, 로컬 Vite 서버와 Playwright 기반 스모크 테스트로 대체한다.
-
-## 관리자 로그인과 전체 학습 데이터 모니터링 (2026-05-18)
-- 요청 목표는 교사용 로그인 왼쪽에 관리자 로그인을 추가하고, 교사용은 전체 학생 진도 모니터링, 관리자는 교사·학생·계정·학습 기록 전체 조회와 백업이 가능하도록 만드는 것이다.
-- 기존 계정 구조는 `teacherAccounts`, `studentAccounts`가 비밀번호 평문이 아닌 해시를 저장한다. 새 관리자 기능도 평문 비밀번호를 저장하지 않고 `adminAccounts` 저장소에 `passwordHash`만 저장한다.
-- IndexedDB 버전은 기존 학습 시도와 교사·클래스·학생 데이터를 지우지 않는 업그레이드로 올리고, localStorage fallback에도 관리자 계정 배열을 추가한다.
-- 교사용 모니터링은 기존 활성 클래스 기준 화면에서 전체 학생 기준 `loadAllLearningProgress()`로 바꾸고, 5초 주기로 갱신해 학생별 풀이 수, 정답률, 오답률, 코칭을 확인하도록 한다.
-- 관리자 화면은 계정 해시 목록, 전체 학습자 진도, 최근 학습 데이터, 백업 JSON 복사와 파일 저장을 제공한다.
-- 검증은 `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db`, 마지막 `npm run lint` 순서로 통과했다.
-- `npm run smoke:learning-db`는 관리자 계정 생성, `adminAccounts` 저장, 교사용 회원가입, 클래스 등록과 관리, 학생 등록, 학생용 회원가입과 로그인, 학습 기록 저장, 관리자 화면의 계정 해시와 최근 학습 데이터 표시를 확인한다.
-- 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고, 세 파일의 SHA256은 `B3FD367DE898777997E4EA017E874C8FB90E40A89AE2A9E9A82C830BCE5B183E`로 일치한다.
-- 모바일 서비스워커 캐시 버전은 `codex-math-mobile-v53`으로 올렸다.
-- Cloudflare Pages도 `npm run pages:deploy`로 production `main` 브랜치에 재배포했다. 배포 URL은 `https://68036e85.prunet-math-ebook.pages.dev`이고, 운영 URL `https://prunet-math-ebook.pages.dev/`는 HTTP 200과 `Cache-Control: public, max-age=0, must-revalidate`로 확인했다.
-
-## Google 관리자 인증과 교사용 학생 계정·진도 관리 (2026-05-19)
-- 요청 목표는 관리자 모드를 Google 로그인 인증으로 전환하고, 관리자 허용 이메일을 지정하며, 교사용 로그인 상태에서 클래스·학생·학생 계정·학생 진도 수정까지 가능하도록 확장하는 것이다.
-- Cloudflare Pages 정적 앱만으로는 Google ID 토큰 서명 검증을 서버에서 강제할 수 없으므로, 이번 구현은 Google Identity Services 프런트엔드 로그인 게이트와 Client ID·이메일·만료시간 확인을 적용한다. 운영 보안을 더 강하게 하려면 Cloudflare Worker에서 Google ID 토큰 검증을 추가해야 한다.
-- 관리자 계정 저장소는 비밀번호 계정을 더 만들지 않고 Google 이메일, 표시 이름, Google subject, 토큰 audience와 만료 시각을 저장한다. 현재 관리자 로그인은 `purunetkangtaehun@gmail.com`의 이메일 확인이 된 Google 응답에서만 열린다.
-- Google OAuth Client ID는 `VITE_GOOGLE_CLIENT_ID` 환경변수 또는 관리자 로그인 화면에서 저장한 로컬 설정을 사용한다. Cloudflare Pages 운영 환경에서는 빌드 변수로 넣는 방식이 가장 재현 가능하다.
-- 교사용 학생 등록 폼은 학생 이름·학년·클래스에 더해 학생 로그인 아이디, 새 비밀번호, 비밀번호 확인, 수정 진도, 수정 정답 수를 입력할 수 있게 했다.
-- 기존 학생 계정을 열어 진도만 수정할 때 새 비밀번호를 강제로 요구하지 않도록, 기존 아이디 유지와 계정 변경 요청을 분리했다.
-- 학습자 모니터링 목록과 관리자 전체 진도 목록에 `계정·진도 수정` 버튼을 추가해 선택한 학생의 계정과 진도 수정 폼으로 바로 이동한다.
-- 브라우저 스모크 테스트는 Google Identity Services를 테스트용으로 목 처리해 실제 OAuth 팝업 없이 관리자 Google 인증, 교사 회원가입, 클래스 관리, 학생 가입·로그인, 학습 기록, 학생 계정 비밀번호 변경, 학생 진도 override 저장을 검증하도록 갱신했다.
-- 검증은 `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` 순서로 통과했다. `npm run onefile`과 Pages 빌드의 500kB 초과 청크 경고는 기존 단일 번들 크기 경고이며 빌드 실패는 아니다.
-- 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고, 세 파일의 SHA256은 `867F7643D2129659BCEF21BFCC7171009475592F0E49422D448C2D67844F7D66`으로 일치한다.
-- 모바일 서비스워커 캐시 버전은 `codex-math-mobile-v54`로 올렸다.
-- Cloudflare Pages는 `npm run pages:deploy`로 production `main` 브랜치에 재배포했다. 배포 URL은 `https://bf3b24a4.prunet-math-ebook.pages.dev`이고 운영 URL `https://prunet-math-ebook.pages.dev/`는 HTTP 200, HTML 캐시 `public, max-age=0, must-revalidate`, asset 캐시 `public, max-age=31536000, immutable`로 확인했다.
-
-## 접힘형 관리 메뉴 UI 최적화 (2026-05-19)
-- 요청 목표는 관리자 로그인, 교사용 로그인, 학생용 로그인, 회원가입 약관, 선생님 이름 등록, 클래스 등록, 학생 등록, 클래스 관리 버튼과 입력 패널이 학습 콘텐츠 상단을 계속 차지하지 않게 하는 것이다.
-- 기본 화면은 학습 콘텐츠 가독성을 우선해 상단에 `관리 메뉴`와 `오늘 학습`만 남긴다.
-- `관리 메뉴`를 열었을 때만 로그인·회원가입·등록·관리 버튼과 선택한 입력 폼을 보여주고, 닫으면 입력 UI는 렌더링하지 않는다.
-- 학생 로그인이 필요해 학습 시작을 막는 경우, 클래스·학생 관리에서 수정으로 이동하는 경우처럼 입력이 필요한 흐름은 관리 메뉴가 자동으로 열리도록 처리한다.
-- 구현 결과 기본 홈 화면에서는 등록 메뉴바와 입력 패널이 렌더링되지 않고, 헤더 오른쪽의 `관리 메뉴` 버튼을 눌렀을 때 `registration-drawer` 안에 기존 메뉴와 폼이 표시된다.
-- 브라우저 스모크 테스트는 첫 화면에서 `nav.registration-menu-bar`가 보이지 않는지 확인한 뒤, `관리 메뉴`를 열어 기존 Google 관리자 로그인, 교사용 회원가입, 클래스 관리, 학생 로그인, 학습 기록, 학생 계정·진도 수정 흐름을 검증한다.
-- 검증은 `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` 순서로 통과했다.
-- 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고, 세 파일의 SHA256은 `9CBECA52C0B28D723769B648F4E16ED90BFDAFE934477660AE5C16762D92BBFD`로 일치한다.
-- 모바일 서비스워커 캐시 버전은 `codex-math-mobile-v55`로 올렸다.
-- Cloudflare Pages는 `npm run pages:deploy`로 production `main` 브랜치에 재배포했다. 배포 URL은 `https://f5f6da1c.prunet-math-ebook.pages.dev`이고 운영 URL `https://prunet-math-ebook.pages.dev/`는 HTTP 200, 새 asset `/assets/index-CioVF-Ua.js`, asset 캐시 `public, max-age=31536000, immutable`로 확인했다.
-
-## 교사용 일일 학습 진단서와 학부모 상담일지 자동 생성 (2026-05-19)
-- 요청 목표는 관리자 Google 이메일을 `purunetkangtaehun@gmail.com`으로 변경하고, 교사용 로그인 상태에서 학생별·날짜별 학습 진단서와 학부모 상담일지를 자동 생성하는 것이다.
-- 리포트 기준은 ASCA의 데이터 기반 학교상담, CASEL의 SEL 5개 역량, IES 초등 수학 중재 가이드의 체계적 명시 지도 관점을 참고한다.
-- 문구는 임상적 심리 진단이 아니라 학습 데이터 기반 교육 상담 참고 문서로 제한한다. 정서·동기 표현은 관찰 가능한 학습 행동과 가정 협력 제안으로만 작성한다.
-- 기존 `ClassLearningProgressSnapshot`의 학생별 요약만으로는 날짜별 보고서를 만들 수 없으므로, 학생별 실제 풀이 기록 배열을 진행 데이터에 포함해 교사용 모니터링에서 날짜별로 묶는다.
-- 구현 결과 교사용 학습자 모니터링에서 학생 카드별로 `날짜별 학습 진단서·학부모 상담일지` 접힘 영역이 표시되고, 날짜별 풀이 기록이 있는 학생은 학습 진단서와 학부모 상담일지가 자동 생성된다.
-- 검증은 `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` 순서로 통과했다.
-- 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고, 세 파일의 SHA256은 `232C5DE5B0FA7F5A39F35E72FCC83FD563279CB7500BAF8FC049FBC615E29EEE`로 일치한다.
-- 모바일 서비스워커 캐시 버전은 `codex-math-mobile-v56`으로 올렸다.
-- Cloudflare Pages는 `npm run pages:deploy`로 production `main` 브랜치에 재배포했다. 배포 URL은 `https://d6f9da6e.prunet-math-ebook.pages.dev`이고 운영 URL `https://prunet-math-ebook.pages.dev/`는 HTTP 200, 새 asset `/assets/index-BJ-bbl9J.js`, asset 캐시 `public, max-age=31536000, immutable`로 확인했다.
-
-## 학습 보고서 공유 버튼 제거와 관리자·교사용 상담 문서 패널 배치 (2026-05-19)
-- 요청 목표는 학습 보고서 헤더의 텔레그램·카카오톡 전송 버튼을 제거하고, 관리자 또는 교사 로그인 상태에서 학습 보고서 아래에 학생별 학습 진단서와 학부모 상담서 화면을 보이게 하는 것이다.
-- 보고서 복사 기능은 유지한다. 외부 메신저 직접 전송 상태와 함수는 제거해 UI와 개인정보 노출 가능성을 줄인다.
-- 기존 교사용 학습자 모니터링 카드는 진도와 코칭 요약 중심으로 남기고, 긴 진단서·상담서 본문은 학습 보고서 아래의 별도 관리자·교사용 문서 패널로 모은다.
-- 구현 결과 학습 보고서 헤더에는 `보고서 복사`만 남고, 관리자 또는 교사용 로그인 상태에서는 학습 보고서 바로 아래 `학생별 학습 진단서와 학부모 상담서` 패널이 표시된다.
-- 검증은 `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` 순서로 통과했다.
-- 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고, 세 파일의 SHA256은 `BB3C9EA64903293E5866064047D94927A90B3C31110E368375F33F5DAE6E24F6`로 일치한다.
-- 모바일 서비스워커 캐시 버전은 `codex-math-mobile-v57`로 올렸다.
-- Cloudflare Pages는 `npm run pages:deploy`로 production `main` 브랜치에 재배포했다. 배포 URL은 `https://d913c00f.prunet-math-ebook.pages.dev`이고 운영 URL `https://prunet-math-ebook.pages.dev/`는 HTTP 200, 새 asset `/assets/index-DKXHMy54.js`, asset 캐시 `public, max-age=31536000, immutable`로 확인했다.
-- 운영 asset에서 `manager-counsel-panel`과 `student-counsel-report` 클래스가 포함되고, `kakaotalk://`와 `https://t.me/share/url` 외부 전송 경로는 포함되지 않는 것을 확인했다.
-
-## 모험 지도 STEM 스토리텔링 고도화 (2026-05-19)
-- 요청 목표는 `모험 지도 > 스토리 단원 보기`를 1학년부터 6학년까지 현재 선택된 단원과 목차에 맞는 전문 스토리텔링 수학 이야기로 채우는 것이다.
-- 구현 기준은 National Academies의 통합 STEM 관점, ISTE의 컴퓨팅 사고와 데이터·알고리즘·추상화 관점, OECD PISA 2025의 디지털 세계 문제해결과 자기조절 학습 관점을 참고한다.
-- 콘텐츠는 외부 본문을 복사하지 않고, 현재 전자북 단원·목차 제목과 설명을 기반으로 단원별 이야기, 목차별 미션, STEM 설계 과제, 그래프·도표·수식·벡터 장면을 자동 생성한다.
-- 기존 `CHAPTERS`는 5학년 중심 제목이 고정되어 있어 1~6학년 전체에는 맞지 않는다. 새 방식은 `contentUnits`를 받아 현재 학년·연산 과정의 모든 단원에 맞춰 스토리 챕터를 동적으로 만든다.
-- 구현 결과 `app/src/lib/story.ts`에 `buildStemStoryChapters`를 추가해 현재 선택된 `contentUnits` 전체를 단원별 STEM 스토리 챕터로 변환한다. 각 챕터에는 단원 이야기, STEM 초점, 설계 과제, 데이터 질문, 핵심 수식, 목차별 미션이 포함된다.
-- `app/src/App.tsx`의 모험 지도는 고정 `CHAPTERS` 대신 `stemStoryChapters`를 사용하며, 단원 카드를 열면 인라인 SVG 벡터 장면, 역량 분포 막대 도표, 탐구 난이도 선 그래프, 목차별 탐구 미션 버튼이 표시된다.
-- 검증은 `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` 순서로 통과했다.
-- 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고, 세 파일의 SHA256은 `3F0F194A37EFC15B261430BEC20AF9634523C0667512EBDFCE48B15276B82955`로 일치한다.
-- 모바일 서비스워커 캐시 버전은 `codex-math-mobile-v58`로 올렸다.
-- Cloudflare Pages는 `npm run pages:deploy`로 production `main` 브랜치에 재배포했다. 배포 URL은 `https://ceea1a0c.prunet-math-ebook.pages.dev`이고 운영 URL `https://prunet-math-ebook.pages.dev/`는 HTTP 200, 새 asset `/assets/index-C-20szea.js`와 `/assets/index-2RUyZAMS.css`, asset 캐시 `public, max-age=31536000, immutable`로 확인했다.
-- 운영 asset에서 `story-vector`, `story-chapter-card`, `story-topic-mission` 클래스가 포함되는 것을 확인했다.
-
-## 학생용 로그인 학습자 이름 자동 반영과 개별 학습 선택 (2026-05-19)
-- 요청 목표는 학생용 로그인 후 학습자 이름이 학생 등록 이름으로 자동 표시되고, 학생이 단원과 목차를 직접 골라 개별 학습을 시작할 수 있게 만드는 것이다.
-- 기존 `applyStudentRecordToLearner`는 학생 레코드를 학습자 상태로 반영하지만, 로그인 직후에는 인증 계정의 `studentId`를 우선으로 확인하는 보강이 필요하다.
-- 학생 모드에서는 이름·학년 입력을 계정 학생 정보로 고정하고, 학습 내용 선택 영역은 `학생 선택 학습`으로 명확히 표시해 단원·공부할 내용 드롭다운을 바로 사용할 수 있게 한다.
-- 구현 완료: 학생용 로그인 계정의 `studentId`를 타입 가드로 확인한 뒤 해당 학생 레코드를 학습자 프로필에 우선 반영하고, 학생 모드에서는 학습자 이름·학년 입력과 학년 빠른 선택 버튼을 잠가 계정값이 유지되도록 했다.
-- 구현 완료: 학생 로그인 상태의 학습 차례 UI를 `학생 선택 학습`으로 표시하고, 단원·목차 드롭다운에서 학생이 직접 선택한 목차를 `선택한 목차 학습` 버튼으로 시작할 수 있게 했다.
-- 검증 완료: `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` 통과. 스모크 결과의 `learnerName`은 등록 학생명 `점검 학생 mpbfacjq`로 확인됐다.
-- 산출물 반영: 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 복사했고, 세 파일 SHA256은 `BD25146014F8A781E857951F9D129DCE55D9BC6C6AB7F950F7FF2B0F4C6E6D07`로 일치한다.
-- 모바일 캐시: `모바일 홈페이지형 전자북(26.05.17)/sw.js`의 `CACHE_NAME`을 `codex-math-mobile-v59`로 갱신했다.
-- Cloudflare Pages 배포: `npm run pages:deploy` 통과, 새 URL `https://e0401159.prunet-math-ebook.pages.dev` 응답 `200`, 새 번들 `index-TKy7bg9g.css`와 `index-DHvkym_Z.js` 참조 확인.
-
-## 윈도우 설치 파일 반영 (2026-05-19)
-- 요청 목표는 직전 학생용 로그인 이름 자동 반영과 개별 학습 선택 기능을 Windows 설치 파일에도 포함시키는 것이다.
-- 현재 Windows 설치 파일은 `app/package.json`의 `installer:win` 스크립트가 `dist/**/*`, `electron/**/*`, `package.json`을 Electron Builder NSIS 패키지로 묶어 `app/release`에 생성하는 구조다.
-- 기존 설치 산출물은 `app/release/푸르넷수학 전자북-설치-1.0.0.exe`, `app/release/푸르넷수학 전자북-설치-1.0.0.exe.blockmap`, `app/release/win-unpacked`로 확인됐다.
-- 반영 완료: `npm run installer:win` 통과. 새 설치 파일은 `app/release/푸르넷수학 전자북-설치-1.0.0.exe`이며 크기는 `102752917` bytes, 수정 시각은 `2026-05-19 오전 1:38:15`다.
-- 검증 완료: `app/release/win-unpacked/resources/app.asar` 안에 최신 번들 `dist/assets/index-TKy7bg9g.css`, `dist/assets/index-DHvkym_Z.js`, `dist/index.html`, `electron/main.cjs`가 포함되어 있다.
-- 기능 포함 확인: `app.asar` 내부 CSS/JS에서 `student-study-selector`, `input[readonly]`, `learner-name` 문자열을 확인해 학생용 개별 학습 선택 UI와 학습자 이름 자동 반영 경로가 설치 패키지에도 들어간 것을 검증했다.
-- SHA256: 설치 EXE `DA4106F93451BBE64C8984DE050AF0D39C7FBFB2B23BE04F1F2D31DFEAACAC0D`, blockmap `F13341BD655B329819CDA885AD9BB3806917DEE4E5955659DE4BCB7B8DCFC0C4`, app.asar `E3409C0F8F2F8C9DD54FFD6C68E56550776A85F52447190A65A1E9A21C00213D`.
-- 참고: Electron Builder 출력에서 별도 앱 아이콘 파일이 없어 기본 Electron 아이콘이 사용된다는 경고가 있었으나, NSIS 설치 파일 생성은 정상 완료됐다.
-
-## 교사용 로그인 학습 진행 허용 (2026-05-19)
-- 요청 목표는 교사용 계정으로 로그인한 상태에서도 오늘 학습, 선택 단원, 선택 목차, 전체 학습 등 모든 학습 시작 버튼을 바로 진행할 수 있게 하는 것이다.
-- 원인은 `App.tsx`의 공통 `start()` 함수가 학생용 로그인만 학습 시작 권한으로 인정해, 교사용 로그인 상태에서도 학생용 로그인 화면으로 되돌리는 조건이었다.
-- 학습 기록 저장 구조와 학생 계정 자동 적용 로직은 건드리지 않는다. 교사가 학습을 시작하면 현재 선택된 학습자 프로필과 활성 클래스 기준으로 기존 기록 저장 경로를 그대로 사용한다.
-- 구현 방향은 공통 권한값 `canStartLearning`을 두고 학생용 로그인 또는 교사용 로그인 중 하나가 있으면 `start()`가 학습 화면으로 진입하도록 하는 것이다.
-- 미로그인 상태의 안내 문구는 학생용 또는 교사용 아이디로 로그인하라는 문구로 맞췄다.
-- `npm run onefile` 첫 실행은 `app/index.html`이 이전 빌드 산출물 `./assets/index-DHvkym_Z.js`를 직접 참조하고 있어 실패했다. 원본 Vite 엔트리인 `/src/main.tsx` 스크립트로 복구한 뒤 재검증했다.
-- 검증은 `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` 순서로 통과했다. 스모크 결과는 교사 계정 1개, 학생 계정 1개, 풀이 기록 1개, `learnerName` `점검 학생 mpbg8fth`로 확인됐다.
-- 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고, 세 파일 SHA256은 `1146D9FE00EBC750D1D4AE61FA8AD2C2914ED6AF8802F75A2BE11673CA15E77E`로 일치한다.
-- 모바일 서비스워커 캐시 버전은 `codex-math-mobile-v60`으로 올렸다.
-
-## 교사용 로그인 학습 진행 허용 설치 파일 반영 (2026-05-19)
-- 요청 목표는 교사용 로그인으로 모든 학습 내용을 진행할 수 있게 한 최신 앱 코드를 Windows 설치 파일에도 포함하는 것이다.
-- 기존 설치 파일은 `app/package.json`의 `installer:win` 스크립트가 `dist/**/*`, `electron/**/*`, `package.json`을 Electron Builder NSIS 패키지로 묶어 `app/release`에 생성하는 구조다.
-- 반영 완료: `npm run installer:win` 통과. 새 설치 파일은 `app/release/푸르넷수학 전자북-설치-1.0.0.exe`이며 크기는 `102752984` bytes, 수정 시각은 `2026-05-19 오전 2:02:33`이다.
-- 새 blockmap은 `app/release/푸르넷수학 전자북-설치-1.0.0.exe.blockmap`이며 크기는 `106541` bytes, 수정 시각은 `2026-05-19 오전 2:02:35`이다.
-- 검증 완료: `app/release/win-unpacked/resources/app.asar` 내부 목록에 `\dist\index.html`, `\dist\assets\index-B1eUpA_g.js`, `\dist\assets\index-TKy7bg9g.css`, `\electron\main.cjs`가 포함되어 있다.
-- 기능 포함 확인: `app.asar`를 임시 폴더에 풀어 확인한 결과 `dist/index.html`은 `index-B1eUpA_g.js`와 `index-TKy7bg9g.css`를 참조하고, 번들 JS에는 학습 시작 권한 조건이 `Ge=Re||Le`로 들어가 학생 로그인 또는 교사용 로그인을 허용한다.
-- SHA256: 설치 EXE `C26953D881C20C8656E667C80B9399C3F3B41EE530FEC764E139C4D158491EB9`, blockmap `0F7C7932D3FB9B2EA15BD7D6723ABAB50881D02CE038D56C807691844EAF5EFF`, app.asar `360F6C5CED9B444F92C805800DF75C8DD3AD9B2AA2D1D094E83B2FDB3EF2B7F3`.
-- 참고: Electron Builder 출력에서 별도 앱 아이콘 파일이 없어 기본 Electron 아이콘이 사용된다는 경고와 큰 번들 크기 경고가 있었으나, NSIS 설치 파일 생성과 내부 번들 검증은 정상 완료됐다.
-
-## 교사용 계정 전체 학습 데이터 접근 보강 (2026-05-19)
-- 요청 목표는 교사용 아이디로만 로그인한 상태에서도 모든 학생용 학습 데이터에 접근하고, 모든 학습 콘텐츠를 바로 실행할 수 있게 하는 것이다.
-- 현재 학습 시작 권한은 이미 교사용 로그인을 허용하지만, 최근 학습 기록과 전체 원시 데이터 스냅샷은 관리자 로그인일 때만 갱신되어 교사용 단독 로그인 상태에서는 데이터 접근이 비어 보일 수 있다.
-- 구현 기준은 관리자 Google 계정 권한을 교사용 계정에 넘기는 것이 아니라, 교사용 계정도 학생·클래스·학습 기록 조회용 스냅샷과 전체 진도 스냅샷을 읽게 하는 것이다.
-- 검증 기준은 스모크 테스트에서 학생 풀이 기록 생성 후 학생과 관리자를 모두 로그아웃하고, 교사용 아이디만 로그인한 상태로 학생별 진도, 최근 학습 데이터, 선택 학습 시작을 확인하는 것이다.
-- 구현 완료: `canViewAllStudentLearningData` 권한값을 추가해 교사용 또는 관리자 로그인 상태에서 전체 학생 진도와 학습 기록 스냅샷을 갱신하도록 했다.
-- 구현 완료: 하단 학습자 모니터링 패널에 `최근 학습 데이터` 표를 추가해 교사용 로그인만으로도 학생명, 클래스, 단원, 정오답, 일시를 바로 볼 수 있게 했다.
-- 스모크 테스트 보강: 학생 풀이 기록 생성 후 학생용, 관리자, 교사용 세션을 모두 로그아웃하고 교사용 아이디로 다시 로그인해 `교사용 전체`, `최근 학습 데이터`, 학생명, 클래스명, 선택 학습 시작을 검증하도록 했다.
-- 검증 완료: `npm run lint`, `npm run verify`, `npm run smoke:learning-db`, `npm run onefile` 통과. 스모크 결과는 교사 계정 1개, 학생 계정 1개, 풀이 기록 1개, `learnerName` `점검 학생 mpbocxyb`, `className` `점검 6학년반 mpbocxyb`로 확인됐다.
-- 산출물 반영: 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고, 세 파일 SHA256은 `4102940375CF59B87798AFE5CA10FFAABB0D1F78BAC6631CED8190DD9CE60A1F`로 일치한다.
-- 모바일 서비스워커 캐시 버전은 `codex-math-mobile-v61`로 올렸다.
-- Cloudflare Pages 배포: `npm run pages:deploy` 통과, 새 배포 URL은 `https://c4c31db9.prunet-math-ebook.pages.dev`이다. 운영 URL `https://prunet-math-ebook.pages.dev/`는 HTTP 200, HTML 캐시 `public, max-age=0, must-revalidate`, asset 캐시 `public, max-age=31536000, immutable`로 확인했다.
-- 운영 HTML은 새 번들 `index-B_W3Bx7I.js`와 `index-TKy7bg9g.css`를 참조하고, 운영 JS 번들에서 `teacher-recent-attempts` 클래스가 포함된 것을 확인했다.
-
-## 교사용 전체 학습 데이터 접근 보강 설치 파일 반영 (2026-05-19)
-- 요청 목표는 Cloudflare Pages에 배포한 교사용 전체 학습 데이터 접근 보강 버전을 Windows 설치 파일에도 포함하는 것이다.
-- 반영 완료: `npm run installer:win` 통과. 새 설치 파일은 `app/release/푸르넷수학 전자북-설치-1.0.0.exe`이며 크기는 `102752929` bytes, 수정 시각은 `2026-05-19 05:52:18`이다.
-- 새 blockmap은 `app/release/푸르넷수학 전자북-설치-1.0.0.exe.blockmap`이며 크기는 `106603` bytes, 수정 시각은 `2026-05-19 05:52:20`이다.
-- `app/release/win-unpacked/resources/app.asar`는 크기 `12884347` bytes, 수정 시각 `2026-05-19 05:51:50`로 갱신됐다.
-- `app/release.zip`은 최신 `app/release` 폴더 기준으로 다시 압축했고 크기는 `250432830` bytes, 수정 시각은 `2026-05-19 05:53:57`이다. ZIP 내부에 `푸르넷수학 전자북-설치-1.0.0.exe`와 `win-unpacked\resources\app.asar`가 포함된 것을 확인했다.
-- 기능 포함 확인: `app/dist/assets/index-B_W3Bx7I.js`와 `app/release/win-unpacked/resources/app.asar`에서 `teacher-recent-attempts` 문자열을 확인했고, `app.asar` 안에서 `index-B_W3Bx7I.js` 참조도 확인했다.
-- SHA256: 설치 EXE `E7891AEA9711945D997D3CE116BD3BDED629E1CD423C3B7A5A89F56A309C2323`, blockmap `F85864508AE616E11CAC4B52E41482F088B873CD3FEE774093CB67F7245AA082`, app.asar `43452470FAD45A36705C8BE39D715F7DACB69A512E2B65875BAC771FE199B881`, release.zip `B0708CA6DDED9224BA0F977B90A56794E76D164DF9CFD3574C30D5F2AFA8F4AC`.
-- 참고: Electron Builder 출력에서 별도 앱 아이콘이 없어 기본 Electron 아이콘이 사용된다는 기존 경고와 큰 번들 크기 경고가 있었지만, 설치 파일 생성과 내부 번들 검증은 정상 완료됐다.
-
-## 관리자 계정별 학습 데이터 접근 권한과 보안 보강 (2026-05-19)
-- 요청 목표는 관리자 모드에서 교사와 학생 계정별로 로그인, 학습 실행, 학생 학습 데이터 접근 권한을 따로 제한하고, 불량 사용자를 차단하며, 비밀번호 해킹 위험을 줄이는 것이다.
-- 현재 계정 저장 구조는 비밀번호 평문을 저장하지 않고 `passwordHash`를 저장하지만, 관리자 계정 데이터 표와 백업 JSON에는 해시가 노출될 수 있어 이 경로를 차단해야 한다.
-- 브라우저 단일 HTML/IndexedDB 앱은 서버 권한 검증을 대체할 수 없으므로, 이번 보강은 로컬 앱의 실제 UI·실행 경로 차단과 해시 비노출, 백업 민감정보 제외를 기준으로 적용한다.
-- 검증 기준은 관리자가 교사·학생 권한을 바꾸면 즉시 로그인, 학습 시작, 전체 학습 데이터 조회가 제한되는지 스모크 테스트로 확인하는 것이다.
-- 구현 완료: 교사·학생 계정에 `access` 권한 정책을 추가하고 기존 계정은 정상 권한으로 자동 해석하도록 했다. 권한에는 로그인, 학습 실행, 학생 학습 데이터 조회, 클래스·학생 관리 허용값이 들어간다.
-- 구현 완료: 관리자 모드 계정 데이터 영역에 `교사·학생 개별 제한` 카드를 추가했다. 관리자는 계정별로 `전체 허용`, `학습 데이터 차단`, `학습 차단`, `계정 차단`을 바로 적용할 수 있다.
-- 구현 완료: 계정 차단 시 로그인 단계에서 거부하고, 학생 계정이 로그인된 상태에서는 학생 학습 실행 권한을 우선 적용해 같은 브라우저에 남은 교사용 세션으로 학생 차단을 우회하지 못하게 했다.
-- 구현 완료: 교사용 학습 데이터 조회 권한이 꺼진 경우 전체 학습자 진도와 최근 학습 데이터 패널 대신 제한 안내를 표시한다.
-- 보안 보강: 관리자 계정 표에는 비밀번호 해시를 표시하지 않고 `해시 비노출` 상태만 표시한다. 관리자 백업 JSON에서도 `passwordHash`를 제거하고 `password-hash-redacted` 표시와 접근 권한만 남긴다.
-- 스모크 테스트 보강: 관리자 권한 카드가 보이는지, 해시 비노출 문구가 보이는지, 학생 학습 차단, 교사 데이터 차단, 교사 계정 차단, 재허용 후 교사 로그인과 학습 시작이 모두 동작하는지 확인하도록 했다.
-- 검증 완료: `npm run lint`, `npm run verify`, `npm run smoke:learning-db`, `npm run onefile` 통과. 스모크 결과는 교사 계정 1개, 학생 계정 1개, 풀이 기록 1개, `learnerName` `점검 학생 mpbpbpy8`, `className` `점검 6학년반 mpbpbpy8`로 확인됐다.
-- 산출물 반영: 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고, 세 파일 SHA256은 `A3F3BAF6710560727102D5CCF930ED54913951510D65D88E8DF64717D79C154F`로 일치한다.
-- 모바일 서비스워커 캐시 버전은 `codex-math-mobile-v62`로 올렸다.
-- Cloudflare Pages 배포 완료: `npm run pages:deploy` 통과, 새 배포 URL은 `https://26381ad3.prunet-math-ebook.pages.dev`이다. 운영 URL `https://prunet-math-ebook.pages.dev/`는 HTTP 200이고 운영 JS `assets/index-Cpbcef99.js`에서 `account-access-card`, `password-hash-redacted` 문자열이 확인됐다.
-- 설치 파일 반영 완료: `npm run installer:win` 통과. 새 설치 파일은 `app/release/푸르넷수학 전자북-설치-1.0.0.exe`, 크기 `102755607` bytes, 수정 시각 `2026-05-19 06:17:55`, SHA256 `F5AF7F871ECDA229DC5C9D6BF8F12AAC740890D3CFDCF794D8EF5C3BABC77D69`이다.
-- 설치 산출물 검증: blockmap SHA256 `6FDBB111220C7545E7E1F70C342DD268A81410A428E6DD3BC88C28AA472D6322`, `app.asar` SHA256 `FCBB622C42888B3A496CD1F4709DD35C2848AB48A7E0E5B136DA74376699275E`, `release.zip` SHA256 `9E5D5D0801D8BFD7DD268CE2118C0C654C41246D237AE67FB24249570080A6F0`이다.
-- 참고: Electron Builder 출력에서 별도 앱 아이콘이 없어 기본 Electron 아이콘이 사용된다는 기존 경고와 Vite 번들 크기 경고가 있었지만, 설치 파일 생성과 배포는 정상 완료됐다.
-
-## 관리자 Google 승인 오류 로컬 복구 로그인 (2026-05-19)
-- 증상은 Google 계정 로그인 팝업에서 `액세스 차단됨: 승인 오류`, `no registered origin`, `401 오류: invalid_client`가 표시되는 것이다.
-- 원인은 앱의 내부 관리자 권한 코드가 아니라 Google Cloud OAuth Web Client에 현재 실행 주소가 승인된 JavaScript Origin으로 등록되지 않았거나, 웹 클라이언트 ID가 아닌 값을 넣은 경우다.
-- Cloudflare 운영 주소는 Google Cloud Console에서 `https://prunet-math-ebook.pages.dev`를 승인된 Origin에 등록해야 한다. 개발 주소는 `http://127.0.0.1:4174`와 필요한 경우 `http://localhost:4174`를 등록한다.
-- Windows 설치 파일이나 단일 HTML처럼 `file://`로 실행되는 환경은 Google Identity Services가 Origin 승인을 안정적으로 통과하기 어렵기 때문에, 앱 안에 로컬 관리자 PIN 복구 로그인을 추가하는 방향으로 보강한다.
-- 로컬 관리자 PIN은 평문 저장 없이 기존 계정 해시 저장 경로를 사용하고, 관리자 백업에서는 해시를 계속 제외한다.
-- 구현 완료: 관리자 로그인 화면에 승인된 JavaScript Origin 안내와 로컬 관리자 PIN 로그인·저장 폼을 추가했다. 기존 관리자 계정이 이미 있는 기기에서는 무단 PIN 재설정을 막기 위해 관리자 로그인 상태에서만 기존 관리자 PIN 변경을 허용한다.
-- 보안 보강: 관리자 PIN은 `sha256-v1` 해시로 저장하고 백업 JSON에서는 `passwordHash`를 제거한 뒤 `local-admin-pin-redacted` 또는 `google-oauth-local-pin-redacted` 상태만 남긴다.
-- 스모크 테스트 보강: Google 테스트 로그인 후 로컬 관리자 PIN 저장, 관리자 로그아웃, 로컬 PIN 재로그인까지 확인한다. 이번 실행 결과 `SMOKE PASSED`, 관리자/교사/학생 계정 각 1개와 풀이 기록 1개가 생성됐다.
-- 검증 완료: `app` 폴더 기준 `npm run lint`, `npm run verify`, `npm run smoke:learning-db`, `npm run onefile` 통과. 루트에서 실행한 `npm run lint`는 루트에 `package.json`이 없어 `ENOENT`로 실패했고, 실제 앱 패키지 위치인 `app`에서 같은 검증을 완료했다.
-- 산출물 반영: 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고, 모바일 서비스워커 캐시는 `codex-math-mobile-v63`으로 올렸다.
-- Cloudflare Pages 배포 완료: `npm run pages:deploy` 통과, 새 배포 URL은 `https://1e40a8a0.prunet-math-ebook.pages.dev`이다. 운영 URL `https://prunet-math-ebook.pages.dev/`와 새 배포 URL 모두 HTTP 200을 확인했다.
-- 배포/설치 번들 확인: 운영 빌드 JS는 `assets/index-DTJgLsRB.js`이고 `local-admin-login-form`, `local-admin-pin-redacted` 문자열이 확인됐다. `app.asar` 내부 `\dist\assets\index-DTJgLsRB.js`에서도 같은 문자열이 확인됐다.
-- 설치 파일 반영 완료: `npm run installer:win` 통과. 새 설치 파일은 `app/release/푸르넷수학 전자북-설치-1.0.0.exe`, 크기 `102755334` bytes, 수정 시각 `2026-05-19 06:42:53`, SHA256 `5F30B3990FD4E33BDCEE644B44E12E0D66D2114DDECC8042C5A54E600E71130B`이다.
-- 설치 산출물 검증: blockmap SHA256 `AD3F9B542AB1589094F7524F2F8CE20677D51F90DCA92A31DAF7043DBC9B9DEA`, `app.asar` SHA256 `10AB36523EC7837ABB061F371DB1EDDEB4178820F04883E7742B444CC816DCAA`, `release.zip` SHA256 `391DF13F4B0FCF00DCBE93E92FBCCEC3100688AA085D314AE83AE8981FF00B54`이다.
-- 참고: Electron Builder 출력에서 앱 아이콘 미설정 fallback 경고와 Vite 번들 크기 경고가 있었지만, 설치 파일 생성과 배포는 정상 완료됐다.
-
-## 관리자 대리 사용과 이상행동 자동 차단 알림 (2026-05-19)
-- 업로드된 새 증상은 Google 로그인 중 Windows 보안 패스키 확인 단계에서 `알 수 없는 오류가 발생했습니다`가 뜨는 것이다. 이 단계는 Google/Windows 인증 UI라 앱 코드가 직접 제어할 수 없으므로, 앱 내부에서는 로컬 관리자 PIN과 교사·학생 계정 대리 사용 경로를 더 강화한다.
-- 목표는 관리자 모드에서 교사·학생 계정을 명시적으로 대리 사용해 학습 데이터와 학습 화면에 접근할 수 있게 하고, 반복 실패 로그인이나 학생의 비정상 빠른 연속 오답 같은 악성 사용 징후를 자동 감시해 권한을 제한하는 것이다.
-- 정적 Cloudflare Pages와 Windows 단일 앱 구조에서는 서버 비밀키를 보관해 이메일·카카오톡을 자동 발송할 수 없으므로, 이번 구현은 관리자 화면의 실시간 알림함, 이메일 `mailto:` 작성, 카카오톡 메시지 복사용 알림 문구를 제공하는 방식으로 적용한다.
-- 검증 기준은 관리자 대리 사용 버튼으로 교사/학생 계정 세션이 열리고, 자동 감시 기준 초과 시 해당 계정 권한이 제한되며, 관리자 알림함에서 이메일·카카오톡 안내 문구가 확인되는지 스모크 테스트로 확인하는 것이다.
-- 구현 결과: 관리자 계정 관리 카드에 `관리자 대리 사용` 버튼을 추가했고, 교사·학생 계정의 학습 데이터 접근 권한을 관리자 모드에서 개별적으로 켜고 끌 수 있게 유지했다. 대리 사용은 비밀번호 입력 없이 관리자 권한으로 해당 교사/학생 세션을 활성화한다.
-- 보안 감시 결과: 교사/학생 로그인 실패가 10분 안에 5회 이상 반복되면 로그인·학습·데이터 열람 권한을 자동 제한한다. 학생이 3분 안에 빠른 연속 오답 6회 이상을 기록하면 학습과 데이터 열람 권한을 자동 제한한다.
-- 알림 결과: 관리자 화면에 자동 제한 알림함을 추가했고, 각 알림에서 이메일 작성 창 열기, 카카오톡 전달 문구 복사, 확인 처리 버튼을 제공한다.
-- 검증 결과: `npm run lint`, `npm run verify`, `npm run smoke:learning-db`, `npm run onefile` 통과. 스모크 테스트는 관리자 대리 사용, 반복 실패 로그인 자동 제한, 관리자 알림함, 카카오톡 문구 복사를 포함한다.
-- 배포 결과: Cloudflare Pages 새 배포 `https://98c9a8a2.prunet-math-ebook.pages.dev` 완료, `https://prunet-math-ebook.pages.dev` HTTP 200 확인. Windows 설치 파일과 `release.zip`을 새 빌드로 재생성했다.
-- 설치 산출물 검증: `app/release/푸르넷수학 전자북-설치-1.0.0.exe` SHA256 `F9AB73D5289CFB0AB3FC95D7F6895C2B502BA4D15FCE207E515B3886A171CC57`, `app/release.zip` SHA256 `21BE0A4B2EFB4DAF0D635D1C2A5383E3B3EDF1BFE335E11F506F574447580980`이다.
-## 관리자 교사·학생 아이디 사용 승인 UI (2026-05-19)
-- 요청 목표는 관리자 계정으로 로그인했을 때 등록된 교사용 아이디와 학생용 아이디의 사용 승인을 화면 상단에서 바로 처리하게 하는 것이다.
-- 기존 `canLogin` 권한이 로그인 허용과 차단을 이미 담당하므로, 별도 저장소를 만들지 않고 `blockedReason`에 승인 대기 상태를 표시해 승인 전 로그인을 막는 방향이 가장 작고 안전하다.
-- 신규 회원가입 계정은 곧바로 로그인시키지 않고 승인 대기 상태로 저장한 뒤, 관리자가 `승인 인증`을 누르면 기본 권한으로 전환한다.
-- 검증 기준은 가입 후 승인 대기 문구, 승인 전 로그인 차단, 관리자 승인 후 교사·학생 로그인이 정상 진행되는 브라우저 스모크 흐름과 기본 lint/verify/onefile 통과다.
-- 구현 결과: 관리자 로그인 화면 상단에 `사용 승인` 바로가기와 `사용 승인 관리` 패널을 배치했고, 승인 대기·승인 완료·등록 계정 수를 함께 표시한다.
-- 구현 결과: 교사용·학생용 계정 카드마다 `승인 인증`과 `승인 보류` 버튼을 제공해 신규 계정 승인과 승인 취소를 같은 권한 저장 흐름으로 처리한다.
-- 구현 결과: 승인 대기 계정은 `approval-pending` 차단 사유로 저장되며, 로그인 시 `관리자 승인 후 로그인할 수 있습니다` 안내를 표시한다.
-- 검증 결과: `npm run lint`, `npm run verify`, `npm run smoke:learning-db`, `npm run onefile` 통과. 스모크 테스트는 교사와 학생 가입 후 승인 전 로그인 차단, 관리자 승인, 승인 후 로그인을 확인한다.
-- 산출물 반영: 생성된 단일 HTML을 `푸르넷수학-연습.html`과 `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고, 세 HTML SHA256은 `DC456EC89D5F1BA805E0DAE1DCF06471F884697D22CB69399B7D7AC636BA1009`로 일치한다.
-- 모바일 서비스워커 캐시 버전은 `codex-math-mobile-v65`로 올렸다.
-
-## 승인 UI Cloudflare Pages와 Windows 설치 파일 반영 (2026-05-19)
-- 요청 목표는 관리자 교사·학생 아이디 사용 승인 UI가 반영된 최신 앱을 Cloudflare Pages 운영 서버와 Windows 설치 파일에 반영하는 것이다.
-- 검증 기준은 `npm run pages:deploy` 배포 성공, 운영 URL HTTP 200 확인, `npm run installer:win` 설치 파일 생성 성공, `app/release.zip` 최신화와 산출물 SHA256 기록이다.
-- Cloudflare Pages 결과: `npm run pages:deploy`는 `npm run build`와 Vite 빌드까지 성공했지만 Wrangler가 비대화형 환경에서 `CLOUDFLARE_API_TOKEN`이 없다고 거부해 업로드가 완료되지 않았다.
-- 운영 URL 확인: `https://prunet-math-ebook.pages.dev/`는 HTTP 200으로 응답하지만 현재 운영 JS `assets/index-B_ESa1It.js`에는 `approval-pending`과 `approval-management-panel` 문자열이 없어 최신 승인 UI가 아직 반영되지 않았다.
-- Windows 설치 파일 반영 완료: `npm run installer:win` 통과. 새 설치 파일은 `app/release/푸르넷수학 전자북-설치-1.0.0.exe`, 크기 `102757410` bytes, 수정 시각 `2026-05-19 15:06:42`, SHA256 `832F367823F48009E6808ABEEE65E6689E53827EFF3F525D93DD210E68EFA6F3`이다.
-- 설치 산출물 검증: blockmap SHA256 `39D063DFB34106A0FDA7839C946F2C4AB683B8947EFEE9094137935A5F0F7C07`, `app.asar` SHA256 `B9FCD85AE56363218E9A3B75813CD1E310F1532EA5BD7EFC8C9A8EB32EC65241`, `release.zip` SHA256 `D21303DF13BC66A0121F0C13BE3FCF9A086DFE5C9DC5541D5D4C85BE4F922BEA`이다.
-- 기능 포함 확인: `app/dist`와 `app/release/win-unpacked/resources/app.asar`에서 `approval-management-panel`, `approval-pending`, `승인 인증`, `사용 승인 관리` 문자열을 확인했다.
-- 참고: Electron Builder 출력에서 앱 아이콘 미설정 fallback 경고와 Vite 번들 크기 경고가 있었지만, Windows 설치 파일 생성은 정상 완료됐다.
-- Cloudflare Pages 최종 반영: `npx wrangler login`으로 CLI OAuth 로그인을 완료한 뒤 `npm run pages:deploy` 재실행에 성공했다. 새 배포 URL은 `https://6fd8ba36.prunet-math-ebook.pages.dev`이다.
-- 운영 서버 최종 확인: `https://prunet-math-ebook.pages.dev/`와 새 배포 URL 모두 HTTP 200이며, 운영 JS `assets/index-Btney19w.js`에서 `approval-pending`, `approval-management-panel`, `승인 인증`, `사용 승인 관리`, `관리자 승인 후 로그인` 문자열을 확인했다.
-
-## Cloudflare Pages 운영 URL 신규 데이터 갱신 (2026-05-19)
-- 요청 목표는 `https://prunet-math-ebook.pages.dev/` 운영 URL을 현재 로컬 최신 빌드 데이터로 다시 배포하는 것이다.
-- 검증 기준은 `npm run pages:deploy` 성공, 새 배포 URL 확인, 운영 URL HTTP 200 확인, 운영 JS에 최신 승인 UI 관련 문자열이 남아 있는지 확인하는 것이다.
-- 배포 결과: `npm run pages:deploy` 통과. Wrangler가 `dist`를 배포했고 새 배포 URL은 `https://c75a8a08.prunet-math-ebook.pages.dev`이다.
-- 업로드 결과: 서버에 동일 파일이 이미 있어 `Uploaded 0 files (4 already uploaded)`로 표시됐지만 `_headers`와 새 배포는 정상 완료됐다.
-- 운영 URL 확인: `https://prunet-math-ebook.pages.dev/`는 HTTP 200이며 `assets/index-Btney19w.js`와 `assets/index-DRRYYWyb.css`를 참조한다.
-- 최신 반영 확인: 운영 JS와 새 배포 JS 모두 HTTP 200이며 `approval-pending`, `approval-management-panel` 문자열이 확인됐다.
-
-## 사라진 교사·학생 계정 데이터 확인과 승인 복구 (2026-05-19)
-- 요청 증상은 기존 Cloudflare 서버에 저장됐다고 생각한 교사용 아이디와 학생용 아이디가 운영 URL에서 보이지 않는 것이다.
-- 현재 앱 구조상 교사·학생 계정은 Cloudflare Pages 서버 DB가 아니라 각 브라우저의 IndexedDB `kang-taehoon-math-learner-db`에 저장된다. 배포 URL이 바뀌거나 다른 브라우저/프로필에서 열면 기존 계정이 없는 것처럼 보일 수 있다.
-- 우선 확인 기준은 운영 URL과 최근 preview URL별 브라우저 IndexedDB 폴더를 찾아 계정 저장소가 남아 있는지 확인하고, 발견되면 승인 상태로 바꾸는 복구 경로를 정하는 것이다.
-- Cloudflare에는 이 작업 전 계정용 D1/KV 서버 DB가 없었으므로 서버에서 기존 교사·학생 아이디를 복구할 원본은 없었다.
-- 확인한 Chrome Default 운영 URL IndexedDB에는 관리자 계정 1개만 있었고 teacherAccounts, studentAccounts, teachers, classes, students, attempts는 0개였다.
-- 광범위한 AppData 추가 검색은 사용자가 중단했으므로 다른 브라우저 프로필이나 다른 PC에 남아 있는 데이터는 아직 미확인 상태다.
-
-## Cloudflare D1 서버 계정·학습 데이터 DB 전환 (2026-05-19)
-- 요청 목표는 IndexedDB/localStorage에만 저장되던 교사용 아이디, 학생용 아이디, 사용자 승인 상태, 교사·학습자·학습 데이터를 Cloudflare 서버의 실제 DB로 옮겨 중앙 관리되게 하는 것이다.
-- Cloudflare Pages 정적 앱에 붙이기 가장 작은 서버 구성은 Pages Functions + D1이다. D1은 계정·교사·반·학생 같은 관계형 데이터와 풀이 기록 조회 인덱스를 만들 수 있고, Pages Functions에서 여러 row를 batch upsert할 수 있어 현재 앱 구조에 바로 붙이기 쉽다.
-- 로그인 세션까지 서버에 저장하면 한 기기의 로그인 상태가 다른 기기에 보이는 문제가 생기므로, 서버에는 계정·승인·학습 데이터만 저장하고 현재 로그인 세션은 각 기기의 로컬 설정에 남긴다.
-- 구현 기준은 기존 `learnerDb` 공개 함수 이름을 유지하고, Cloudflare API가 가능하면 D1을 우선 읽고 쓰며 실패 시 기존 IndexedDB/localStorage로 fallback하는 것이다.
-- Cloudflare D1 DB `prunet_math_learning_db`를 APAC 리전에 생성했고 DB id는 `08743c63-9a74-4215-93a8-c5b01a3cec73`이다.
-- `app/migrations/0001_learning_cloud.sql` 마이그레이션을 원격 D1에 적용해 teachers, classes, students, 관리자·교사·학생 계정, 풀이 기록, 진도 보정, 보안 알림, 앱 설정 테이블과 조회 인덱스를 만들었다.
-- Pages Function API는 `/api/learning/snapshot`이며 GET은 D1 전체 스냅샷을 읽고 PUT은 같은 origin 요청에서 스냅샷을 batch upsert한다.
-- 운영 배포는 `npm run pages:deploy`로 완료했고 새 preview URL은 `https://5a5cfe86.prunet-math-ebook.pages.dev`, 운영 URL `https://prunet-math-ebook.pages.dev/`는 `assets/index-CcCJFWxg.js`를 참조한다.
-- 운영 API `https://prunet-math-ebook.pages.dev/api/learning/snapshot`은 HTTP 200으로 응답했고, 현재 D1 count는 teachers/classes/students/admin_accounts/teacher_accounts/student_accounts/learning_attempts/student_progress_overrides/learning_security_alerts가 0, app_settings가 1이다.
-- 이전에는 Cloudflare 서버 DB가 없었기 때문에 사라진 교사·학생 계정을 서버에서 복구할 원본은 없었다. 새 구조에서는 운영 HTTPS 접속 시 D1을 우선 사용하고 IndexedDB/localStorage는 캐시와 오프라인 fallback으로만 사용한다.
-- 로컬 Vite smoke에서는 Pages Function이 없으므로 `canUseCloudLearningDb()`를 HTTPS에서만 D1을 쓰도록 제한했다. 운영 HTTPS에서는 D1 API를 사용하고 필요 시 `VITE_DISABLE_CLOUD_LEARNING_DB=1`로 끌 수 있다.
-- 검증 결과는 `npm run lint`, `npm run verify`, `npm run smoke:learning-db`, `npm run onefile` 모두 통과했다.
-- 단일 HTML 산출물은 `CODEX 수학 익힘북 전자북(26.05.17)/CODEX-수학-익힘북-전자북.html`, `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고 세 파일 SHA256은 `61653BA59D0FAD893E1F553B9C2C0014A6523A620CF018F29AB9DE88A7325C13`으로 일치한다.
-- 모바일 서비스워커 캐시 버전은 `codex-math-mobile-v66`으로 올렸다.
-- Windows 설치 앱은 `app/electron/main.cjs`에서 `https://prunet-math-ebook.pages.dev/`를 먼저 열고 실패하면 내장 `dist/index.html`을 여는 방식으로 바꿨다. 설치 앱이 온라인일 때는 운영 Pages origin에서 실행되므로 D1 API도 같은 origin으로 사용한다.
-- `npm run installer:win` 통과. 설치 파일 `app/release/푸르넷수학 전자북-설치-1.0.0.exe` SHA256은 `D9F649A1E995D8665251CE453DF081DE080BAD2A6895863B84301E417F90B01A`, blockmap SHA256은 `A21EC57FB48772CA626C6F78286CD40EEA232B97A3DE87FB76C88A8C3E01DA4A`, `app.asar` SHA256은 `7E9D6BBCC04B277000DB788BFBB2AA682362E954ACCF6DCA3196A04F9CDFF2A1`, `app/release.zip` SHA256은 `23B3FEBF7ECD4AFE7C88CF2807A425147CC0B553CC731E68E9C9B50ABD369DAD`이다.
-- `app.asar` 내부 `electron/main.cjs`에서 운영 URL 문자열과 fallback 함수가 포함된 것을 확인했다.
-
-## Cloudflare D1 데이터 보호·보고서·교사용 관리 보강 (2026-05-19)
-- 요청 목표는 중요한 교사·학생·학습 데이터를 주기적으로 유효성 검사하고, 학습 보고서·학습 진단서·학부모 상담서 데이터를 교사별·학생별로 서버 DB에 누적 기록하며, 필요 시 주기 백업까지 수행하는 것이다.
-- Cloudflare 문서 기준으로 Cron Trigger는 Worker의 `scheduled()` handler를 통해 주기 작업을 실행하므로 Pages Function API와 별도의 유지보수 Worker를 같은 D1에 바인딩하는 방향이 맞다.
-- Cloudflare D1은 현재 `wrangler d1 export`와 Time Travel/백업 기능을 제공하므로, 배포 전에는 원격 DB export를 만들고 앱 내부에서도 스냅샷 백업 row를 남기는 이중 보호가 적합하다.
-- DB 보호 기준은 기존 테이블을 drop/delete하지 않는 additive migration, `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, upsert만 사용, 배포 전 export 백업 스크립트 유지다.
-- Windows 설치 앱은 이미 운영 URL 우선 로드로 바꿨으므로 온라인 설치 모드는 Cloudflare Pages origin에서 실행되어 D1 서버 DB와 같은 방식으로 동기화된다. 이번 보강에서는 서버 유지보수 API와 교사용 UI를 추가 반영한다.
-- 구현 완료: `0002_learning_maintenance.sql`로 `learning_data_validations`, `learning_periodic_reports`, `learning_db_backups`, `student_progress_map_settings` 테이블과 인덱스를 추가했다. 기존 테이블 삭제 없이 `CREATE TABLE IF NOT EXISTS`와 `CREATE INDEX IF NOT EXISTS`만 사용했다.
-- 구현 완료: `functions/_learningMaintenance.ts`, `functions/api/learning/maintenance.ts`, `workers/maintenance.ts`, `wrangler.maintenance.toml`을 추가했다. Pages Function은 수동 실행과 상태 조회를 제공하고, Worker `prunet-math-maintenance`는 `17 * * * *`, `0 18 * * *` UTC Cron으로 운영 D1 유지보수를 실행한다.
-- 구현 완료: `scripts/backup-d1.mjs`와 `db:backup`, `db:migrate:remote`, `maintenance:deploy` 스크립트를 추가했다. 원격 마이그레이션 전 `wrangler d1 export prunet_math_learning_db --remote`로 SQL 백업을 먼저 만들도록 바꿨다.
-- 원격 DB 적용 완료: `npm run db:migrate:remote`가 백업 후 `0001_learning_cloud.sql`, `0002_learning_maintenance.sql`을 운영 D1 `prunet_math_learning_db`에 적용했다. DB id는 `08743c63-9a74-4215-93a8-c5b01a3cec73`다.
-- 유지보수 Worker 배포 완료: `npm run maintenance:deploy` 성공. Worker URL은 `https://prunet-math-maintenance.scalpertv.workers.dev`, 배포 version id는 `198003a2-d340-449a-92a3-69ee1ffb482c`다.
-- 운영 Pages 배포 완료: `npm run pages:deploy` 성공. 새 preview URL은 `https://5e302ed5.prunet-math-ebook.pages.dev`, 운영 URL은 `https://prunet-math-ebook.pages.dev`다.
-- 운영 API 검증 완료: `POST https://prunet-math-ebook.pages.dev/api/learning/maintenance`에 same-origin header로 `manual-verify`를 실행했고 `ok: true`, `issueCount: 0`, `validationId: validation-1779177144374-4aohbq`, `backupId: backup-1779177144374-nf0392`가 반환됐다.
-- 운영 D1 확인 완료: `learning_data_validations` 1건, `learning_db_backups` 1건, `learning_periodic_reports` 0건이다. 현재 운영 DB에 교사·학생 데이터가 없어 보고서는 아직 생성되지 않았고, 학생 데이터가 들어오면 학생별 3종 보고서가 생성된다.
-- 교사용 UI 구현 완료: 학생 비밀번호 임시 초기화, 학생별 진도맵 목표/중점/메모 설정, 보고서 파일 저장, PDF 저장/PC 출력용 인쇄 창, 카카오톡 전송용 시스템 공유/클립보드 fallback, 이메일 작성 링크를 추가했다.
-- Windows 설치 앱 갱신 완료: `npm run installer:win` 성공. 설치 앱의 `app.asar`에서 운영 URL 우선 로드, 내장 fallback, `/api/learning/maintenance` 코드 포함을 확인했다.
-- 최신 산출물 SHA256: 설치 EXE `261D7669EBE9667AE0ABA5D38CA890C987A0AF027AA2B1DC11AEE09CEEDF1CA6`, blockmap `F54CDCAD97B64F4C1A2FC67EE211CB03E69BC0889812718116A93CE22AA5389B`, app.asar `C1BEC80491613610B10BC1A04855505965AD8A3F073C7CE978058675866D28A5`, release.zip `D0E72745D1E30975097C33C2A7A37083CE8F0D3FBECD9213895489AF11A4A72B`다.
-- 단일 HTML 산출물 갱신 완료: `CODEX 수학 익힘북 전자북(26.05.17)/CODEX-수학-익힘북-전자북.html`, `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html` SHA256은 모두 `063BD1840A30D1258E0209EBB9C8B6BC882EBF0F0B26557D832C46DB4E531314`다. 모바일 서비스워커 캐시는 `codex-math-mobile-v67`로 올렸다.
-- 검증 완료: `npm run lint`, `npm run build`, `npm run smoke:learning-db`, `npm run verify`, `npm run onefile`, `npm run pages:deploy`, `npm run installer:win` 모두 통과했다. Electron Builder의 기본 아이콘 fallback 경고와 Vite 번들 크기 경고는 기존과 같은 비차단 경고다.
-
-## 관리자 root 권한·교사용 운영·학습 콘텐츠 DB 분리 보강 (2026-05-19)
-- 요청 목표는 관리자 계정에 전체 프로그램 root 권한을 명시적으로 부여하고, 관리자 상단 메뉴에서 교사·학생 승인과 계정/비밀번호/학습 데이터/접근 권한 관리를 바로 처리하게 하는 것이다.
-- 교사용 목표는 등록 학생의 아이디·비밀번호 수정, 클래스 등록·수정, 실시간 진도 모니터링, 보충수업과 반복학습 숙제 부여, 학생별 일간·주간·월간 진도와 진단서·상담서 출력/공유를 한 흐름으로 처리하는 것이다.
-- 데이터베이스 목표는 사용자·교사·학습자 운영 DB와 학습 콘텐츠 DB를 분리하고, 초등 수학과 중등 수학, 초등 영어, 중등 영어, 내신 대비 출판사별 콘텐츠를 추후 추가해도 기존 데이터를 훼손하지 않는 additive 구조를 마련하는 것이다.
-- 구현 기준은 기존 D1 데이터를 drop/delete하지 않고 `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, upsert 중심으로 확장하는 것이다.
-- 이번 변경은 이미 들어간 보고서 출력/공유 기능은 재사용하고, 부족한 root 권한 표시, 상단 승인 바로가기, 교사용 클래스·숙제 운영, 콘텐츠 DB 분리 스키마를 보강하는 방향이 가장 안전하다.
-- 구현 완료: 관리자 로그인 상태에서 `ROOT 권한` 패널을 표시하고 교사 아이디·비밀번호 관리, 학생 아이디·비밀번호 관리, 학습 데이터 관리, 유저별 접근 학습 접근 관리, 사용자 승인, 서버 DB 검증·백업 관리를 명시했다.
-- 구현 완료: 화면 상단 메뉴바에 `교사 승인`, `학생 승인` 바로가기 버튼과 승인 대기 건수를 표시했다. 버튼은 관리자 패널을 즉시 열고 최신 관리자 데이터를 새로고침한다.
-- 구현 완료: 관리자 접근 권한 카드에 교사 비밀번호 임시 초기화 버튼을 추가했다. 학생은 기존 학생 계정·비밀번호 수정과 임시 비밀번호 초기화 흐름을 유지한다.
-- 구현 완료: 교사용 실시간 진도맵 학생 카드에 `보충수업 추가`, `반복숙제 부여` 버튼을 추가했다. 부여 기록은 `StudentLearningAssignmentRecord`로 저장하고 학생별 진도 카드에 최근 과제 chip으로 표시한다.
-- 구현 완료: 학생별 상담 문서 영역에 일간·주간·월간 진도 도표를 추가했다. 기존 학습 진단서와 학부모 상담서의 PDF 저장·PC 출력·파일 저장·카카오톡 공유·이메일 전송 기능은 그대로 연결된다.
-- DB 구현 완료: `0003_learning_root_content_partition.sql`로 `learning_assignments`, `learning_content_databases`, `learning_content_units`, `learning_content_topics`, `learning_content_items`를 추가했다. 기존 테이블 삭제 없이 additive SQL만 사용했다.
-- Cloudflare API 구현 완료: `/api/learning/snapshot`에 `assignments` 동기화를 추가했고, `/api/learning/content` Pages Function을 새로 만들어 학습 콘텐츠 카탈로그와 단원·유형 메타데이터를 D1에 분리 저장하게 했다.
-- 콘텐츠 DB 분리 완료: 운영 페이지 로드 후 원격 D1에 `learning_content_databases` 5건, `learning_content_units` 74건, `learning_content_topics` 811건이 저장된 것을 확인했다. 5개 DB는 초등 수학, 중등 수학, 초등 영어, 중등 영어, 내신 대비 출판사별 DB다.
-- 원격 DB 적용 완료: `npm run db:migrate:remote`는 백업을 성공한 뒤 Wrangler fetch 오류로 한 번 끊겼고, `npx wrangler d1 migrations apply prunet_math_learning_db --remote` 재실행으로 `0003_learning_root_content_partition.sql` 적용을 완료했다.
-- 운영 배포 완료: `npm run pages:deploy` 성공. 새 preview URL은 `https://ebe0cb4a.prunet-math-ebook.pages.dev`, 운영 URL은 `https://prunet-math-ebook.pages.dev`다. `/api/learning/snapshot`은 HTTP 200, `/api/learning/content`도 HTTP 200으로 확인했다.
-- 단일 HTML 산출물 갱신 완료: `CODEX 수학 익힘북 전자북(26.05.17)/CODEX-수학-익힘북-전자북.html`, `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html` SHA256은 모두 `6078478B23F1A8CAFFD9B9559A634EC14CE58D9A342A1FE85982102D90412B13`다. 모바일 서비스워커 캐시는 `codex-math-mobile-v68`로 올렸다.
-- Windows 설치 앱 갱신 완료: `npm run installer:win` 성공. `app.asar`에서 운영 URL 우선 로드, 내장 fallback, `/api/learning/content`, `studentLearningAssignments` 포함을 확인했다.
-- 최신 설치 산출물 SHA256: 설치 EXE `71736266D0004502C3D5541D6836AEB141181738EABDD03EDDD4A92FE53B76CE`, blockmap `88B42576A0B0C5B1A5398FA83707A9EFC88F6F50186215CDB6ED10A3985E5B8B`, app.asar `7A51EC335C442BB39547DD55D05D57DFC8E50B7A691E30CA2ED11A0EE2F14768`, release.zip `8FD3D724EBB0B5A7C51CC958CD929C4937875DAA6EF4E36825644008853A8992`다.
-- 검증 완료: `npm run lint`, `npm run build`, `npm run smoke:learning-db`, `npm run verify`, `npm run onefile`, `npm run pages:deploy`, `npm run installer:win` 모두 통과했다. Electron Builder의 기본 아이콘 fallback 경고, Vite 번들 크기 경고, Electron Builder DEP0190 경고는 기존과 같은 비차단 경고다.
-
-## 학생 계정 학년별 전체 접근과 다른 학년 선택 학습 (2026-05-19)
-- 요청 목표는 등록된 학생 아이디로 로그인하면 본인 등록 학년의 모든 학습 데이터를 기본으로 열고, 학생이 원하면 다른 학년 데이터도 선택해서 학습할 수 있게 하는 것이다.
-- 현재 앱은 학생 로그인 시 `activeStudent.grade`를 `learner.grade`로 넣고 `unitsForLearner`가 그 학년 콘텐츠만 필터링한다. 동시에 학생 로그인 상태에서는 학년 입력과 빠른 학년 버튼이 비활성화되어 다른 학년 선택이 막혀 있다.
-- 안전한 구현 기준은 학생 계정의 이름, 학생 id, teacher/class 연결은 그대로 유지하고, 화면에서 선택하는 `learner.grade`만 바꿔 콘텐츠 필터를 전환하는 것이다. 이렇게 해야 다른 학년 선택 학습 중에도 기록이 같은 학생 계정에 계속 연결된다.
-- 클래스 등록 확장은 기존 클래스 폼을 유지하면서 학년·과정 선택 버튼 영역을 넓히고, 일반 학년과 연산 과정을 모두 빠르게 선택할 수 있게 하는 방향이 가장 작고 안전하다.
-- 검증 기준은 학생 로그인 상태에서 학년 버튼이 활성화되고, 다른 학년 선택 시 학습 단원이 전환되며, 본인 학년으로 돌아가는 버튼이 보이고, 클래스 등록에서 확장된 학년 선택 UI가 보이는 것이다. 이후 lint, verify, onefile, smoke, 운영 배포, Windows 설치 파일 갱신까지 완료한다.
-- 구현 완료: 학생 로그인 상태에서도 학년 입력과 학년·연산 빠른 선택 버튼을 사용할 수 있게 했다. 이름은 계속 읽기 전용으로 두고, 학년만 바꾸도록 했다.
-- 구현 완료: 학생이 다른 학년을 선택해도 `learnerProfileFromStudent(activeAccountStudent)` 기반 학생 id, 교사, 클래스 연결을 유지하고 `grade`만 바꿔 저장한다. 학습 기록은 기존 학생 계정에 계속 묶인다.
-- 구현 완료: 학생 화면에는 `내 학년 전체` 버튼과 `선택 학습` 상태 문구를 추가했다. 등록 학년이 `6학년 연산`이어도 `내 학년 전체`를 누르면 `6학년` 전체 자료로 전환할 수 있다.
-- 구현 완료: 클래스 등록 폼에 `클래스 학년·과정 빠른 선택` 영역을 추가해 1~6학년 일반 학년과 1~6학년 연산 과정을 모두 버튼으로 선택할 수 있게 했다.
-- 검증 완료: `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` 통과. 추가 DOM 점검에서 클래스 빠른 선택 버튼 12개와 학습자 학년 버튼 12개가 렌더링되는 것을 확인했다.
-- 운영 배포 완료: `npm run pages:deploy` 성공. 새 preview URL은 `https://170da45e.prunet-math-ebook.pages.dev`, 운영 URL `https://prunet-math-ebook.pages.dev/`는 `assets/index-BT0QvDEs.js`, `assets/index-CmjGsVBN.css`를 참조하며 `내 학년 전체`, `선택 학습`, `class-grade-menu` 반영을 확인했다.
-- 단일 HTML 산출물 갱신 완료: `CODEX 수학 익힘북 전자북(26.05.17)/CODEX-수학-익힘북-전자북.html`, `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html` SHA256은 모두 `B61DC92952BD6DAAB6FAD1BBC2EA379FD790AA27B9B12ECC08B0B4280F47CDBB`다. 모바일 서비스워커 캐시는 `codex-math-mobile-v69`로 올렸다.
-- Windows 설치 앱 갱신 완료: `npm run installer:win` 성공 후 `app/release.zip`도 최신 `release` 기준으로 다시 압축했다. 설치 EXE SHA256은 `C0FAB1002876E1A59784AD49E371B74D5F36613BAA1C7B8C64418728E1338D40`, blockmap은 `DDC44F884310E8EA0E82306A53587E546F0290FC5CAD1309CD1FD66F7D3674EA`, app.asar는 `78AB636CEAF8960818A3712AE42F6AA5879138CD893B64C8A539FEC1E48316BD`, release.zip은 `B9F1E3D068F32F889282C6314AAAEFF56E3F2E00730DFB652109CAA04805D3A8`이다.
-
-## 클래스 과정 다중 선택 저장과 모험지도 위치 조정 (2026-05-19)
-- 요청 목표는 클래스 등록의 `클래스 학년·과정 빠른 선택`에서 여러 과정을 동시에 선택하고, 저장 시 선택한 과정들이 실제 클래스 목록에 저장되게 하는 것이다.
-- 현재 `ClassRecord`는 `grade` 한 개만 저장한다. 기존 DB 스키마를 바꾸지 않는 안전한 방식은 다중 선택을 UI 상태로만 관리하고, 저장할 때 선택한 과정마다 같은 클래스명과 담당 선생님으로 `registerClassRecord`를 순차 호출해 과정별 클래스 레코드를 만드는 것이다.
-- 기존 클래스를 수정 중일 때 여러 과정을 선택하면 첫 번째 과정은 기존 클래스 id로 저장하고, 나머지 과정은 신규 클래스 레코드로 추가하는 방향이 데이터 손실 위험이 가장 낮다.
-- 두 번째 요청 목표는 왼쪽 학습 메뉴의 `모험 지도 / 스토리 단원 보기` 섹션을 `학습 보고서`보다 위에 배치하는 것이다. 기존 컴포넌트를 새로 만들지 않고 JSX 위치만 옮기는 방식으로 처리한다.
-- 검증 기준은 빠른 선택 버튼이 여러 개 active로 유지되고, 저장 로직이 선택 과정 개수만큼 호출되며, 화면 DOM에서 모험지도 섹션이 학습 보고서보다 먼저 나오는 것이다. 이후 기본 lint, verify, onefile, smoke 검증과 운영 배포, 설치 파일 갱신을 수행한다.
-- 구현 완료: `classForm.grades`를 추가해 빠른 선택 버튼이 다중 active 상태를 유지하게 했다. 직접 입력은 단일 과정 입력으로 동작하고, 빠른 선택 버튼은 토글 방식으로 누적 선택된다.
-- 구현 완료: 클래스 저장 시 `selectedClassGrades`를 순회하며 `registerClassRecord`를 순차 호출한다. 첫 번째 선택 과정은 기존 `classForm.id`를 유지하고, 나머지 과정은 신규 클래스 레코드로 저장된다.
-- 구현 완료: 클래스 등록 UI에 `N개 과정 저장 예정` 문구와 저장 버튼의 `N개 과정 저장` 표시를 추가했다.
-- 구현 완료: 왼쪽 사이드바의 `모험 지도 / 스토리 단원 보기` 블록을 제거하고, 메인 학습 영역의 `학습 보고서` 바로 위로 이동했다.
-- 검증 완료: `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` 통과. 추가 브라우저 DOM 점검에서 빠른 선택 active 버튼 3개와 `3개 과정 저장` 버튼 문구, 모험지도 섹션이 학습 보고서보다 먼저 나오는 것을 확인했다.
-- 운영 배포 완료: `npm run pages:deploy` 성공. 새 preview URL은 `https://504134d2.prunet-math-ebook.pages.dev`, 운영 URL `https://prunet-math-ebook.pages.dev/`는 `assets/index-27INhryS.js`, `assets/index-CmjGsVBN.css`를 참조하며 다중 과정 저장 문구와 모험지도 이동 문자열을 확인했다.
-- 단일 HTML 산출물 갱신 완료: `CODEX 수학 익힘북 전자북(26.05.17)/CODEX-수학-익힘북-전자북.html`, `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html` SHA256은 모두 `F522D78E9E70862EE42AA19F1094AFA43DC6E6BA8891661FD96906DB3CC29AFC`다. 모바일 서비스워커 캐시는 `codex-math-mobile-v70`으로 올렸다.
-- Windows 설치 앱 갱신 완료: `npm run installer:win` 성공 후 `app/release.zip`도 최신 `release` 기준으로 다시 압축했다. 설치 EXE SHA256은 `EAA7986DD5E37276E77861CA250B103F49034B76E758ECB7800F9C9A421B7C96`, blockmap은 `072BEE2CF6B4A38A334CAC0443CB7C79DBA48D4FA9F1AD9E7C0608409456F6E9`, app.asar는 `867E28B1243BEF8AF6B573E1133FE32D6813CD12D4B675C0DA62A3EEB2E9A35F`, release.zip은 `D11534C8885A734A632406E8B5BEA52C7C0F832DA910F29C055C42497E38A571`이다.
-
-## 가독성 보강과 교사용 모니터링 버튼 로직 수정 (2026-05-19)
-- 요청 목표는 모험 지도 스토리 단원 보기, 보고서 자세히 보기, 학습 진단서, 학부모 상담서의 글씨를 키우고, 좌우 여백을 줄여 실제 학습 콘텐츠 폭을 넓히는 것이다.
-- 글씨 크기는 개발 지침상 `vw` 기반 연속 스케일 대신 CSS 변수와 미디어쿼리 브레이크포인트를 사용한다. 이렇게 하면 화면 크기에 맞춰 적응하지만 글자가 흔들리거나 과하게 커지지 않는다.
-- 학습자 모니터링은 학생 계정에서는 보이지 않아야 하므로 `canViewAllStudentLearningData` 또는 관리자/교사 권한을 기준으로 섹션 자체를 렌더링하지 않게 한다.
-- 모니터링 버튼은 기존 함수가 폼만 채우거나 출력/공유를 한 버튼에 섞어 처리해 사용자가 동작을 못 느낄 수 있다. 버튼별로 관리 패널 이동, 메시지 표시, PDF 저장, 프린터 출력 동작을 분리해 명확하게 만든다.
-- 구현 완료: 앱 좌우 기본 여백을 줄이고 학습 셸 최대 폭을 1760px로 넓혔다. 스토리 단원 카드와 보고서, 상담 문서 textarea는 `--readable-*`, `--report-*` CSS 변수와 1280px, 1600px, 560px 브레이크포인트로 가독성을 높였다.
-- 구현 완료: 학습자 모니터링 섹션은 관리자 또는 교사용 계정 로그인 상태에서만 렌더링한다. 기본 접속과 학생 계정 조건에서는 `.class-monitor-panel`이 화면에 나오지 않는다.
-- 구현 완료: 계정·진도 수정과 진도맵 설정 버튼은 학생을 선택하고 학생 관리 폼을 연 뒤 현재 진도, 목표 문제 수, 중점 단원, 교사 메모를 채운다. 비번 초기화는 교사/관리자 권한을 먼저 검사하고, 보충수업 추가와 반복숙제 부여는 기존 서버 진도 갱신 경로와 연결된 상태를 유지한다.
-- 구현 완료: 상담 문서 버튼은 `PDF 저장`과 `프린터 출력`으로 분리했다. 두 버튼 모두 브라우저 인쇄 창을 열지만, PDF 저장 버튼은 PDF 대상 선택 안내를 별도로 표시하고 출력 문서 글씨 크기도 17px로 키웠다.
-- 검증 완료: `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db`를 모두 통과했다. 추가 브라우저 DOM 점검에서 기본 접속 기준 `monitorVisible=false`, `--readable-text=17px`, `--report-text=18px`, 앱 좌우 padding 12px 적용을 확인했다.
-- 산출물 갱신 완료: 단일 HTML 3개 파일 SHA256은 모두 `E8A6E65B9897B0E8BDE510344603C3F5AE58E04339A43E8813DC6DC069D9630D`다. 모바일 서비스워커 캐시는 `codex-math-mobile-v71`로 올렸다.
-- 운영 배포 완료: `npm run pages:deploy` 성공. 새 preview URL은 `https://ae8f95a3.prunet-math-ebook.pages.dev`이고 운영 URL `https://prunet-math-ebook.pages.dev/`에서 `assets/index-CS3Clv_S.js`, `assets/index-DXDAyHSq.css` 반영을 확인했다.
-- Windows 설치 파일 갱신 완료: `app/release/푸르넷수학 전자북-설치-1.0.0.exe` SHA256은 `A2F43B12C8BB54963F8CA84B46F75303925AF2D17A94D4EF40739D7A3D2691AC`, blockmap은 `EDEE72D9F168C31F76C5655A81C7C049CCD8B2098F4010C767CEF2E10094F547`, app.asar는 `05D6DAAB64A2FC10FE85D7222A0524EDBC6E4CDA2D08714871118371BAADDDFF`, `app/release.zip`은 `A6C525847EF095E0160BE5D90A602DD94EA8862606BC0B5D99BEF9CD8DDB5E77`다.
-
-## 클래스 등록 저장 안정화와 관리 UI 고도화 (2026-05-19)
-- 요청 목표는 클래스 복수 과정 저장 후 학생 이름, 학년, 학생 로그인 아이디, 학생 비밀번호가 실제 클래스에 정상 연결되고, 저장 후에도 “등록 학생 없음”처럼 보이는 상태 불일치를 없애는 것이다.
-- 현재 위험 지점은 클래스 등록이 복수 과정 저장을 하면서 마지막 저장 클래스만 activeClass로 남거나 학생 폼의 classId가 사용자가 의도한 클래스와 어긋나는 경우다. 학생 저장 직전 classId와 실제 클래스 목록을 확인해 불일치를 줄인다.
-- 클래스 관리는 현재 선택, 수정, 학생 추가 중심이므로 제거 버튼과 복수 과정 선택/수정 로직을 추가해야 한다. DB 삭제는 기존 데이터 보호 원칙 때문에 학생이 있는 클래스 제거는 차단하거나 명확히 처리하는 방향이 안전하다.
-- 디자인 변경은 기능 구조를 바꾸지 않고 CSS 중심으로 진행한다. 왼쪽 제어패널은 너무 넓거나 답답하지 않게 줄이고, 오른쪽 학습 화면은 더 넓게 쓰며, 글씨는 `vw`가 아닌 CSS 변수와 브레이크포인트로 키운다.
-- 검증 기준은 등록/관리 흐름 스모크, lint, verify, onefile, smoke DB, 단일 HTML과 모바일 반영, Cloudflare 운영 배포, Windows 설치 파일 갱신까지다.
-- 구현 완료: 복수 과정 클래스 저장 후 첫 번째 선택 과정 클래스를 다시 activeClass로 확정하고 학생 등록 폼의 classId, 학년, 계정 입력값을 바로 새 학생 등록 상태로 초기화한다. 학생 저장은 선택 클래스 존재 여부를 검사하고, 저장 후 `selectLearningRosterStudent`로 activeClass와 activeStudent를 다시 맞춘다.
-- 구현 완료: 학생 이름, 학년, 학생 로그인 아이디, 비밀번호를 한 번에 저장할 때 실패 메시지가 조용히 사라지지 않도록 클래스 저장과 학생 저장 모두 try/catch로 사용자 메시지를 표시한다. 학생 계정 저장 성공 메시지는 관리자 승인 필요 상태까지 안내한다.
-- 구현 완료: 클래스 관리는 같은 선생님과 같은 클래스 이름의 여러 과정 클래스를 한 카드로 묶어 표시한다. 수정 버튼은 묶인 과정 전체를 클래스 등록 폼의 복수 선택 상태로 불러오고, 학생 추가는 해당 묶음의 현재 대표 클래스로 연결한다.
-- 구현 완료: 클래스 제거 버튼을 추가했다. 등록 학생이 있는 클래스는 제거를 차단하고, 학생이 없는 클래스는 `deletedAt` 복구 표시를 남겨 서버 DB에는 보존하면서 화면 목록에서는 숨긴다.
-- 디자인 구현 완료: 왼쪽 제어패널은 272px 기준으로 줄이고 오른쪽 학습 영역을 넓혔다. 글씨 크기는 CSS 변수와 브레이크포인트로 키웠고, `clamp()` 기반 viewport 글씨 스케일은 제거했다. 제어패널 스크롤바는 thin/투명 계열로 줄였다.
-- 디자인 구현 완료: 학습 히어로, 대시보드, 제어 카드, 클래스 관리 카드에 반투명 표면과 가벼운 블러, 얇은 테두리, 큰 버튼/입력 글씨를 적용해 더 현대적인 교육 사이트 느낌으로 정리했다.
-- 검증 완료: `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db`를 모두 통과했다. 추가 브라우저 DOM 점검에서 `--readable-text=18px`, `--hero-title=50px`, 학습 레이아웃 `272px 1134px`, 제어패널 스크롤바 `thin`, CSS 내 `clamp()` 없음 상태를 확인했다.
-- 산출물 갱신 완료: 단일 HTML 3개 파일 SHA256은 모두 `5BF951B2E96B35397A400B3B156836628F8586CE33FA94AE24AC237F3FE6B457`다. 모바일 서비스워커 캐시는 `codex-math-mobile-v72`로 올렸다.
-- 운영 배포 완료: `npm run pages:deploy` 성공. 새 preview URL은 `https://e3669d93.prunet-math-ebook.pages.dev`이고 운영 URL `https://prunet-math-ebook.pages.dev/`에서 `assets/index-B5KqaBEq.js`, `assets/index-BvvKLRBL.css` 반영을 확인했다.
-- Windows 설치 파일 갱신 완료: `app/release/푸르넷수학 전자북-설치-1.0.0.exe` SHA256은 `E4DA55D787AB243BABB7ECC3C1697D3874CAAA80D7157E50AD3D3CAF4AA648A2`, blockmap은 `853D9680E5975E121C35062027702CC46EC4E409437CBB21ECB1D662B465752D`, app.asar는 `9B600031C94DAB99A545FA73F9198897F9BF8059A8E85C7EBFECF3F9C8D40E53`, `app/release.zip`은 `62C2D9B09FD205DD79387FA4EBF0C22E33F2A8C51DC0A5AD2239DD2A4C00B635`다.
-# 학생 선택 학습 라벨과 학생 관리 고도화 (2026-05-19)
-- 요청 목표는 왼쪽 제어패널의 학생 선택 학습에서 같은 `5학년 3월` 버튼이 중복 표시되는 문제를 일반 과정과 연산 과정으로 구분하고, 클래스 관리와 학생 관리 흐름을 실제 수정 중심으로 정리하는 것이다.
-- 구현 기준은 기존 학습 데이터와 서버 DB를 삭제하지 않고, 단원 선택 UI 라벨만 보완하며, 학습 코칭 과제는 삭제 대신 `deletedAt` 표시로 숨기는 방향이 안전하다.
-- 클래스 관리에서는 이름 영역을 눌러도 수정 폼이 열리게 하고, 학생 비밀번호 초기화는 모니터링 카드에서 빼서 `학생 등록` 옆 `학생 관리` 메뉴로 이동시키는 것이 사용자 흐름에 맞다.
-- 검증 기준은 중복 단원 버튼 라벨 구분, 클래스명 클릭 수정, 과제 문구 수정·삭제, 학생 관리 메뉴의 아이디·비밀번호 수정과 초기화 동작 확인, 이후 lint/verify/onefile/smoke 및 배포 산출물 갱신이다.
-- 구현 완료: 단원 선택용 `unitSelectionLabel`을 추가해 수학연산 과정은 `5학년 3월 연산`처럼 월 라벨에 연산 표시가 붙도록 했다. 일반 과정 라벨과 보고서용 기존 라벨은 그대로 유지한다.
-- 구현 완료: 클래스 관리 카드의 클래스 이름 영역을 수정 버튼으로 바꾸고, 내부 접근성 라벨 충돌은 `과정 목록`으로 정리해 기존 `선택` 버튼과 함께 안정적으로 동작하게 했다.
-- 구현 완료: 학습 코칭 과제 chip에 `수정`, `삭제` 버튼을 추가했다. 수정은 제목을 갱신하고 삭제는 `deletedAt` 표시로 숨겨 Cloudflare D1 payload에는 복구 가능한 기록을 남긴다.
-- 구현 완료: 상단 관리 메뉴에서 `학생 등록` 오른쪽에 `학생 관리`를 추가했다. 학생 관리 카드에서 학생 아이디·비밀번호 수정 폼을 열고, 비밀번호 초기화는 이 화면에서 임시 비밀번호를 발급하도록 옮겼다.
-- 검증 완료: `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db`가 통과했다. 운영 URL은 `https://prunet-math-ebook.pages.dev/`에서 `index-CUm__Evl.js`, `index-DjbVtTxu.css`를 참조하고 `/api/learning/snapshot`은 HTTP 200으로 확인했다.
-- 산출물 갱신 완료: 단일 HTML 3개 SHA256은 모두 `93BB57CAABDD1AE18DCF8967CB425BE7379023B21A9AC70964D5959E6BF08076`이고 모바일 캐시는 `codex-math-mobile-v73`으로 올렸다. Windows 설치 EXE SHA256은 `09E631717D24086127A67F5BAF51CCE55360CC1995735E6B10A972615A376789`, `release.zip`은 `6F5DA3D4AA0D8287C79358CC93F3A79F65932286FC8F29B540A507F1FD605737`이다.
-
-## 초중등 영어 전자북 구조·설계 루틴 문서화 (2026-05-19)
-- 요청 목표는 푸르넷 수학 전자북에서 확립한 작업 루틴과 노하우를 바탕으로 초등 교육청 필수 영단어, 초등 영문법, 중등 교육청 필수 영단어, 중등 영문법 전자북을 만들기 위한 구조와 설계 루틴 문서를 먼저 만드는 것이다.
-- 이번 작업은 앱 코드 수정이 아니라 문서화 작업이므로 `npm run lint`, `npm run verify`, `npm run onefile`은 실행 대상에서 제외했다. 검증 기준은 새 Markdown 파일 존재, 네 개 영어 콘텐츠 DB 구조 포함, 기존 수학 전자북 운영 루틴 반영, `checklist.md`와 `context-notes.md` 갱신 여부로 잡았다.
-- 새 문서는 `강태훈샘_푸르넷영어책(26.05.19)/초중등_영어_전자북_구조_설계_루틴.md`에 만들었다. 내용에는 콘텐츠 DB와 사용자·학습 DB 분리, additive migration 원칙, 영단어·영문법 스키마, 화면 구조, 학습 흐름, 보고서 지표, 검증·배포 루틴, 다음 작업 체크리스트를 포함했다.
-- 교육청 필수 영단어 자료는 지역과 연도에 따라 달라질 수 있으므로 실제 콘텐츠 입력 전에는 최신 출처, 발행 연도, 사용 가능 범위, 원본 항목 수를 먼저 검증하고 별도 출처 검증 보고서에 남기는 기준으로 정리했다.
-- 후속 요청으로 영어 파닉스 교실을 추가했다. 파닉스는 영단어 전 단계의 별도 학습 흐름이므로 `english_phonics_classroom` 콘텐츠 DB, 음가·입 모양·블렌딩·디코딩 스키마, 파닉스 기본 학습 흐름, 파닉스 리포트 지표, 구현 순서와 다음 작업 체크리스트에 독립 항목으로 반영했다.
-- 후속 요청으로 영어 내신 대비반과 영어 리딩반을 추가했다. 내신 대비반은 `english_school_exam_textbook` 콘텐츠 DB로 두고 8종 영어 교과서별 출판사, 판본, Lesson, 본문 분석, 문법 분석, 단어 분석, 문장 분석, 학교 시험형 문제를 분리해 관리하도록 정리했다.
-- 리딩반은 `english_reading_class` 콘텐츠 DB로 두고 지문, 장르, 난이도, 독해 스킬, 정답 근거, 요약·확장 쓰기 과제를 관리하도록 정리했다. 교과서 본문은 저작권 자료이므로 실제 수록 전 출판사, 판본, 학교 채택본, 사용 가능 범위를 확인하고 원문 전문보다 분석 메타데이터를 우선 저장하는 기준을 남겼다.
-- 후속 요청으로 유치원 영어반과 영어 도서관을 추가했다. 유치원 영어반은 `english_kindergarten_class` 콘텐츠 DB로 두고 그림카드, 원어민 음성, 챈트, 몸동작 반응, 생활영어 표현, 가정 미션을 저장하도록 정리했다.
-- 영어 도서관은 `english_library` 콘텐츠 DB로 두고 레벨별 서가, 도서 메타데이터, 오디오 키, 핵심 어휘, 이해 질문, 읽기 기록장, 독후활동 템플릿을 관리하도록 정리했다. 도서 원문, 표지, 오디오도 저작권 자료이므로 정식 라이선스가 있는 자료만 저장하고, 기본은 메타데이터와 자체 요약·독후활동 중심으로 운영하는 기준을 남겼다.
-- 후속 요청으로 초등 영어 교과서를 추가했다. 초등 영어 교과서는 `english_elementary_textbook` 콘텐츠 DB로 두고 학년, 출판사, 학기, Lesson, 의사소통 표현, 듣기·말하기 대화, 단원 어휘, 읽기 요약, 쓰기 활동, 교실 활동, 복습 문제를 관리하도록 정리했다.
-- 초등 영어 교과서는 내신 대비반과 목적이 다르므로 학교 수업 예습·복습 흐름으로 분리했다. 교과서 원문, 삽화, 음성은 저작권 자료이므로 실제 수록 전 출판사, 판본, 학교 채택본, 사용 가능 범위를 확인하고 기본은 단원 메타데이터와 자체 제작 활동문으로 구성하는 기준을 남겼다.
-- 후속 요청으로 영어 노래방과 영어 동화책을 추가했다. 영어 노래방은 `english_karaoke_class` 콘텐츠 DB로 두고 노래 제목, 레벨, 주제, 핵심 표현, 가사 학습 단위, 가사 하이라이트 타이밍, 반주·가이드 음성, 발음·리듬 포인트, 녹음 과제를 관리하도록 정리했다.
-- 영어 동화책은 `english_storybook_class` 콘텐츠 DB로 두고 장면별 요약, 읽어주기 음성, 등장인물 역할극, 핵심 어휘, 반복 문장, 이해 질문, 이야기 순서, 다시 말하기, 독후활동 템플릿을 관리하도록 정리했다. 노래 가사·음원과 동화 원문·삽화·오디오는 저작권 자료이므로 정식 라이선스 또는 자체 제작 콘텐츠를 우선하는 기준을 남겼다.
-- 후속 요청으로 영어 듣기, 영어 말하기, 영어 읽기, 영어 쓰기를 추가했다. 영어 듣기는 `english_listening_class` 콘텐츠 DB로 두고 대화·지시문·시험형 듣기, 대본, 받아쓰기, 섀도잉, 정답 근거를 관리하도록 정리했다.
-- 영어 말하기는 `english_speaking_class` 콘텐츠 DB로 두고 따라 말하기, 역할극, 질문·응답, 발표, 녹음 과제, 교사용 피드백 기준을 관리하도록 정리했다. 영어 읽기는 기존 `english_reading_class` 리딩반과 분리해 `english_reading_fluency` DB로 두고 소리내어 읽기, 끊어 읽기, 시간 읽기, 녹음, 유창성 피드백을 관리하도록 정리했다.
-- 영어 쓰기는 `english_writing_class` 콘텐츠 DB로 두고 단어 쓰기, 문장 완성, 문단 쓰기, 주제 글쓰기, 첨삭, 다시 쓰기, 포트폴리오 저장을 관리하도록 정리했다. 리딩반은 계속 독해 스킬 중심으로 유지하고, 읽기반은 유창성 중심으로 분리하는 기준을 남겼다.
-- 후속 요청으로 현재 영어 프로젝트 구성을 미국 영어교육 전문가와 영국 영어교육 전문가 관점에서 최대치로 구체화했다. 공식 기준 확인 후 Common Core, ACTFL, WIDA, 영국 National Curriculum, DfE Reading Framework, CEFR형 `can-do` 성취문을 상위 설계 프레임으로 묶고, 16개 트랙을 입문·흥미, 소리·문자, 교과·내신, 문해력·산출 축으로 조직했다.
-- 미국식 표준 기반 문해력은 목표 성취문, 수행 과제, 평가 증거, 보충 루틴 중심으로 반영했다. 영국식 초기 문해력은 systematic synthetic phonics, decodable text, 반복 읽기, reading for pleasure 중심으로 반영했다.
-- 모든 콘텐츠 item에 `learningObjective`, `skillStrand`, `cefrCanDo`, `englishVariant`, `sourceLicenseStatus`, `evidenceType`, `teacherAction`을 붙이는 기준을 추가했다. 교사용 운영 대시보드는 오늘 수업 큐, 기능별 프로필, 파닉스·읽기 결손, 교과·내신 관리, 산출물 포트폴리오, 미국·영국 변이 검토, 리포트 발행 영역으로 구성했다.
-- 후속 요청으로 TESOL 전문 영어교육 과정에 맞춰 현재 영어 학습법을 다시 고도화했다. TESOL 6 Principles, TESOL standards, Cambridge CELTA course topics, British Council CPD Framework를 확인하고 학습자 분석, 언어 분석, 네 기능 수업 설계, 수업 계획, 교수 기술, 지속 평가, 교사 공동체 관점으로 프로젝트 설계를 확장했다.
-- 모든 Lesson을 `diagnose → prepare → notice → practice → communicate → feedback → reflect` 루틴으로 재정의했다. 언어 분석은 form, meaning, use, pronunciation, appropriacy, common errors, CCQ, model sentence 기준으로 보강했다.
-- 콘텐츠 공통 메타데이터에 `tesolStage`, `languageAnalysis`, `interactionPattern`, `scaffolding`, `ccqIcq`, `reflectionPrompt`를 추가했다. 교사용 TESOL 수업안 템플릿에는 main aim, subsidiary aim, learner profile, anticipated problems, solutions, materials, procedure, CCQ·ICQ, assessment evidence, feedback plan, reflection을 포함했다.
-- 후속 요청으로 `강태훈_푸르넷영어_자기주도학습_학원형(26.05.19).md` 요청 기록과 영어 설계 문서를 기반으로 HTML5·JavaScript MVC 영어 학습 프로그램을 만들기로 했다. 기존 수학 Vite 앱을 직접 섞지 않고 `강태훈샘_푸르넷영어책(26.05.19)/mvc-english-learning`에 독립 실행형 앱을 만든다.
-- 구현 기준은 브라우저에서 바로 열리는 HTML5 앱, Model·View·Controller 분리, 16개 트랙 카탈로그, TESOL 단계 학습 플로우, 듣기·말하기·읽기·쓰기 상호작용, 교사용 대시보드, localStorage 기반 학습 기록 저장이다. 검증 기준은 HTML·JS 문법 점검, 핵심 파일 존재 확인, 브라우저 실행 가능성 확인이다.
-- 구현 완료: `mvc-english-learning/index.html`, `assets/styles.css`, `js/data.js`, `js/models.js`, `js/views.js`, `js/controllers.js`, `js/app.js`, `README.md`를 만들었다. 16개 트랙 필터, TESOL 7단계 탭, 언어 분석 카드, 퀴즈, 받아쓰기, TTS 듣기, 말하기 인식 fallback, 읽기 타이머, 쓰기·성찰 포트폴리오, 교사용 TESOL 대시보드를 포함했다.
-- 검증 완료: `node --check`로 5개 JavaScript 파일 문법을 확인했다. 시스템 Chrome executablePath를 지정한 Playwright smoke에서 `file:///.../index.html`을 열고 트랙 16개 렌더링, 말하기 트랙 선택, practice 단계 퀴즈 정답 처리, localStorage 기록 생성을 확인했다.
-- 후속 요청으로 영단어와 영문법을 자기주도 학습 루틴으로 다시 프로그래밍한다. 최신 영어교육 흐름은 근거 기반 구어 상호작용, 문맥 기반 어휘, 인출 연습, 메타인지, human-centred AI, 음성·텍스트 인터랙션을 반영하고, 앱에는 단어와 문법 전용 루틴 엔진을 추가한다.
-- 구현 기준은 영단어의 `문맥 노출 → 발음·의미 → 인출 → 문장 사용 → 간격 복습` 루틴과 영문법의 `예문 발견 → form·meaning·use 분석 → 오류 수정 → 문장 변환 → 자유 산출` 루틴이다. 검증은 JavaScript 문법 검사와 브라우저 스모크에서 단어·문법 인터랙션이 실제 저장되는지 확인하는 것으로 잡는다.
-- 구현 완료: `js/data.js`에 `vocabularyBank`와 `grammarPatterns`를 추가하고, `js/models.js`에 단어 숙달도와 문법 숙달도 저장, 단어 인출, 단어 문장 산출, 문법 오류 수정, 문장 변환, 자유 산출 저장 로직을 추가했다.
-- 구현 완료: `js/views.js`에 `Vocabulary Self-Study Lab`과 `Grammar Discovery Lab`을 추가하고, `js/controllers.js`에 단어·문법 전용 이벤트를 연결했다. `assets/styles.css`에는 전문 학습 랩과 루틴 단계 UI를 추가했고, `README.md`에도 새 루틴을 기록했다.
-- 검증 완료: `node --check`로 5개 JavaScript 파일 문법을 통과했다. Chrome 기반 Playwright smoke에서 초등 영단어 트랙의 단어 인출·문장 산출, 중등 영문법 트랙의 오류 수정·문장 변환·자유 산출을 실행했고 `localStorage`에 `wordMastery=1`, `grammarMastery=1`, `portfolio=2`, `evidence=5`가 저장되는 것을 확인했다.
-
-## 유치원 학습 놀이터 기획 문서화 (2026-05-20)
-- 요청 목표는 `푸르넷 유치원(26.05.20)` 폴더에 6세반과 7세반 아이들을 위한 초등학교 입학 준비용 유치원 학습 놀이터 기획서, 실천 계획, 프로그램 요소, 체크리스트를 만드는 것이다.
-- 이번 작업은 앱 코드 수정이 아니라 문서화 작업이므로 `npm run lint`, `npm run verify`, `npm run onefile`은 실행 대상에서 제외했다. 검증 기준은 새 Markdown 문서 존재, 6세·7세 계획표 포함, 국어·수학·영어 교실 포함, 카드북·국어동화·영어동화·수학동화 포함, 개발 체크리스트 포함 여부로 잡았다.
-- 새 문서는 `푸르넷 유치원(26.05.20)/푸르넷 유치원 학습 놀이터(26.05.20).md`에 작성했다. 내용에는 전체 목표, 기본 방향, 화면 구조, 6세반·7세반 12주 학습 계획표, 국어교실·수학교실·영어교실 구성, 카드북과 동화책 계획, 게임형 학습 요소, 프로그램 필수 요소, 데이터 구조 초안, 실천 계획, 주간 운영 예시, 교사용 리포트, 구현 메모, 검증 기준, 개발 체크리스트를 포함했다.
-- 유치원생용 콘텐츠는 실제 아이가 누르고 듣고 말하는 흐름이 중요하므로 정답률 중심보다 참여 횟수, 반복, 발화, 읽기, 스티커 보상, 교사 관찰 리포트가 함께 저장되는 방향으로 정리했다.
-- 동화 원문, 삽화, 음원은 저작권 위험이 있으므로 자체 제작 콘텐츠 또는 정식 라이선스를 확인한 자료만 수록하고, 문서에는 이를 별도 기준으로 남겼다.
-
-## 유치원 학습 놀이터 HTML5·JavaScript MVC 구현 (2026-05-20)
-- 요청 목표는 금방 만든 유치원 학습 놀이터 기획 문서를 실제로 실행 가능한 프로그램으로 구현하는 것이다.
-- 구현 방향은 기존 영어 MVC 앱과 비슷하게 메인 Vite 수학 앱에 바로 섞지 않고 `푸르넷 유치원(26.05.20)/kindergarten-learning-playground`에 독립 실행형 HTML5·JavaScript MVC 앱을 만드는 것으로 잡았다. 이렇게 하면 `index.html`을 바로 열 수 있고, 이후 단일 HTML, 모바일 PWA, 설치 앱으로 흡수하기 쉽다.
-- 구현 파일은 `index.html`, `assets/styles.css`, `assets/playground-scene.svg`, `js/data.js`, `js/models.js`, `js/views.js`, `js/controllers.js`, `js/app.js`, `scripts/smoke.mjs`, `README.md`이다.
-- 6세반과 7세반 각각 국어·수학·영어 과목별 카드북, 동화책, 게임을 1개씩 넣어 총 18개 샘플 활동을 구성했다. 카드 넘기기, 동화 장면 넘기기, 듣기 버튼, 게임 정답 확인, 활동 완료, 보상 스티커, `localStorage` 기록 저장, 교사용 입학 준비 리포트를 포함했다.
-- 검증 기준은 `node --check` 기반 JavaScript 문법 검사와 Playwright 스모크에서 파일 URL로 앱을 열고 7세반 수학 카드북·게임 완료, 교사용 리포트 렌더링, `localStorage` 기록 저장을 확인하는 것이다.
-- 검증 완료: `npm run check` 통과. `npm run smoke`에서 파일 URL로 앱을 열고 초기 국어 활동 3개 렌더링, 7세반 수학교실 선택, `math-7-number-cardbook` 카드 넘기기와 완료, `math-7-add-game` 정답 처리와 완료, 교사용 리포트 렌더링, `localStorage`의 7세반·수학교실·완료·정답·보상 기록 저장을 확인했다.
-
-## 유치원 학습 놀이터 이미지·3D·동적 상호작용 고도화 (2026-05-20)
-- 요청 목표는 학습 내용이 빈약하고 이미지가 없다는 문제를 해결하고, 학습용 이미지, 게임용 이미지, 3차원 로직, 동적 상호 반응을 추가해 입체적인 학습 놀이터로 만드는 것이다.
-- 구현 기준은 유치원생이 실제로 보고 누를 수 있는 이미지와 조작 요소를 우선하고, 기존 독립 실행형 `index.html` 더블클릭 실행을 깨지 않는 것이다.
-- 이미지 보강 완료: `assets/images/`에 국어·수학·영어 카드북, 동화, 게임용 자체 제작 SVG 9종을 추가했다. 기존 활동 목록과 상세 화면, 카드북, 동화 장면에 이미지를 연결했다.
-- 학습 내용 보강 완료: `js/data.js`에서 각 활동에 준비놀이, 손 조작 미션, 교사 질문, 감각 태그를 자동 부여했다. 화면에는 `준비놀이`, `손 조작 미션`, `교사 질문` 3개 확장 학습 카드로 표시한다.
-- 3D 구현 완료: Three.js를 의존성으로 추가하고 `js/three-playground.mjs`에 3D 활동 블록, 현재 활동 이미지 패널, 정답 큐브, 보상 별, 과목 캐릭터, hover 확대, 회전 애니메이션, 드래그 회전, 클릭 이벤트를 구현했다.
-- file URL 이슈 처리: Chrome은 `file://`에서 ES module 로딩을 CORS로 차단하므로 `esbuild`를 devDependency로 추가하고 `js/three-playground.bundle.js` 일반 스크립트 번들을 생성해 `index.html`에서 불러오게 했다.
-- 스모크 보강 완료: `scripts/smoke.mjs`에서 활동 이미지 로딩, 데스크톱 3D 캔버스 크기와 WebGL 픽셀, 애니메이션 픽셀 변화, 3D 정답 큐브 클릭, 모바일 3D 캔버스 픽셀, 가로 overflow 없음, 데스크톱·모바일 스크린샷 생성을 검증한다.
-- 검증 완료: `npm run check` 통과. `npm run smoke` 통과. 스크린샷은 `scripts/.smoke-output/desktop-3d.png`, `scripts/.smoke-output/mobile-3d.png`에 생성됐다.
-
-## 유치원 학습 놀이터 교육용 게임 앱 전면 개편 (2026-05-20)
-- 요청 목표는 기존 프로그램이 재미와 반응성이 부족하다는 문제를 해결하고, 최근 인기 학습 프로그램과 앱의 패턴을 참고해 교육용 게임 앱 형식으로 디자인과 학습 데이터를 전부 고치는 것이다.
-- 참고 기준은 Khan Academy Kids의 캐릭터·책·게임·창작 활동과 교사용 진행 확인, Lingokids의 structured lesson과 자기 속도 학습, ABCmouse의 티켓·보상 시스템, Duolingo ABC의 hands-on reading lesson과 tracing·drag-and-drop 류의 다감각 활동, Teach Your Monster to Read의 월드·미니게임·파닉스 진행 구조다. 특정 앱의 UI나 캐릭터를 복제하지 않고 공통 패턴만 자체 디자인으로 반영했다.
-- 데이터 전면 개편 완료: `js/data.js`를 72개 퀘스트 생성형 데이터로 교체했다. 6세·7세, 국어·수학·영어, 과목별 4개 월드, 카드북·동화·게임 활동이 생성된다.
-- 게임화 데이터 추가 완료: 각 활동에 레벨, 난이도, XP, 코인, 배지, 미니게임 타입, 스킬 코드, 퀘스트 설명, 준비놀이, 손 조작 미션, 교사 질문, 감각 태그를 넣었다.
-- 모델 개편 완료: `js/models.js`에 XP, 코인, 연속 완료, 등급, 캐릭터 반응, 최근 퀘스트 로그 저장을 추가했다.
-- 화면 개편 완료: `js/views.js`에 게임 HUD, 레벨·XP·코인·연속 완료 표시, 캐릭터 반응, 퀘스트 목표판, 보상 미터, 최근 퀘스트 로그를 추가했다.
-- 상호작용 개편 완료: `js/controllers.js`에 정답·완료 효과음과 XP 폭죽 애니메이션을 추가했다.
-- 3D 수정 완료: `js/three-playground.mjs`의 카메라가 3D 월드를 중앙으로 바라보게 조정했다. `file://` CORS를 피하기 위해 3D 활동 패널은 외부 SVG 텍스처 대신 캔버스 텍스처로 직접 그린다.
-- 버그 수정 완료: 게임 문제 영역에서 `undefined`가 보이던 원인은 게임 round가 `prompt` 대신 `clue`를 쓰는데 렌더러가 `prompt`만 읽어서 생긴 문제였다. `prompt || clue` fallback으로 수정했다.
-- 검증 완료: `npm run check` 통과. `npm run smoke` 통과. 추가 확인에서 모바일 `undefined? false`를 확인했다. 새 스크린샷은 `scripts/.smoke-output/desktop-3d.png`, `scripts/.smoke-output/mobile-3d.png`에 생성됐다.
-
-## 유치원 ROOT 관리자 모니터링 화면 (2026-05-20)
-- 요청 목표는 `푸르넷 유치원(26.05.20)/kindergarten-learning-playground`에서 교사용 버튼 옆에 관리자 버튼을 추가하고, 교사용·학생용 아이디와 비밀번호 및 학습 콘텐츠 전체를 ROOT 관리자 화면에서 관리하는 것이다.
-- 구현 기준은 현재 독립 실행형 단일 HTML 앱 구조를 유지하는 것이다. 서버 인증을 새로 만들지 않고 localStorage roster에 교사·학생 `username`, `password` 필드를 추가하고, 기존 데이터에는 기본 아이디와 비밀번호를 자동 보강하도록 했다.
-- 상단 헤더는 `회원가입`, `학생용`, `교사용`, `관리자` 순서로 정리했다. `관리자` 버튼은 `admin-dashboard`로 진입하며, 관리자 모드에서는 새로고침으로 저장소 최신 roster와 콘텐츠 관리 상태를 다시 읽는다.
-- ROOT 관리자 화면은 교사 계정 수, 등록 클래스 수, 학생 계정 수, 콘텐츠 코스 수, 평균 진도를 요약하고, 전체 학생 진행률을 기존 Three.js 모니터링 장면으로 보여준다.
-- 계정 관리는 교사용과 학생용을 나눠 아이디와 비밀번호를 바로 수정하는 폼으로 구성했다. 콘텐츠 관리는 6세·7세 × 국어·수학·영어 6개 코스별 운영 상태와 운영 메모를 `contentAdmin`에 저장한다.
-- 검증 완료: `npm run check`, `npm run smoke` 통과. Edge 파일 실행 점검에서 관리자 버튼, ROOT 대시보드, 계정 수정 저장, 콘텐츠 운영 상태 저장, 3D 캔버스 출력, 모바일 가로 overflow 없음이 확인됐다.
-
-## 유치원 학습 놀이터 Cloudflare Pages 배포 (2026-05-20)
-- 요청 목표는 지금까지 작업한 유치원 앱을 `https://purunet-kindergarten.pages.dev` 주소에서 홈페이지로 작동하게 업데이트하는 것이다.
-- 기존 루트 `wrangler.toml`은 수학 전자북용 `purunet-math-ebook` 설정이어서 유치원 앱 배포에는 사용하지 않았다. Wrangler로 `purunet-kindergarten` Pages 프로젝트를 새로 생성했다.
-- 배포 전 `푸르넷 유치원(26.05.20)/kindergarten-learning-playground`에서 `npm run check`와 `npm run smoke`를 실행했고 모두 통과했다.
-- 운영 배포에는 앱 실행에 필요한 `index.html`, `assets`, `js`, `vendor`만 포함했다. 문서, 스크립트, 패키지 파일은 운영 사이트에 노출하지 않도록 임시 배포 폴더에서 제외했다.
-- 배포 명령은 `npx wrangler pages deploy "$env:TEMP\purunet-kindergarten-pages" --project-name purunet-kindergarten --branch main`으로 실행했다. Wrangler는 9개 파일 업로드와 배포 완료를 반환했다.
-- 운영 검증 완료: `https://purunet-kindergarten.pages.dev/`는 HTTP 200이고 제목은 `푸르넷 유치원`이다. `assets/styles.css`, `js/models.js`, `js/views.js`, `vendor/three.min.js`도 모두 HTTP 200으로 확인했다.
-- Edge 운영 URL 점검에서 홈 화면, 관리자 버튼, ROOT 관리자 대시보드, 3D 캔버스 렌더링이 통과했다.
-
-## 유치원 학습 놀이터 Cloudflare D1 병행 동기화 (2026-05-20)
-- 요청 목표는 사이트의 학습용 데이터, 학습자 데이터, 교사 데이터를 Cloudflare 전용 DB와 현재 프로젝트 DB에 병행 저장하고 동기화하는 것이다.
-- 현재 프로젝트 DB는 기존 브라우저 `localStorage`이며, 이를 제거하지 않고 Cloudflare D1을 추가 저장소로 붙였다. D1 이름은 `purunet_kindergarten_learning_db`, 바인딩 이름은 `KINDERGARTEN_DB`다.
-- D1 스키마는 전체 snapshot 백업용 `sync_snapshots`와 조회용 `teachers`, `classes`, `students`, `student_progress`, `learning_content`, `content_admin` 테이블로 구성했다.
-- Cloudflare Pages Advanced Worker `_worker.js`를 추가해 `/api/kindergarten/sync`를 처리한다. 같은 origin PUT만 저장하고, GET은 snapshot과 조회 테이블 데이터를 반환한다.
-- 브라우저 쪽에는 `js/cloud-sync.js`를 추가했다. `models.js`는 localStorage 저장 후 운영 HTTPS 환경에서 Cloudflare D1 저장을 debounce로 병행 실행하고, 앱 시작 및 새로고침 시 D1 snapshot을 받아 localStorage와 병합한다.
-- 배포 전 `npm run check`, `npm run smoke`가 통과했다. 운영 URL에서 Edge로 교사·학생 등록을 수행한 뒤 `/api/kindergarten/sync`와 원격 D1 SQL 조회에서 teachers 1, classes 1, students 1, progress 1, content 6 저장을 확인했다.
-- 검증 후 운영 DB의 더미 교사·학생·진행 데이터와 활성 snapshot은 삭제했다. 현재 D1에는 학습 콘텐츠 6개만 남아 있다.
-## 유치원 Google 관리자 인증과 영어·수학 통합 포털 (2026-05-21)
-- 요청 목표는 유치원 ROOT 관리자 화면을 Google 인증 이후에만 열고, 기존 `https://purunet-math-ebook.pages.dev/`와 `https://purunet-english-ebook.pages.dev/`를 `푸르넷 영어 수학 학원` 신규 포털에서 선택할 수 있게 만드는 것이다.
-- 유치원 앱은 순수 HTML/JS 구조라 Google Identity Services 프런트엔드 게이트를 적용했다. 관리자는 Google OAuth 웹 Client ID와 허용 이메일을 저장한 뒤, ID 토큰의 audience, 이메일, 이메일 확인 여부, 만료 시간을 통과해야 `admin-dashboard`로 이동한다.
-- 신규 포털은 `푸르넷 영어 수학 학원(26.05.21)/academy-portal`에 만들었다. 첫 화면에는 상단 `회원가입`, `학생용`, `교사용`, `관리자` 버튼과 `푸르넷 수학`, `푸르넷 영어` 선택 카드가 있고, 배경은 Three.js 기반 3D 입체 포털 장면이다.
-- 요청 주소 `purunet_academy.pages.dev`는 밑줄 때문에 DNS 호스트명으로 사용할 수 없어 Cloudflare Pages 프로젝트는 `purunet-academy`로 생성했다. 운영 주소는 `https://purunet-academy.pages.dev/`이다.
-- 검증 완료: 유치원 `npm run check`, `npm run smoke` 통과. 로컬·운영 Playwright에서 신규 포털 3D 캔버스 비공백, 수학·영어 링크, 권한 버튼, 모바일 390px overflow 0을 확인했고, 운영 유치원 사이트에서 Google 관리자 게이트 목 인증 후 ROOT 대시보드 진입을 확인했다.
-
-## 푸르넷 영어 수학 학원 통합 학습 앱 재구축 (2026-05-21)
-- 사용자 정정에 따라 기존 `purunet-academy` 외부 링크 게이트를 폐기하고, 수학·영어 데이터를 앱 내부에서 직접 학습하는 통합 사이트로 다시 만들었다.
-- `푸르넷 영어 수학 학원(26.05.21)/academy-portal/js/learning-data.js`는 수학 1~6학년 개념 72개, 수학 1~6학년 연산 72개, 영어 16트랙과 영어 집중 코스를 합쳐 총 173개 학습 모듈을 생성한다.
-- `js/app.js`는 과목 탭, 코스 목록, 카드북, 대표 문제 게임, 음성 듣기, 학습 지도, localStorage 진도 저장, 회원가입, 학생용 현재 학습, 교사용 모니터링, 관리자 콘텐츠 인벤토리를 렌더링한다.
-- 3D 환경은 단순 게이트가 아니라 수학 탑과 영어 탑, 학습자 오브젝트가 있는 학습 캠퍼스로 바꿨고, 과목과 진행률에 따라 학습자 오브젝트가 반응한다.
-- 검증 완료: `node --check js/learning-data.js`, `node --check js/app.js`, 로컬 Playwright, 운영 Playwright를 통과했다. 운영 URL은 `https://purunet-academy.pages.dev/`이고, 운영 HTML에는 기존 외부 수학·영어 링크 문자열이 남아 있지 않다.
-
-## 중등 내신 영어 8종 교과서 분석 사이트 (2026-05-21)
-- 이번 요청은 기존 `purunet-academy`를 중등 내신 영어 대비반까지 확장하는 작업이다.
-- 구현은 8개 출판사 그룹, 중1·중2·중3, 단원별 본문 분석·단어·문장 암기·자습서 정리·평가문제집 대비를 앱 내부 학습 과목으로 추가하는 방향으로 잡았다.
-- 교과서 본문, 자습서, 평가문제집 원문은 저작권 자료이므로 자동 수집하거나 전문을 코드에 넣지 않는다. 교사가 가진 정식 자료를 입력하면 localStorage에서 분석과 문제를 생성하는 방식으로 처리한다.
-- 검증 기준은 중등 영어 데이터 카운트, 문법 검사, 빌드, 브라우저 스모크다.
-- 구현 완료: `academy-portal/js/middle-english-textbooks.js`에 8개 출판사 그룹, 중1·중2·중3, 총 192개 Lesson 분석 세트를 추가했다.
-- 구현 완료: `middle-english` 과목을 기존 수학·영어 통합 카탈로그, 문제 생성, 학습 화면, 관리자 콘텐츠 인벤토리에 연결했다.
-- 검증 완료: 새 데이터 카운트 8개 출판사, 3개 학년, 24개 코스, 192개 중등 영어 모듈을 확인했고, 전체 모듈은 282개다.
-- 검증 완료: `node --check`, `npm run build`, 로컬 Playwright 스모크가 통과했다. `lint/verify/onefile`은 이 하위 앱에 스크립트가 없어 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/` 운영 URL에 반영했고, 최종 프리뷰는 `https://07646f6b.purunet-academy.pages.dev`다.
-
-## 초등·중등 필수 영단어와 영문법 학습 사이트 (2026-05-21)
-- 이번 요청은 `academy-portal` 안에 초등 필수 영단어, 중등 필수 영단어, 초등 영문법, 중등 영문법 과목을 추가하는 작업이다.
-- 2022 개정 영어과 교육과정과 기본 어휘 목록 연구를 기준으로 삼되, 전체 단어 목록은 교사용 붙여넣기 확장 방식으로 처리한다.
-- 검증 기준은 새 데이터 카운트, JS 문법 검사, 빌드, 로컬·운영 브라우저 스모크다.
-- 구현 완료: `academy-portal/js/english-core-sites.js`를 추가하고 네 과목 총 48개 모듈을 만들었다.
-- 구현 완료: 단어는 기본 대표 세트와 교사용 붙여넣기 저장을 제공하고, 문법은 초등 12개·중등 14개 문법 루틴을 제공한다.
-- 검증 완료: `node --check`, 데이터 카운트, `npm run build`, 로컬 Playwright 스모크가 통과했다. `lint/verify/onefile`은 하위 앱에 스크립트가 없어 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/` 운영 URL에 반영했고, 최종 프리뷰는 `https://36e4f4dc.purunet-academy.pages.dev`다.
-
-## 초등 내신 영어 8종 교과서 학습 세트 (2026-05-21)
-- 이번 요청은 `academy-portal`에 초등 내신 영어 8종 교과서 학습 세트를 추가하는 작업이다.
-- 교과서 원문은 저작권 자료이므로 기본 탑재하지 않고, 교사용 입력형 분석과 학습 루틴을 제공한다.
-- 검증 기준은 새 데이터 카운트, JS 문법 검사, 빌드, 로컬·운영 브라우저 스모크다.
-- 구현 완료: 8개 채택판 그룹, 초3~초6, 총 352개 Lesson 학습 세트를 추가했다.
-- 구현 완료: 대화문, 단원 단어, 파닉스, 핵심 문장, 수행평가, 단원평가 대비와 교사용 입력 저장을 기존 앱 흐름에 연결했다.
-- 검증 완료: `node --check`, 데이터 카운트, `npm run build`, 로컬 Playwright 스모크가 통과했다. `lint/verify/onefile`은 하위 앱에 스크립트가 없어 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/` 운영 URL에 반영했고, 최종 프리뷰는 `https://980c206a.purunet-academy.pages.dev`다.
-- 운영 검증 완료: 전체 682개 모듈, 8개 과목 카드, 초등 내신 영어 352개 학습 세트, 교사용 대화문 localStorage 저장, 데스크톱 overflow 0, 모바일 390px overflow 0, 콘솔 오류 0, 400 이상 응답 0을 확인했다.
-
-## 고등 내신 영어 교과서·고등 영문법·고등 필수 영단어 (2026-05-21)
-- 이번 요청은 `academy-portal`에 고등 내신 영어 교과서 분석, 고등 필수 영단어, 고등 영문법 과목을 추가하는 작업이다.
-- 공개 자료 확인 기준으로 2022 개정 고등학교 1학년 영어 교과서는 공통영어1·공통영어2 읽기 자료 위계가 중요하므로, 앱은 공통영어1·공통영어2·영어Ⅰ·영어Ⅱ 단원 흐름을 제공한다.
-- 사용자 요청은 8종 세트이므로 8개 대표 채택판 그룹을 기본으로 두고, 복수 저자판·학교별 채택판명은 교사용 입력 메모로 보정할 수 있게 한다.
-- 교과서 원문은 저작권 자료이므로 기본 탑재하지 않고, 교사용 입력형 분석과 고등 내신 문제 루틴을 제공한다.
-- 검증 기준은 새 데이터 카운트, JS 문법 검사, 빌드, 로컬·운영 브라우저 스모크다.
-- 구현 완료: `academy-portal/js/high-english-textbooks.js`를 추가하고 8개 대표 채택판 그룹, 공통영어1·공통영어2·영어Ⅰ·영어Ⅱ, 총 256개 고등 내신 영어 분석 세트를 만들었다.
-- 구현 완료: `academy-portal/js/english-core-sites.js`에 고등 필수 영단어 12개 코스와 고등 영문법 16개 코스를 추가했다.
-- 구현 완료: 고등 본문 구조, 핵심 어휘, 구문 분석, 어법 포인트, 문장 암기, 서술형, 평가문제집 대비 루틴을 기존 문제 생성·듣기·진도·관리자 흐름에 연결했다.
-- 검증 완료: `node --check`, 데이터 카운트, `npm run build`, 로컬 Playwright 스모크가 통과했다. `lint/verify/onefile`은 하위 앱에 스크립트가 없어 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/` 운영 URL에 반영했고, 최종 프리뷰는 `https://5e32906e.purunet-academy.pages.dev`다.
-- 운영 검증 완료: 전체 966개 모듈, 11개 과목 카드, 고등 내신 영어 256개, 고등 필수 영단어 12개, 고등 영문법 16개, 교사용 본문 localStorage 저장, 데스크톱 overflow 0, 모바일 390px overflow 0, 콘솔 오류 0, 400 이상 응답 0을 확인했다.
-
-## 중등 내신 수학 (2026-05-21)
-- 이번 요청은 `academy-portal`에 중등 내신 수학 과목을 추가하는 작업이다.
-- 2022 개정 중학교 수학의 4개 영역인 수와 연산, 변화와 관계, 도형과 측정, 자료와 가능성을 기준으로 단원 카탈로그를 구성한다.
-- 범위는 중1·중2·중3 단원별 내신 대비이며, 교과서 원문이 아니라 개념, 기본, 유형, 서술형, 고난도, 오답 루틴과 교사용 시험범위 메모를 제공한다.
-- 검증 기준은 새 데이터 카운트, JS 문법 검사, 빌드, 로컬·운영 브라우저 스모크다.
-- 구현 완료: `academy-portal/js/middle-math-exams.js`를 추가하고 중1·중2·중3 총 30개 중등 내신 수학 세트를 만들었다.
-- 구현 완료: 각 세트는 개념 압축, 기본 계산, 대표 유형, 서술형, 고난도, 오답 클리닉 6개 루틴과 생성형 문제를 제공한다.
-- 구현 완료: 교사용 시험범위·교재·오답 메모 입력을 localStorage에 저장하고, 기존 문제 생성·듣기·진도·관리자 권한 흐름에 연결했다.
-- 검증 완료: `node --check`, 데이터 카운트, `npm run build`, 로컬 Playwright 스모크가 통과했다. `lint/verify/onefile`은 하위 앱에 스크립트가 없어 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/` 운영 URL에 반영했고, 최종 프리뷰는 `https://679e2a6f.purunet-academy.pages.dev`다.
-- 운영 검증 완료: 전체 996개 모듈, 12개 과목 카드, 중등 내신 수학 30개, 교사용 시험범위 localStorage 저장, 문제 생성, 데스크톱 overflow 0, 모바일 390px overflow 0, 콘솔 오류 0, 400 이상 응답 0을 확인했다.
-
-## 홈 화면 학년군 탭 메뉴 (2026-05-21)
-- 이번 요청은 메인 3D 배경 아래에 나열된 과목 메뉴를 초등학생, 중학생, 고등학생 탭 아래의 세부 메뉴로 재구성하는 작업이다.
-- 기존 과목 데이터, 문제 생성, 진도 저장, 관리자 흐름은 유지하고 홈 화면 과목 선택 UI만 바꾼다.
-- 검증 기준은 JS 문법 검사, 빌드, 로컬·운영 브라우저에서 탭 전환·과목 선택·모바일 overflow를 확인하는 것이다.
-- 구현 완료: 홈 화면을 초등학생, 중학생, 고등학생 탭과 세부 과목 패널 구조로 바꿨다.
-- 검증 완료: `node --check`, `npm run build`, 로컬·운영 Playwright 스모크가 통과했다. `lint/verify/onefile`은 하위 앱에 스크립트가 없어 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/` 운영 URL에 반영했고, 최종 프리뷰는 `https://5640f984.purunet-academy.pages.dev`다.
-- 운영 검증 완료: 초등 탭 5개 메뉴, 중등 탭 4개 메뉴, 고등 탭 3개 메뉴, 중등 수학 선택 후 30개 모듈 표시, 데스크톱 overflow 0, 모바일 390px overflow 0, 콘솔 오류 0, 400 이상 응답 0을 확인했다.
-
-## 중등 내신 국어·사회·과학·역사 (2026-05-21)
-- 이번 요청은 `academy-portal` 중학생 탭 아래에 중등 내신 국어, 중등 내신 사회, 중등 내신 과학, 중등 내신 역사를 추가하는 작업이다.
-- NCIC 2022 개정 교육과정 공개 자료를 참고해 과목별 단원 구조를 잡되, 교과서 원문은 수록하지 않고 내신 대비용 개념·자료 분석·문제 루틴으로 구성했다.
-- 구현 완료: `js/middle-core-exams.js`를 추가해 국어 12개, 사회 12개, 과학 12개, 역사 12개, 총 48개 중등 내신 세트를 만들었다.
-- 구현 완료: 각 세트는 개념 핵심, 자료·지문 분석, 대표 유형, 서술형, 고난도, 오답 클리닉 토픽과 생성형 문제를 제공한다.
-- 구현 완료: `js/learning-data.js`, `js/worksheet.js`, `js/models.js`, `js/controllers.js`, `js/views.js`, `assets/styles.css`, `index.html`, `README.md`를 연결해 메뉴, 학습 화면, 문제 생성, 저장, 권한, 관리자 인벤토리를 반영했다.
-- 검증 완료: `node --check`, 데이터 카운트, `npm run build`, 로컬 Playwright 스모크, 운영 Playwright 스모크가 통과했다. `npm run lint`, `npm run verify`, `npm run onefile`은 `academy-portal/package.json`에 스크립트가 없어 실행 불가했다.
-- 배포 완료: `npx --yes wrangler pages deploy . --project-name purunet-academy --branch main` 성공, 최종 프리뷰는 `https://31461d1b.purunet-academy.pages.dev`다.
-- 운영 검증 완료: `https://purunet-academy.pages.dev/`와 프리뷰 URL에서 전체 1044개 모듈, 중학생 탭 8개 카드, 국어·사회·과학·역사 각 12개 세트, 교사용 메모 localStorage 저장, 문제 생성, 데스크톱 overflow 0, 모바일 390px overflow 0, 콘솔 오류 0, 400 이상 응답 0을 확인했다.
-
-## 초등 내신 국어·수학·사회·과학·역사·한자·독서논술·문해력 (2026-05-22)
-- 이번 요청은 `academy-portal` 초등학생 탭 아래에 초등 내신 국어, 초등 내신 수학, 초등 내신 사회, 초등 내신 과학, 초등 내신 역사, 초등 한자, 초등 독서논술, 초등 문해력을 추가하는 작업이다.
-- NCIC 2022 개정 교육과정 공개 자료와 교육부 안내 자료를 참고해 과목별 학습 세트 구조를 잡는다.
-- 초등 역사는 독립 정규 교과가 아니므로 초등 사회 속 역사 기초와 한국사 준비 루틴으로 해석한다.
-- 초등 한자, 독서논술, 문해력은 교과서 원문 수록이 아니라 보충 학습과 내신 서술형 대비 세트로 구성한다.
-- 검증 기준은 데이터 카운트, JS 문법 검사, `npm run build`, 로컬·운영 브라우저 스모크다.
-- 구현 완료: `academy-portal/js/elementary-core-exams.js`를 추가해 신규 초등 8개 과목과 총 96개 학습 세트를 만들었다.
-- 구현 완료: 초등학생 탭에 신규 8개 과목을 넣고, 각 학습 화면에 범위 입력, 분석 카드, 문제 생성, 진도 저장 흐름을 연결했다.
-- 검증 완료: `node --check`, 데이터 카운트, `npm run build`, 로컬·운영 Playwright 스모크가 통과했다. `lint/verify/onefile`은 하위 앱에 스크립트가 없어 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/` 운영 URL에 반영했고, 최종 프리뷰는 `https://817c272c.purunet-academy.pages.dev`다.
-- 운영 검증 완료: 전체 1140개 모듈, 초등학생 탭 13개 카드, 신규 초등 8개 과목 각 12개 세트, 교사용 메모 저장, 문제 생성, 데스크톱 overflow 0, 모바일 390px overflow 0, 콘솔 오류 0, 400 이상 응답 0을 확인했다.
-
-## 고등 내신 국어·수학·사회·과학 (2026-05-22)
-- 이번 요청은 `academy-portal` 고등학생 탭 아래에 고등 내신 국어, 고등 내신 수학, 고등 내신 사회, 고등 내신 과학을 추가하는 작업이다.
-- NCIC 2022 개정 교육과정 공개 자료와 고등학교 과목 구조 안내 자료를 참고해 과목별 학습 세트 구조를 잡는다.
-- 고등 과목은 공통 과목과 주요 선택 과목 폭이 넓으므로 과목별 16개 세트, 총 64개 세트로 구성한다.
-- 교과서 원문은 수록하지 않고 교육과정 단원 구조 기반의 내신 대비 루틴과 교사용 시험범위 입력 구조로 처리한다.
-- 검증 기준은 데이터 카운트, JS 문법 검사, `npm run build`, 로컬·운영 브라우저 스모크다.
-- 구현 완료: `academy-portal/js/high-core-exams.js`를 추가해 신규 고등 4개 과목과 총 64개 내신 세트를 만들었다.
-- 구현 완료: 고등학생 탭에 신규 4개 과목을 넣고, 각 학습 화면에 범위 입력, 분석 카드, 문제 생성, 진도 저장 흐름을 연결했다.
-- 검증 완료: `node --check`, 데이터 카운트, `npm run build`, 로컬·운영 Playwright 스모크가 통과했다. `lint/verify/onefile`은 하위 앱에 스크립트가 없어 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/` 운영 URL에 반영했고, 최종 프리뷰는 `https://756b0d6d.purunet-academy.pages.dev`다.
-- 운영 검증 완료: 전체 1204개 모듈, 고등학생 탭 7개 카드, 신규 고등 4개 과목 각 16개 세트, 교사용 메모 저장, 문제 생성, 데스크톱 overflow 0, 모바일 390px overflow 0, 콘솔 오류 0, 400 이상 응답 0을 확인했다.
-
-## 푸르넷 아카데미 Windows 설치 파일 (2026-05-22)
-- 이번 요청은 최신 `academy-portal` 운영본을 PC 설치 파일로도 사용할 수 있게 갱신하는 작업이다.
-- 기존 `app/release` 설치 파일은 수학 전자북 전용이므로, `academy-portal` 안에 별도 Electron 래퍼와 설치 산출물을 만든다.
-- 설치 앱은 `https://purunet-academy.pages.dev/`를 우선 로드하고, 실패하면 설치 파일에 포함된 정적 파일을 연다.
-- 검증 기준은 빌드, 설치 파일 생성, release 압축, 산출물 해시 기록이다.
-- 구현 완료: `academy-portal/electron/main.cjs`와 `academy-portal/package.json`의 `installer:win` NSIS 설정을 추가했다.
-- 검증 완료: `node --check`, `package.json` 파싱, `npm run build`, `npm run installer:win`이 통과했다.
-- 설치 산출물 생성 완료: `academy-portal/release/푸르넷 아카데미-설치-1.0.0.exe`와 `academy-portal/release.zip`을 생성했다.
-- 패키지 검증 완료: `app.asar` 내부에서 운영 URL, `js/high-core-exams.js`, `PurunetHighCore`, `high-korean` 포함을 확인했다.
-- 최신 산출물 SHA256: 설치 EXE `6BD6CD2D6336FC741F224B8EDFC41542B3B9353C667AE904281EB5406378825D`, blockmap `0914753793E0E27C49B3B067D689192658767BE79AC38A0853AEDD304782847F`, app.asar `1186BA87D02C4B1B1DA46DA2BD123684A3E1F45A14AE542320BBD7ED31C04431`, release.zip `14AB99D8EA2FC08BAC4CD9C608E8FF104CD505105B6B383E34F1F05FB0CFEC0D`이다.
-
-## 학생용 고등학생 탭 제한 (2026-05-22)
-- 이번 요청은 학생용 홈 메뉴에서 고등학생 탭을 숨기고, 교사용에서만 고등학생 탭을 보이게 하는 작업이다.
-- 교사용 역할은 기존에 모니터링 화면만 렌더링했으므로, 모니터링 아래 학습 메뉴도 함께 붙이는 방향으로 처리한다.
-- 학생용으로 돌아올 때 고등 과목이 선택된 상태가 남아 있으면 초등 기본 과목으로 돌려 학생 화면에 고등 코스가 노출되지 않게 한다.
-- 검증 기준은 학생용 탭 2개, 교사용 탭 3개, 학생용 전환 후 고등 코스 미노출, 빌드, 배포, 설치 파일 갱신이다.
-- 구현 완료: 학생용은 초등학생·중학생 탭만 표시하고, 교사용은 초등학생·중학생·고등학생 탭을 표시하게 했다.
-- 구현 완료: 교사용 모니터링 아래 학습 메뉴와 코스 목록을 붙여 교사용에서 고등학생 탭을 사용할 수 있게 했다.
-- 구현 완료: 학생용 전환 시 고등 과목 상태를 초등 기본 과목으로 초기화하고, 학생용 고등 과목 선택을 차단했다.
-- 배포 완료: `npm run deploy`를 설치 산출물 제외 임시 배포 방식으로 보정하고 `https://purunet-academy.pages.dev/`에 반영했다. 최종 프리뷰는 `https://8fce8b4c.purunet-academy.pages.dev`다.
-- 검증 완료: 로컬과 운영 Playwright에서 학생용 탭 2개, 교사용 탭 3개, 교사용 고등 카드 7개, 전체 모듈 1204개를 확인했다.
-- 설치 파일 갱신 완료: `academy-portal/release/푸르넷 아카데미-설치-1.0.0.exe`와 `academy-portal/release.zip`을 최신 UI 기준으로 다시 생성했다.
-- 최신 산출물 SHA256: 설치 EXE `760F5BDD3D5188B8FE65CC583F64A7791785959F8260BDA48E1A28032D41386A`, blockmap `3CE061E351BDB04FE48C9C0DA7C64B20785186BC7EE90EEBFD703F42092C7E8F`, app.asar `CA89BE71D8D6FC9D90E7C8F52BDC19CEE0A6839DCA5B1F06C3517F9AD6F78ED9`, release.zip `AC53F6E5E376FA9BD68CB3721606C973D775369BA82557CE409F1DACD5AEBE11`이다.
-
-## PC 설치 파일 재갱신 (2026-05-22)
-- 이번 요청은 `academy-portal`의 PC 설치 파일을 최신 학생용 고등학생 탭 제한 UI 기준으로 다시 생성하는 작업이다.
-- 검증 기준은 `npm run installer:win`, `app.asar` 내부 UI 로직 확인, `release.zip` 재압축, 산출물 해시 기록이다.
-- 설치 파일 재생성 완료: `academy-portal`에서 `npm run installer:win`이 통과했다.
-- 패키지 검증 완료: `app.asar` 내부에서 운영 URL, `visibleSubjectsForRole`, 교사용 학습 메뉴 렌더링, 고등학생 메뉴 차단 문구를 확인했다.
-- `release.zip` 재압축 완료: 최신 `academy-portal/release/` 기준으로 다시 생성했다.
-- 최신 산출물 SHA256: 설치 EXE `96B1F56940D5ABC85E05C8E1CD1FD1AFA6D1A33248DD7F63C17FEC2A47D44C31`, blockmap `EB9C927BC63C31FE0325B1A111C4A5972F57CE4136142AA691D00DB1A7E1B973`, app.asar `CA89BE71D8D6FC9D90E7C8F52BDC19CEE0A6839DCA5B1F06C3517F9AD6F78ED9`, release.zip `EC5B7D6F58D50789C0772BA514B9890B1F998289EF16828437AEE44DC09551B6`이다.
-
-## 중3 수학 연산 PDF 기반 학습 페이지 제작 (2026-05-24)
-- 요청 목표는 업로드된 `바빠수학(중3)연산1권`, `바빠수학(중3)연산2권`, `바빠중3도형` 3개 PDF를 참고해 중학교 3학년 수학 연산 학습 페이지를 만드는 것이다.
-- 저작권 보호를 위해 PDF 지면, 문항, 해설을 그대로 복제하지 않고 단원·유형 흐름만 확인해 새 문제 생성 루틴과 학습 UI를 만들었다.
-- 기존 `academy-portal`에는 사용자 변경으로 보이는 `elem-vocab.html`, `assets/elem-vocab.css`, `js/elem-vocab.js` 변경이 있으므로 이번 작업에서는 건드리지 않았다.
-- 구현 완료: `academy-portal/middle3-math.html`, `academy-portal/assets/middle3-math.css`, `academy-portal/js/middle3-math.js`를 추가해 연산 1권 24단계, 연산 2권 23단계, 도형 25단계의 총 72단계 문제 생성형 학습 페이지를 만들었다.
-- 배포 보정: `academy-portal/scripts/deploy-pages.mjs`의 배포 포함 목록에 `middle3-math.html`을 추가했다.
-- 검증 완료: `node --check`, `npm run build`, 로컬 Playwright, Cloudflare 프리뷰 Playwright, 운영 URL 모바일 Playwright가 통과했다. `npm run lint`, `npm run verify`, `npm run onefile`은 현재 `package.json`에 스크립트가 없어 실행 불가했다.
-- 운영 접근 URL은 `https://purunet-academy.pages.dev/middle3-math.html`이다.
-
-## 중3 수학 연산 학습 페이지 문제 수 확장 (2026-05-24)
-- 사용자 피드백은 현재 단계 수는 있으나 문제집에 비해 실제 풀이 문제 수가 너무 적다는 것이다.
-- 저작권 보호 기준은 유지한다. PDF 원문 문제를 그대로 옮기지 않고, 문제집 분량에 맞는 목표 문항 수와 새 무작위 생성 문제 풀을 늘리는 방식으로 처리한다.
-- 기존 사용자 변경으로 보이는 `academy-portal/assets/elem-vocab.css`, `academy-portal/elem-vocab.html`, `academy-portal/js/elem-vocab.js`는 계속 건드리지 않는다.
-- 구현 완료: `middle3-math.html`, `assets/middle3-math.css`, `js/middle3-math.js`를 갱신해 각 단계 20문항, 전체 72단계 1,440문항 목표를 표시하고 단계별 진행률을 저장하게 했다.
-- 검증 완료: `node --check js/middle3-math.js`, `node --check scripts/deploy-pages.mjs`, `npm run build`, 로컬 Playwright, 운영 URL Playwright가 통과했다.
-- 프로젝트 공통 명령 `npm run lint`, `npm run verify`, `npm run onefile`은 현재 `academy-portal/package.json`에 스크립트가 없어 `Missing script`로 실행 불가했다.
-- 배포 완료: 운영 URL `https://purunet-academy.pages.dev/middle3-math.html`에서 목표 1,440문항과 단계별 0/20 → 1/20 진행 증가를 확인했다.
-
-## 중3 수학 설명·도형 직관화 고도화 (2026-05-24)
-- 사용자 요청은 설명 부분과 도형 부분을 더 고도화해 이해하기 쉽고 직관적으로 표현하는 것이다.
-- 기존 사용자 변경으로 보이는 `academy-portal/assets/elem-vocab.css`, `academy-portal/elem-vocab.html`, `academy-portal/js/elem-vocab.js`는 계속 건드리지 않는다.
-- 구현 방향은 문제 원문 복제 없이 현재 생성형 문제에 맞춰 단계별 풀이 순서, 시각 단서, 도형 SVG를 보강하는 것이다.
-- 구현 완료: `middle3-math.html`에 풀이 안내 패널을 추가하고, `assets/middle3-math.css`로 반응형 설명 카드 스타일을 붙였다.
-- 구현 완료: `js/middle3-math.js`에 유형별 풀이 순서·그림 읽기 설명을 추가하고, 피타고라스·삼각비·원 단원은 문제 값이 표시되는 동적 SVG로 개선했다.
-- 오답 피드백도 정답만 보여주지 않고 해당 유형의 풀이 순서를 함께 안내하게 했다.
-- 검증 완료: `node --check js/middle3-math.js`, `npm run build`, 로컬 Playwright, 운영 URL Playwright가 통과했다. `npm run lint`, `npm run verify`, `npm run onefile`은 현재 스크립트가 없어 `Missing script`로 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/middle3-math.html`에서 피타고라스 설명, 동적 삼각형 값 표시, 설명 패널 2개, overflow 0을 확인했다.
-
-## 중3 수학 SVG 정확도·문제 연동 고도화 (2026-05-24)
-- 사용자 지적은 SVG 이미지가 문제에 맞춰 충분히 바뀌지 않고, 그래프와 그림의 정확도가 낮다는 것이다.
-- 기존 사용자 변경으로 보이는 `academy-portal/assets/elem-vocab.css`, `academy-portal/elem-vocab.html`, `academy-portal/js/elem-vocab.js`는 계속 건드리지 않는다.
-- 구현 방향은 그래프·삼각형·원 SVG에 문제별 `visualData`를 더 많이 넣고, 고정 그림 대신 값과 비율을 반영하는 렌더러로 바꾸는 것이다.
-- 구현 완료: 이차함수 문제 생성 함수들이 계수, 꼭짓점, 축, 절편, 대입점 데이터를 SVG에 넘기고, `graphSvg`가 이를 좌표로 변환해 동적 포물선과 표시점을 그리게 했다.
-- 구현 완료: `triangleSvg`는 문제의 변 길이 비율을 반영해 삼각형의 밑변과 높이를 조절하고, 직각 표시와 강조 변 색상을 유지하게 했다.
-- 구현 완료: `circleSvg`의 원주각 문제는 각도에 따라 같은 호의 양 끝점, 중심각, 원주각을 계산해 그리게 했다.
-- 검증 완료: `node --check js/middle3-math.js`, `npm run build`, 로컬 Playwright, 운영 URL Playwright가 통과했다. 운영 URL에서 x절편, 삼각형 변 길이, 원주각·중심각 텍스트가 문제별로 바뀌는 것을 확인했다.
-- `npm run lint`, `npm run verify`, `npm run onefile`은 현재 스크립트가 없어 `Missing script`로 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/middle3-math.html`에 반영했다.
-
-## buk.io 권한 보유 페이지 PDF 생성 스크립트 (2026-05-24)
-- 사용자 요청은 `https://buk.io/@kb4010/1`부터 `https://buk.io/@kb4010/42`까지 웹 크롤링으로 PDF 문서를 만드는 파이썬 파일을 작성하는 것이다.
-- 이전 확인에서 첫 URL은 외부 접근 시 403이었다. 따라서 접근 제한 우회, 로그인 우회, 유료/저작권 자료 복제를 지원하지 않는 안전한 스크립트로 작성한다.
-- 스크립트는 사용자가 권한을 가진 페이지에 한해 실행하며, robots.txt와 HTTP 401/403을 존중하도록 만든다.
-- 최신 요청은 PDF 스크립트가 아니라 `@kb4010` 1~42, `@kb4011` 1~48, `@kb4007` 1~64 범위를 참고해 중1 연산 페이지를 만드는 것이다.
-- 확인 결과 `https://buk.io/robots.txt`는 `Allow: /`이고 세 첫 페이지는 HTTP 200으로 접근됐다. 다만 페이지 텍스트는 앱 스크립트 중심이라 원문 문항을 추출·복제하지 않고, 범위 쪽수만 반영한 생성형 중1 연산 페이지로 처리한다.
-- 구현 완료: `academy-portal/middle1-math.html`, `academy-portal/assets/middle1-math.css`, `academy-portal/js/middle1-math.js`를 추가했다.
-- 구성 완료: `@kb4010`은 42단계, `@kb4011`은 48단계, `@kb4007`은 64단계로 만들고 각 단계 20문항 목표를 적용해 총 3,080문항 목표로 표시했다.
-- 배포 보정: `academy-portal/scripts/deploy-pages.mjs`에 `middle1-math.html`을 포함했다.
-- 검증 완료: `node --check js/middle1-math.js`, `node --check scripts/deploy-pages.mjs`, `npm run build`, 로컬 Playwright, 운영 URL Playwright가 통과했다. `npm run lint`, `npm run verify`, `npm run onefile`은 현재 스크립트가 없어 `Missing script`로 실행 불가했다.
-- 운영 접근 URL은 `https://purunet-academy.pages.dev/middle1-math.html`이다.
-
-## 중1·중3 수학 기호 표기 고도화 (2026-05-24)
-- 사용자 요청은 중1 문제집과 중3 문제집의 수학 기호들을 수학 전문 기호에 맞춰 고도화하는 것이다.
-- 구현 방향은 정답 비교 문자열은 유지하고, 화면 표시만 위첨자, 루트, 세로 분수, 수학 폰트로 렌더링하는 것이다.
-- 기존 사용자 변경으로 보이는 `academy-portal/assets/elem-vocab.css`, `academy-portal/elem-vocab.html`, `academy-portal/js/elem-vocab.js`는 계속 건드리지 않는다.
-- 구현 완료: `middle1-math.js`와 `middle3-math.js`에 `mathHtml` 렌더러를 추가해 문제, 선택지, 힌트, 피드백 표시를 수학 기호 HTML로 변환하게 했다.
-- 구현 완료: `middle1-math.css`와 `middle3-math.css`에 `Cambria Math` 계열 폰트, 위첨자, 세로 분수, 루트 윗줄 스타일을 추가했다.
-- 검증 완료: `node --check js/middle1-math.js`, `node --check js/middle3-math.js`, `npm run build`, 로컬 Playwright, 운영 URL Playwright가 통과했다. 운영에서 중3 `√3/2`류 선택지가 루트+세로분수로, 중1 분수 문제가 세로분수로 표시되는 것을 확인했다.
-- `npm run lint`, `npm run verify`, `npm run onefile`은 현재 스크립트가 없어 `Missing script`로 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/middle1-math.html`, `https://purunet-academy.pages.dev/middle3-math.html`에 반영했다.
-
-## 중2 연산 페이지 제작 (2026-05-24)
-- 사용자 요청은 `@kb4012` 1~38, `@kb4013` 1~64, `@kb4014` 1~70을 웹 크롤링해 중2 연산 새 페이지를 만들고 각 단원마다 문제집의 최대치 문제 숫자로 작성하는 것이다.
-- `https://buk.io/robots.txt`는 `Allow: /`이고 세 첫 페이지는 HTTP 200으로 접근됐다.
-- 원문 문제를 그대로 추출·복제하지 않고 URL 범위의 쪽수만 반영한 생성형 중2 연산 페이지로 처리한다.
-- 기존 사용자 변경으로 보이는 `academy-portal/assets/elem-vocab.css`, `academy-portal/elem-vocab.html`, `academy-portal/js/elem-vocab.js`는 계속 건드리지 않는다.
-- 구현 완료: `middle2-math.html`, `assets/middle2-math.css`, `js/middle2-math.js`를 추가했다.
-- 구성 완료: `@kb4012` 38단계, `@kb4013` 64단계, `@kb4014` 70단계이며 각 단계 20문항 목표라 전체 목표는 3,440문항이다.
-- 배포 보정: `scripts/deploy-pages.mjs`에 `middle2-math.html`을 포함했다.
-- 검증 완료: `node --check js/middle2-math.js`, `node --check scripts/deploy-pages.mjs`, `npm run build`, 로컬 Playwright, 운영 URL Playwright가 통과했다.
-- `npm run lint`, `npm run verify`, `npm run onefile`은 현재 스크립트가 없어 `Missing script`로 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/middle2-math.html`에서 38·64·70단계와 목표 3,440문항을 확인했다.
-
-## 중등 필수 영단어 학습 페이지 노출 보정 (2026-05-24)
-- 사용자 요청은 중등 초급·중급·고급 필수 영단어 작업은 했는데 학습용 페이지가 나오지 않는 문제를 수정하는 것이다.
-- 조사 결과 `middle-vocab.html`, `js/middle-vocab.js`, `js/middle-vocab-data.js`는 로컬에 있고 `js/views.js`에서도 iframe으로 연결하지만, `scripts/deploy-pages.mjs`의 Cloudflare Pages 배포 포함 목록에는 `middle-vocab.html`이 빠져 있었다.
-- 수정 기준은 기존 초등 영단어 파일 변경은 건드리지 않고, 누락된 중등 영단어 HTML을 배포 산출물에 포함한 뒤 초급·중급·고급 URL을 각각 검증하는 것이다.
-- 구현 완료: `scripts/deploy-pages.mjs` 배포 포함 목록에 `middle-vocab.html`을 추가했다.
-- 구현 완료: `js/middle-vocab.js`가 `?level=beginner`, `?level=intermediate`, `?level=advanced`를 읽어 해당 레벨 학습 세션으로 바로 진입하게 했다.
-- 검증 완료: `node --check js/middle-vocab.js`, `node --check js/middle-vocab-data.js`, `node --check scripts/deploy-pages.mjs`, `npm run build`, 로컬 Playwright, 운영 URL Playwright가 통과했다.
-- `npm run lint`, `npm run verify`, `npm run onefile`은 현재 `package.json`에 스크립트가 없어 각각 `Missing script`로 실행 불가했다.
-- 배포 완료: 프리뷰 `https://a1d3a78c.purunet-academy.pages.dev`, 운영 `https://purunet-academy.pages.dev/middle-vocab.html?level=beginner` 등에서 세 레벨 모두 HTTP 200, 학습 세션 1개, 단어 카드 1개, 콘솔 오류 0을 확인했다.
-
-## 초등·중등 영단어 의미연상암기 고도화 (2026-05-24)
-- 사용자 요청은 AutoVoca의 의미연상암기법과 ScienceDirect 논문을 참고해 초등 영단어와 중등 영단어 학습을 더 고도화하는 것이다.
-- AutoVoca 세 페이지는 브라우저 접근은 가능했지만 정적 텍스트 추출이 거의 되지 않아 원문 문구나 콘텐츠는 복제하지 않고, 사용자가 제시한 “뇌과학 원리에 기반한 의미연상암기법” 방향만 참고한다.
-- ScienceDirect 논문은 Kiwamu Kasahara의 2011년 System 논문이며, 익숙한 단어와 새 단어를 결합한 two-word collocation이 단일 단어 학습보다 의미 보존과 인출을 더 잘 돕는다는 결과를 제시한다. DOI는 `10.1016/j.system.2011.10.001`이다.
-- 구현 기준은 새 단어를 familiar cue, 의미 장면, 회상 질문과 함께 부호화하고, 카드 뒤집기와 확인 퀴즈에서 같은 cue를 다시 보여주어 인출 단서를 일관되게 제공하는 것이다.
-- 구현 완료: `js/elem-vocab.js`와 `js/middle-vocab.js`에 `meaningLink`, `familiarCue`, `linkBox`를 추가해 같은 테마 안의 익숙한 단어와 목표 단어를 결합한 의미연상 고리를 생성한다.
-- 구현 완료: 새 단어 카드 앞면·뒷면, 스펠링 카드, 묶음 확인 퀴즈, 복습 카드에 의미연상 고리와 회상 질문을 표시한다.
-- 구현 완료: 초등 영단어도 `?level=beginner`, `?level=intermediate`, `?level=advanced`로 바로 학습 세션에 진입하게 했다.
-- 구현 완료: `assets/elem-vocab.css`에 의미연상 박스 스타일을 추가했다.
-- 검증 완료: `node --check js/elem-vocab.js`, `node --check js/middle-vocab.js`, `node --check js/elem-vocab-data.js`, `node --check js/middle-vocab-data.js`, `npm run build`, 로컬 Playwright, 운영 Playwright, 운영 모바일 390px Playwright가 통과했다.
-- `npm run lint`, `npm run verify`, `npm run onefile`은 현재 `package.json`에 스크립트가 없어 각각 `Missing script`로 실행 불가했다.
-- 배포 완료: 프리뷰 `https://28bff01a.purunet-academy.pages.dev`, 운영 초등·중등 영단어 6개 레벨 URL에서 HTTP 200, 의미연상 박스 2개, overflow 0, 콘솔 오류 0을 확인했다.
-
-## 초등 영문법 단계형 패턴 전자북 고도화 (2026-05-24)
-- 사용자 요청은 초등 영문법을 초급·중급·고급으로 나누고, 미국과 영국 유명 영어 출판사의 문법책·전자북 구성을 참고해 최신 영어 교육법과 패턴 영어 학습법을 적용한 사용자 친화적 전자북으로 고도화하는 것이다.
-- 참고한 공식 자료의 방향은 Cambridge Primary Grammar Box의 연령·레벨별 문법 게임과 활동, Oxford Grammar Friends의 6레벨 young learner 문법 보충 교재, Pearson Primary의 paced content와 age-appropriate assessment, Macmillan Primary Grammar의 Pre-A1~A1+ 3레벨 구조다. 원문 문항과 지면은 복제하지 않고 범위와 교수 설계 원리만 참고한다.
-- 구현 방향은 `elementary-grammar` 단일 과목을 초급·중급·고급으로 분리하고, 각 문법 카드를 입력·패턴 말하기·규칙 발견·오류 수정·문장 산출 루틴으로 재구성하는 것이다.
-- 구현 완료: `elementary-grammar` 단일 과목을 `elementary-grammar-beginner`, `elementary-grammar-intermediate`, `elementary-grammar-advanced` 3개 과목으로 분리했다.
-- 구성 완료: 각 단계 8개 문법 모듈, 총 24개 모듈로 만들고 초급은 명사·be동사·복수·전치사, 중급은 일반동사·질문·조동사·현재진행, 고급은 과거·미래·비교·접속·관계 확장으로 배치했다.
-- 구현 완료: 학습 카드에 단계 표시, 리듬 패턴 말하기, 4단계 학습 프로세스, 산출 미션을 추가했고 문법 랩 루틴도 입력·패턴 말하기·오류 수정·산출 중심으로 바꿨다.
-- 검증 완료: `node --check`, `npm run build`, 로컬 Playwright, 운영 Playwright, 운영 모바일 390px Playwright가 통과했다.
-- `npm run lint`, `npm run verify`, `npm run onefile`은 현재 `package.json`에 스크립트가 없어 각각 `Missing script`로 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/`에서 초등 영문법 초급·중급·고급 3개 과목과 각 8개 모듈, 문법 카드 요소, overflow 0, 콘솔 오류 0을 확인했다.
-## 중등 영문법 단계형 패턴 전자북 고도화 (2026-05-24)
-- 사용자 요청은 중등 영문법도 초급·중급·고급으로 나누고, 미국·영국 유명 영어 출판사의 문법책·전자북 구성을 참고해 최신 영어 교육법과 패턴 영어 학습법을 적용한 사용자 친화적 문법 전자북으로 고도화하는 것이다.
-- 공식 자료 조사 요약: Pearson Focus on Grammar는 주제 기반 문법, 충분한 연습, 비판적 사고, 지속 평가, 의사소통 자신감을 강조한다. Macmillan English Grammar in Context는 맥락 속 핵심 문법 구조의 복습과 정착을 위한 3레벨 구성이다. Cambridge·Oxford 계열 자료는 어린 학습자와 청소년에게 단계형 문법, 활동형 과제, 문법을 쓰기·말하기로 연결하는 흐름을 제공한다.
-- 구현 기준은 원문 지면이나 문항 복제가 아니라 중등 문법 위계와 학습 프로세스만 참고해 맥락 입력, 패턴 말하기, 오류 수정, 문장 변환, 자기 산출 루틴으로 재구성하는 것이다.
-- 구현 완료: `middle-grammar` 단일 과목을 `middle-grammar-beginner`, `middle-grammar-intermediate`, `middle-grammar-advanced` 3개 과목으로 분리했다.
-- 구성 완료: 각 단계 10개 문법 모듈, 총 30개 모듈로 만들고 초급은 시제·조동사·준동사 기초, 중급은 현재완료·수동태·관계사·간접의문문, 고급은 가정법·분사구문·명사절·강조와 도치·통합 편집으로 배치했다.
-- 구현 완료: 중등 문법도 단계 표시, 리듬 패턴 말하기, 4단계 학습 프로세스, 산출 미션이 보이는 문법 카드형 전자북으로 렌더링한다.
-- 검증 완료: `node --check`, `npm run build`, 로컬 Playwright, 운영 Playwright, 운영 모바일 390px Playwright가 통과했다.
-- `npm run lint`, `npm run verify`, `npm run onefile`은 현재 `package.json`에 스크립트가 없어 각각 `Missing script`로 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/`에서 중등 영문법 초급·중급·고급 3개 과목과 각 10개 모듈, 문법 카드 요소, overflow 0, 콘솔 오류 0을 확인했다.
-## 초등·중등 전문 문법책 신규 페이지 분리 제작 (2026-05-24)
-- 사용자 요청은 `초등 중등 전문 문법책 제작 노하우(26.05.24).md`를 따라 초등 문법책 신규 페이지와 중등 문법책 신규 페이지를 따로 작성하는 것이다.
-- 확인 결과 해당 노하우 문서는 현재 0바이트로 비어 있어, 기존에 반영한 미국·영국 ELT 출판사형 문법책 원리와 현재 `english-core-sites.js`의 초등·중등 단계형 문법 데이터를 기준으로 구현한다.
-- 구현 방향은 기존 통합 학습 화면과 별개로 읽기 좋은 전자문법책 페이지를 만들고, 단계별 목차, 범위표, 개념 설명, 대표 예문, 오류 교정, 변형 연습, 산출 미션, 복습 체크를 한 화면에서 제공하는 것이다.
-- 구현 완료: `elementary-grammar-book.html`, `middle-grammar-book.html`, `assets/grammar-book.css`, `js/grammar-book.js`를 추가했다.
-- 구현 완료: 초등 페이지는 초급·중급·고급 각 8단원, 중등 페이지는 초급·중급·고급 각 10단원을 불러오며, 단원별 패턴·개념·예문·오류교정·문장변형·4단계 워크북을 제공한다.
-- 배포 보정 완료: `scripts/deploy-pages.mjs` 포함 목록에 신규 문법책 2개 HTML을 추가했다.
-- 검증 완료: `node --check js/grammar-book.js`, `node --check scripts/deploy-pages.mjs`, `npm run build`, 로컬 Playwright 데스크톱·모바일, 운영 Playwright 데스크톱·모바일이 통과했다.
-- `npm run lint`, `npm run verify`, `npm run onefile`은 현재 `package.json`에 스크립트가 없어 각각 `Missing script`로 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/elementary-grammar-book.html`, `https://purunet-academy.pages.dev/middle-grammar-book.html`에서 stages 3, 단원 수 정상, workbook rows 4, overflow 0, 콘솔 오류 0을 확인했다.
-## 연구·오픈소스 기반 영문법 학습 고도화 (2026-05-24)
-- 사용자 요청은 GitHub의 영문법 학습 관련 자료와 미국·영국 영어교육 논문을 찾아 현재 초등·중등 영문법 학습 사이트를 업그레이드하는 것이다.
-- 조사한 GitHub 자료 방향은 `learn-english` topic의 타이핑·퀴즈·간격 복습형 학습 UI, LanguageTool의 오픈소스 문법 오류 탐지, Harper의 로컬·프라이버시 우선 문법 검사, GrammarTagger의 문법 feature profiling이다.
-- 조사한 논문·연구 방향은 Cambridge Core의 focus-on-form/corrective feedback, ScienceDirect의 명시·암시 문법 지도 비교, extensive reading/translation 기반 문법 지식 연구, RetrievalPractice.org의 spaced retrieval practice 가이드다.
-- 구현 기준은 외부 콘텐츠나 문제를 복제하지 않고, 현재 문법책 페이지에 능동 회상, 문장 조립, 오류 유형 분석, 간격 복습 예약, 연구 기반 루틴 설명을 기능으로 반영하는 것이다.
-- 구현 완료: `js/grammar-book.js`에 연구 기반 학습 카드 4개, 문법 feature 프로파일, 오류 유형 태그, 능동 회상 문장 조립기, localStorage 기반 1일·3일·7일 간격 복습 저장 기능을 추가했다.
-- 구현 완료: `assets/grammar-book.css`에 연구 카드, feature 태그, 문장 조립, 복습 예약 UI의 데스크톱·모바일 반응형 스타일을 추가했다.
-- 검증 완료: `node --check js/grammar-book.js`, `npm run build`, 로컬 Playwright 데스크톱·모바일, 운영 Playwright 데스크톱·모바일이 통과했다.
-- `npm run lint`, `npm run verify`, `npm run onefile`은 현재 `package.json`에 스크립트가 없어 각각 `Missing script`로 실행 불가했다.
-- 배포 완료: `https://purunet-academy.pages.dev/elementary-grammar-book.html`, `https://purunet-academy.pages.dev/middle-grammar-book.html`에서 연구 카드 4개, builder 1개, 복습 박스 1개, overflow 0, 콘솔 오류 0을 확인했다.
-
-## 초등 교과 영문법 전체 새 페이지 제작 (2026-05-25)
-- 요청 목표는 ClassCard Grammar의 학습 구조를 참고하고, 교육청 초등 교과서에 반복 출현하는 초등 영어 언어형식을 빠짐없이 다루는 새 문법 페이지를 만드는 것이다.
-- ClassCard Grammar 공개 페이지에서 확인한 반영 요소는 초등 대상 69개 유닛, 유닛별 반복훈련, 오답 다시풀기, 문제은행, 개념톡, 자동채점, 서술형 중심 훈련이다.
-- 교육과정 기준은 2022 개정 영어과 교육과정의 초등 영어 성취기준과 언어형식 범위를 직접 원문 복제하지 않고, 자체 예문과 자체 문제로 재구성한다.
-- 기존 `elementary-grammar-book.html`은 다른 작업의 산출물이므로 보존하고, 이번 요청 전용 새 페이지를 별도로 추가해 접근 URL을 분리한다.
-
-## 초등 교과 영문법 전체 새 페이지 제작 완료 기록 (2026-05-25)
-- 새 페이지는 `푸르넷 영어 수학 학원(26.05.21)/academy-portal/elementary-school-grammar.html`이다.
-- 새 자산은 `assets/elementary-school-grammar.css`, `js/elementary-school-grammar.js`이며, 3~4학년 23유닛, 5학년 23유닛, 6학년 23유닛으로 총 69유닛을 구성했다.
-- 기능은 개념톡, 예문 듣기, 빈칸 자동채점, 오답 다시풀기, 문장 조립, 문제은행 카드, XP와 오답 localStorage 저장을 포함한다.
-- 배포 스크립트 `scripts/deploy-pages.mjs`에 `elementary-school-grammar.html`을 포함해 Cloudflare Pages 배포 대상에 들어가도록 했다.
-- 검증 결과 `node --check js/elementary-school-grammar.js`, `node --check scripts/deploy-pages.mjs`, `npm.cmd run build`, Playwright 데스크톱 1280px, 모바일 390px 렌더링이 통과했다.
-
-## 중등 교과 영문법 전체 새 페이지 제작 (2026-05-25)
-- 요청 목표는 ClassCard Grammar를 참고해 교육청 중등 영어 교과서에 나오는 주요 영문법 전체를 새 문법 페이지로 만드는 것이다.
-- ClassCard Grammar 공개 페이지에서 중등 대상 179개 유닛, 유닛별 100문항, 오답 다시풀기, 문제은행, 개념톡, 자동채점, 내신대비 서술형 중심 흐름을 확인했다.
-- 저작권 보호를 위해 ClassCard 문항이나 교재 문항은 복제하지 않고, 중등 교과 문법 범위와 학습 구조만 반영한 자체 예문과 자체 오답 문장으로 구성한다.
-- 기존 `middle-grammar-book.html`은 보존하고, 이번 요청 전용 새 페이지를 별도로 추가한다.
-
-## 중등 교과 영문법 전체 새 페이지 제작 완료 기록 (2026-05-25)
-- 새 페이지는 `푸르넷 영어 수학 학원(26.05.21)/academy-portal/middle-school-grammar.html`이다.
-- 새 자산은 `assets/middle-school-grammar.css`, `js/middle-school-grammar.js`이며, 중1 기초 60유닛, 중2 확장 60유닛, 중3 내신 59유닛으로 총 179유닛을 구성했다.
-- 기능은 개념톡, 예문 듣기, 빈칸 자동채점, 오답 다시풀기, 문장 조립, 문제은행 카드, XP와 오답 localStorage 저장을 포함한다.
-- 배포 스크립트 `scripts/deploy-pages.mjs`에 `middle-school-grammar.html`을 포함해 Cloudflare Pages 배포 대상에 들어가도록 했다.
-- 검증 결과 `node --check js/middle-school-grammar.js`, `node --check scripts/deploy-pages.mjs`, `npm.cmd run build`, Playwright 데스크톱 1280px, 모바일 390px 렌더링이 통과했다.
-
-## 초등·중등 내신 문법 홈 메뉴 분리 (2026-05-25)
-- 요청 목표는 직전에 만든 `elementary-school-grammar.html`과 `middle-school-grammar.html`을 메인 학습 메뉴에서 각각 초등 내신 문법, 중등 내신 문법으로 따로 보이게 하는 것이다.
-- 기존 과목 데이터와 학습 흐름은 유지하고, `js/views.js`의 홈 학교급별 메뉴에 외부 페이지 바로가기 카드만 추가하는 방식으로 처리한다.
-
-## 초등·중등 내신 문법 홈 메뉴 분리 완료 기록 (2026-05-25)
-- `js/views.js`의 학교급별 홈 메뉴에 `elementary-school-grammar.html` 바로가기 카드와 `middle-school-grammar.html` 바로가기 카드를 추가했다.
-- 초등 메뉴 카드는 `초등 내신 문법`으로 69유닛을 표시하고, 중등 메뉴 카드는 `중등 내신 문법`으로 179유닛을 표시한다.
-- `assets/styles.css`의 `.subject-card`에 링크 카드용 `cursor: pointer`, `text-decoration: none`을 추가했다.
-- 검증 결과 `node --check js/views.js`, `npm.cmd run build`, 로컬 HTTP Playwright에서 두 href와 overflow 없음, 콘솔 오류 0을 확인했다.
-
-## 초등·중등 내신 문법 운영 배포 (2026-05-25)
-- 사용자가 운영 URL `https://purunet-academy.pages.dev/`에 새 문법 메뉴가 아직 보이지 않는다고 요청했다.
-- `academy-portal`에서 `npm.cmd run build` 통과 후 `npm.cmd run deploy`를 실행해 Cloudflare Pages를 갱신했다.
-- Wrangler 배포 결과 프리뷰 URL은 `https://066e8f79.purunet-academy.pages.dev`이다.
-- 운영 URL 검증에서 `elementary-school-grammar.html`, `middle-school-grammar.html` 메뉴 href가 보이고, 두 페이지 모두 HTTP 200이며 콘솔 오류 0, 가로 overflow 없음으로 확인했다.
-
-## 고등 교과 영문법 전체 새 페이지 제작 (2026-05-25)
-- 요청 목표는 ClassCard Grammar를 참고해 교육청 고등 영어 교과서에 나오는 주요 영문법 전체를 새 문법 페이지로 만드는 것이다.
-- ClassCard Grammar 공개 페이지에서 고등 대상 23개 유닛, 유닛별 100문항, 오답 다시풀기, 문제은행, 개념톡, 자동채점, 내신대비 서술형 중심 흐름을 확인했다.
-- 저작권 보호를 위해 ClassCard 문항이나 교재 문항은 복제하지 않고, 고등 교과 문법 범위와 학습 구조만 반영한 자체 예문과 자체 오답 문장으로 구성한다.
-- 기존 `high-grammar` 학습 흐름은 보존하고, 이번 요청 전용 새 페이지를 별도로 추가한다.
-
-## 고등 교과 영문법 전체 새 페이지 제작 완료 기록 (2026-05-25)
-- 새 페이지는 `푸르넷 영어 수학 학원(26.05.21)/academy-portal/high-school-grammar.html`이다.
-- 새 자산은 `assets/high-school-grammar.css`, `js/high-school-grammar.js`이며, 고등 핵심 문법 23유닛을 구성했다.
-- 기능은 개념톡, 예문 듣기, 빈칸 자동채점, 오답 다시풀기, 문장 조립, 문제은행 카드, XP와 오답 localStorage 저장을 포함한다.
-- `js/views.js`의 고등학생 메뉴에 `고등 내신 문법` 23유닛 바로가기 카드를 추가했다.
-- 학생 기본 화면에서도 고등 전체 과목 권한은 그대로 막고, 고등 탭의 새 문법 바로가기 카드만 보이도록 `js/controllers.js`의 학교급 탭 선택 제한을 조정했다.
-- 배포 스크립트 `scripts/deploy-pages.mjs`에 `high-school-grammar.html`을 포함했다.
-- 검증 결과 `node --check js/high-school-grammar.js`, `node --check js/views.js`, `node --check js/controllers.js`, `node --check scripts/deploy-pages.mjs`, `npm.cmd run build`, Playwright 데스크톱 1280px, 모바일 390px 렌더링이 통과했다.
-
-## 고등 교과 영문법 운영 배포 (2026-05-25)
-- `academy-portal` 커밋은 `7f19182 Add high school grammar page`이다.
-- `npm.cmd run deploy`로 Cloudflare Pages를 갱신했고 프리뷰 URL은 `https://bf3f6dd8.purunet-academy.pages.dev`이다.
-- 운영 URL 검증에서 고등학생 탭의 `high-school-grammar.html` 메뉴 href가 보이고, 페이지 HTTP 200, 콘솔 오류 0, 가로 overflow 없음으로 확인했다.
-
-## 초중고 내신 영문법 메뉴명 운영 반영 (2026-05-25)
-- 사용자가 초등학생 메뉴에 `초등 내신 영문법`, 중학생 메뉴에 `중등 내신 영문법`, 고등학생 메뉴에 `고등 내신 영문법`을 추가해 달라고 요청했다.
-- 기존 바로가기 카드가 `내신 문법`으로 되어 있어 `js/views.js`의 세 shortcut label을 모두 `내신 영문법`으로 수정했다.
-- 로컬 Playwright에서 세 카드가 각각 `초등 내신 영문법 69유닛`, `중등 내신 영문법 179유닛`, `고등 내신 영문법 23유닛`으로 보이는 것을 확인했다.
-
-## 문법 페이지 홈 버튼 문구 수정 (2026-05-25)
-- 요청 목표는 초등·중등·고등 내신 영문법 페이지 상단의 `통합 학습` 버튼 문구를 더 직관적인 `홈`으로 바꾸는 것이다.
-- 변경 범위는 `js/elementary-school-grammar.js`, `js/middle-school-grammar.js`, `js/high-school-grammar.js`의 상단 홈 링크 텍스트로 제한했다.
-- 검증 결과 `node --check` 3개 파일, `npm.cmd run build`, 운영 URL Playwright 확인이 통과했고, 세 페이지 모두 링크 텍스트가 `홈`이며 기존 `통합 학습` 문구는 0개로 확인했다.
-
-## 내신 영문법 문제은행 세트 확장 (2026-05-25)
-- 요청 목표는 초등·중등·고등 내신 영문법의 각 목차 문제은행에서 10, 20, 30, 40, 50, 60, 70, 80, 90, 100문제 세트를 메뉴바 형식으로 선택하고 실제 문항을 볼 수 있게 만드는 것이다.
-- 구현 방향은 기존 유닛 데이터를 그대로 활용해 빈칸, 오류수정, 개념확인, 문장쓰기, 내신형 서술 문제를 반복 변형 생성하는 방식으로 잡았다. 저작권 보호를 위해 외부 문항 복제가 아니라 기존 자체 예문과 규칙 기반 문항을 만든다.
-- 검증 결과 `node --check` 3개 파일, `npm.cmd run build`, 로컬·운영 Playwright가 통과했다. 운영 URL 모바일 폭에서 세 페이지 모두 메뉴 10개, 기본 10문제, 100문제 선택 시 카드 100개, 콘솔 오류 0, 가로 overflow 없음으로 확인했다.
-
-## 내신 영문법 문제은행 풀이형 전환 (2026-05-25)
-- 요청 목표는 문제은행을 정답 노출 카드가 아니라 실제 풀이형 화면으로 바꾸는 것이다.
-- 구현 방향은 각 문항을 빈칸, 오답, 조립 유형으로 순환 생성하고, 학생이 답을 쓰는 입력칸을 제공한 뒤 `정답 보기` 버튼을 누를 때만 답을 보여주는 방식이다.
-- 검증 결과 초등·중등·고등 운영 URL에서 문제은행 첫 3문항이 `빈칸`, `오답`, `조립` 순서로 나오고, 초기 정답 노출 0개, 입력칸 10개, `정답 보기` 클릭 후 정답 1개만 노출됨을 확인했다.
-
-## 내신 영문법 문제은행 기존 풀이 형식 반영 (2026-05-25)
-- 사용자가 문제은행을 주관식 입력 방식이 아니라 기존 `빈칸`, `오답`, `조립` 탭에서 쓰던 풀이 형식으로 바꾸길 요청했다.
-- 구현 완료: 문제은행 문항 생성은 `빈칸`, `오답`, `조립`만 순환하고, 렌더링은 각각 보기 선택, 정답 보기 토글, 토큰 조립·채점 UI를 사용한다.
-- 검증 결과 운영 URL의 초등·중등·고등 문법 페이지 모두 문제은행 첫 3문항이 `빈칸`, `오답`, `조립`으로 나오고, textarea 0개, 빈칸 보기 4개, 오답 정답 초기 0개/클릭 후 1개, 조립 토큰 및 동작 버튼 정상, 100문제 렌더링, 콘솔 오류 0, 가로 overflow 없음으로 확인했다.
-
-## NLP 내신 문법 끊어읽기 문제 확장과 색상 강조 (2026-05-25)
-- 요청 목표는 초등·중등·고등 NLP 내신 문법 화면의 끊어읽기 화면을 `끊어읽기 NLP 문제`로 명확히 바꾸고, 10~100세트 문제 선택을 제공하며, 개념·빈칸·오답·조립·문제은행의 문장과 단어를 가독성 높은 색상 표현으로 바꾸는 것이다.
-- 구현 방향은 기존 문법 JS 세 파일의 NLP 모드 라벨을 바꾸고, `makeNLPQuestions()` 기반 세트 선택 UI를 유지하면서, 단어 역할 추정 함수와 `renderColorText()`를 추가해 조동사·전치사·접속사·대명사·어미 변화를 색상 칩으로 표시하는 방식이다.
-- `nlp-elementary-grammar.html`, `nlp-middle-grammar.html`, `nlp-high-grammar.html`도 Cloudflare Pages 배포 목록에 포함되도록 배포 스크립트를 갱신했다.
-- 검증 결과 운영 URL의 초등·중등·고등 NLP 문법 페이지 모두 HTTP 200, 탭명 `끊어읽기 NLP 문제`, 세트 버튼 10개, 100세트 선택 시 문제 카드 100개, 색상 단어 칩 렌더링, 콘솔 오류 0, 모바일 가로 overflow 없음으로 확인했다.
-
-## NLP 고도화 전략 기반 문제은행 재구성 (2026-05-25)
-- 사용자가 `초등 중등 고등 nlp 영문법 고도화 전략(26.05.25).md`를 기준으로 문제은행 전체 수정과 불필요한 줄바꿈 복귀를 요청했다.
-- 문서 핵심은 단순 POS/색상 태깅만으로는 `The song sounds beautiful` 같은 2형식 SVC를 잘못 분석할 수 있으므로, S/V/O/C 성분, 5형식, 연결동사, 목적보어 규칙을 결합해야 한다는 것이다.
-- 구현 방향은 기존 문제은행 생성기를 예문 기반 문제 풀로 바꾸고, 빈칸·오답·조립 외에 `문형`과 `성분` 선택형 문제를 추가하는 것이다.
-- 색상 강조 단어는 inline-block 칩에서 inline 강조로 바꿔 불필요한 줄바꿈을 줄였다.
-- 검증 결과 운영 URL의 초등·중등·고등 문법 페이지 모두 문제은행 100문제에서 `빈칸`, `오답`, `조립`, `문형`, `성분` 유형이 섞여 나오고, 색상 단어 표시가 `inline`, 콘솔 오류 0, 모바일 가로 overflow 없음으로 확인했다.
-
-## 내신 영문법 문제은행 줄바꿈 복귀와 NLP 문형 분석 보정 (2026-05-25)
-- 요청 목표는 초등·중등·고등 내신 영문법 문제은행에서 색상 단어 강조 때문에 생긴 불필요한 줄바꿈을 되돌리고, 끊어읽기 NLP 문제의 5형식 성분 분석을 다시 점검하는 것이었다.
-- 문제은행의 `esg-color-text`, `esg-word-tone` 표시를 inline 흐름으로 맞춰 문장 안에서 단어 색상만 강조되도록 유지했다.
-- 기존 NLP 분석은 POS 추정 중심이라 `My name is Minho`, `I am happy today`, `The train leaves at seven` 같은 문장에서 명사·수식어를 목적어 또는 동사로 오인할 수 있었다. 이번 보정에서는 예문 기반 5형식 규칙을 우선 적용하고, SC(주격보어), OC(목적격보어), M(수식어)를 별도 청크로 분리했다.
-- 연결동사는 보어를 SC로 잡되 뒤따르는 시간·장소 표현은 M으로 분리한다. 사역·지각·목적격보어 동사는 대명사 목적어와 실제 보어가 뒤따르는 경우에만 O+OC로 분리해 `made a birthday cake` 같은 일반 타동사 구문을 5형식으로 오분석하지 않게 했다.
-- 문제은행의 문형·성분 문제도 같은 `buildPatternChunks` 분석 결과를 사용하도록 바꿔, 수식어가 붙은 1형식 문장이 3형식으로 출제되는 문제를 줄였다.
-- 검증 결과 `node --check` 3개 JS, `npm.cmd run build`, 로컬 Playwright 6개 페이지, 운영 URL Playwright 6개 페이지가 통과했다. 운영 배포 프리뷰는 `https://48004bc1.purunet-academy.pages.dev`였다.
-
-## 초등 문제은행 문형·성분 문제 제외 (2026-05-25)
-- 요청 목표는 초등 문제은행에서 중등 교육과정에 가까운 문장 성분 질문을 제거하는 것이었다.
-- 초등 문제은행 생성기 `makeBankQuestions`에서 `문형`과 `성분` 문제를 모두 제외했다. 초등 화면에는 `빈칸`, `조립`, `오답` 유형만 남겼다.
-- 중등·고등 문제은행과 NLP 끊어읽기 문제는 이번 요청 범위가 아니므로 유지했다.
-- 검증 결과 로컬과 운영 URL의 초등 문제은행 100문제에서 `문형`, `성분` 문제는 0건이었다. 배포 프리뷰는 `https://04c03298.purunet-academy.pages.dev`였다.
-
-## 중등 문제은행 성분 보기 한글 병행 표기 (2026-05-25)
-- 요청 목표는 중학교 문제은행에서 문장 성분 문제의 `S/V/O/C` 보기를 한글과 함께 표기하는 것이었다.
-- `js/middle-school-grammar.js`의 `makeRoleQuestion`에서 보기와 정답 표시를 `S(주어)`, `V(동사)`, `O(목적어)`, `C(보어)` 형식으로 변경했다.
-- 정답 비교도 새 표기 문자열 기준으로 맞춰, 화면 표기와 채점 기준이 어긋나지 않게 했다.
-- 로컬과 운영 URL에서 중등 문제은행 100문제를 열어 성분 카드가 33개 생성되고 한글 병행 표기가 표시되는 것을 확인했다. 배포 프리뷰는 `https://bcae166e.purunet-academy.pages.dev`였다.
-
-## 수동태 p.p. NLP 동사구 분석 보정 (2026-05-25)
-- 요청 목표는 NLP 끊어읽기 문제에서 수동태의 p.p.가 주격보어로 해석되는 문제를 전체 수정하는 것이었다.
-- 원인은 `has been told`, `were taken`, `is sung`, `has been broken`처럼 `be/have + p.p.`가 이어질 때 불규칙 p.p.를 동사구에 포함하지 못하고 `been/were/is`를 연결동사처럼 처리하는 데 있었다.
-- 초등·중등·고등 문법 JS의 `buildPatternChunks`에 공통으로 불규칙 과거분사 목록과 `isVerbPhraseFollower` 규칙을 추가했다. 이제 `was written`, `is sung`, `were taken`, `has been broken`, `had been spoken`, `will have been completed`를 하나의 동사구로 묶는다.
-- `have never seen`처럼 조동사와 p.p. 사이에 `never`, `already`, `just`, `not` 등이 들어간 완료형도 동사구로 유지하도록 보정했다.
-- 검증 결과 로컬과 운영 URL의 중등 수동태, 고등 불규칙 p.p., 고등 완료수동태 NLP 100문제에서 p.p.가 주격보어로 표시되는 사례는 0건이었다. 배포 프리뷰는 `https://5ec85bc1.purunet-academy.pages.dev`였다.
-
-## 고등 교육부 필수 영단어 3000단어 메뉴 추가 (2026-05-25)
-- 요청 목표는 업로드된 `2022년 교육부 기본 어휘 3000개_전체.txt`를 사용해 고등학생 메뉴에 고등 초급, 중급, 고급 영단어 메뉴를 만드는 것이다.
-- 작업 전 가정은 3000단어를 원본 순서 기준으로 1000개씩 초급·중급·고급으로 나누고, 기존 영단어 학습 UI 패턴을 재사용하는 것이다.
-
-- 원본 txt는 3206개 항목으로 파싱되었고, 요청 명칭에 맞춰 앞 3000개를 초급·중급·고급 각 1000개로 분리했다.
-- 고등 단어 화면은 기존 중등 단어 학습 UI를 설정화해 재사용하고, 진행도 저장 키는 hv3:*로 분리했다.
-- 고등 초급·중급·고급 메뉴는 고등학생 탭에 표시되며 학생 화면에서도 열 수 있게 고등 단어 3단계만 제한 예외로 두었다.
-- 검증은 node --check 6개 파일, npm.cmd run build, 로컬 Playwright, 운영 URL과 프리뷰 URL Playwright로 완료했다.
-- Cloudflare Pages 배포 프리뷰는 https://15ee3206.purunet-academy.pages.dev 이며, 운영 https://purunet-academy.pages.dev 에서도 고등 3단계 메뉴와 high-vocab.html 화면을 확인했다.
-
-## 초중고 TEPS 단어 기존 영단어 기반 확장 (2026-05-26)
-- 요청 목표는 TEPS 단어장을 기존 초등 영단어 800개, 중등 영단어 1800개, 고등 영단어 3000개 데이터를 기반으로 같은 목표 개수까지 확장하는 것이다.
-- 구현 기준은 TEPS HTML에서 기존 영단어 데이터 파일을 먼저 로드하고, TEPS JS가 해당 데이터를 20개 단위 단어 유닛으로 변환해 단어 탭에 표시하는 방식이다.
-- 기존 TEPS 문법, 듣기, 독해, 실전 모의고사 확장 루틴은 유지하고, 이번 변경의 직접 대상은 TEPS 단어 데이터 연결과 정확한 단어 수 보장으로 제한한다.
-- 구현 완료: `elementary-teps.html`, `middle-teps.html`, `high-teps.html`에서 각각 기존 영단어 데이터 파일을 TEPS JS보다 먼저 로드하도록 연결했다.
-- 구현 완료: `js/elementary-teps.js`, `js/middle-teps.js`, `js/high-teps.js`에 기존 영단어 데이터를 20개 단위 TEPS 단어 유닛으로 변환하는 함수를 추가했다.
-- 검증 완료: 원본 데이터 카운트는 초등 800개, 중등 1800개, 고등 3000개이고, 브라우저 렌더링에서 TEPS 단어 유닛은 초등 40개, 중등 90개, 고등 150개이며 각 유닛은 20개 단어로 확인했다.
-
-## 초중고 TEPS 문법 NLP 내신 수준 확장 (2026-05-26)
-- 요청 목표는 초등 TEPS 문법을 초등 NLP 내신 문법 수준으로, 중등 TEPS 문법을 중등 NLP 내신 문법 수준으로, 고등 TEPS 문법을 고등 NLP 내신 문법 수준으로 확장하는 것이다.
-- 기존 NLP 내신 문법 페이지의 핵심 구조는 단순 객관식이 아니라 개념, 오답교정, 문장 성분 또는 구문 역할 분석, 서술형 전환을 한 단원 안에 함께 제공하는 방식이다.
-- 구현 기준은 TEPS 문법 탭의 기존 렌더링 구조를 유지하면서 DATA.grammar를 학교급별 NLP 스타일 단원으로 재구성하고, 듣기·독해·실전 탭은 기존 확장 흐름을 유지하는 것이다.
-- 구현 완료: 초등 TEPS 문법은 23개 NLP 문법 주제에 개념·오답교정·NLP 성분 변형을 붙여 69개 단원으로 구성했다.
-- 구현 완료: 중등 TEPS 문법은 30개 NLP 내신 핵심 주제에 개념·오답교정·NLP 성분 변형을 붙여 90개 단원으로 구성했다.
-- 구현 완료: 고등 TEPS 문법은 27개 고등 NLP 심화 주제에 심화 개념·서술형 전환·NLP 독해문법 변형을 붙여 81개 단원으로 구성했다.
-- 검증 완료: `node --check` 3개 TEPS JS, `npm.cmd run build`, 로컬 Playwright 문법 탭 렌더링 검증을 통과했다.
-
-## 초중고 TEPS 듣기·독해·활동 50회 모의고사 확장 (2026-05-26)
-- 요청 목표는 TEPS 듣기, 독해, 활동 영역을 모의고사 50회 분량으로 확장하는 것이다.
-- 구현 기준은 초등은 듣기·독해·활동을 각각 50묶음으로 맞추고, 중등·고등은 듣기·독해·실전 테스트를 각각 50묶음으로 맞추는 것이다.
-- 기존 단어 800·1800·3000개와 NLP 문법 확장 데이터는 그대로 유지한다.
+﻿# 而⑦뀓?ㅽ듃 ?명듃 ??寃곗젙怨?洹쇨굅
+
+## 以? ?섑븰 ?곗궛 PDF 湲곕컲 ?숈뒿 ?섏씠吏 ?쒖옉 (2026-05-24)
+- ?붿껌 紐⑺몴???낅줈?쒕맂 `諛붾튌?섑븰(以?)?곗궛1沅?蹂몄콉(誘몃━蹂닿린 1~30).pdf`, `諛붾튌?섑븰(以?)?곗궛2沅?蹂몄콉(誘몃━蹂닿린 1~31).pdf`, `諛붾튌以??꾪삎 (1~38).pdf`瑜?李멸퀬??以묓븰援?3?숇뀈 ?섑븰 ?곗궛 ?숈뒿 ?섏씠吏瑜?留뚮뱶??寃껋씠??
+- ??묎텒 蹂댄샇瑜??꾪빐 PDF 吏硫? 臾명빆, ?댁꽕??洹몃?濡?蹂듭젣?섏? ?딄퀬 紐⑹감쨌?좏삎 ?먮쫫留??뺤씤????臾몄젣 ?앹꽦 猷⑦떞怨??숈뒿 UI瑜?留뚮뱺??
+- 湲곗〈 `academy-portal`?먮뒗 ?ъ슜??蹂寃쎌쑝濡?蹂댁씠??`elem-vocab.html`, `assets/elem-vocab.css`, `js/elem-vocab.js` 蹂寃쎌씠 ?덉쑝誘濡??대쾲 ?묒뾽?먯꽌??嫄대뱶由ъ? ?딅뒗??
+
+## Supertonic TTS ?ㅼ튂 (2026-05-24)
+- ?붿껌 紐⑺몴??TTS瑜?`supertone-inc/supertonic`?쇰줈 ?泥댄븯湲??꾪빐 ?대떦 GitHub ??μ냼瑜?濡쒖뺄???ㅼ튂?섎뒗 寃껋씠??
+- ?ㅼ튂 ?꾩튂???ъ슜???덉쓽 `C:\Users\paten\supertonic`?쇰줈 ?먭퀬, ?꾨줈?앺듃 ?깃낵 異⑸룎?섏? ?딅룄濡?蹂꾨룄 Python 媛?곹솚寃쎌쓣 ?ъ슜?쒕떎.
+- 怨듭떇 README ?뺤씤 寃곌낵 Python SDK??`pip install supertonic` 諛⑹떇??沅뚯옣?섍퀬, ?쒕쾭 ?⑸룄??`pip install 'supertonic[serve]'` ??`supertonic serve --host 127.0.0.1 --port 7788`濡??ㅽ뻾?쒕떎.
+- ?ㅼ튂 ?꾨즺: `C:\Users\paten\supertonic`????μ냼瑜?clone?덇퀬, `C:\Users\paten\supertonic\supertonic-env` Python 3.11 媛?곹솚寃쎌뿉 `supertonic[serve]==1.3.1`???ㅼ튂?덈떎.
+- 寃利??꾨즺: `from supertonic import TTS` import ?깃났, `supertonic --help`??`PYTHONIOENCODING=utf-8` ?섍꼍?먯꽌 ?뺤긽 異쒕젰, 泥??ㅽ뻾 紐⑤뜽 26媛??뚯씪 ?먮룞 ?ㅼ슫濡쒕뱶 ???섑뵆 ?뚯꽦 `C:\Users\paten\supertonic\supertonic_test_en.wav` ?앹꽦 ?깃났.
+- ?쒕쾭 寃利??꾨즺: `supertonic serve --host 127.0.0.1 --port 7788` ?ㅽ뻾 ??`http://127.0.0.1:7788/docs`媛 HTTP 200怨?Swagger UI濡??묐떟?⑥쓣 ?뺤씤?덇퀬, ?뚯뒪???쒕쾭 ?꾨줈?몄뒪??醫낅즺?덈떎.
+
+## 珥덈벑 ?곷떒?는룹쁺臾몃쾿 ?ㅼ젣 AI ?대?吏쨌TTS ?먯궛 ?앹꽦 諛?諛고룷 (2026-05-24)
+- ?붿껌 紐⑺몴??珥덈벑 ?곷Ц踰뺢낵 珥덈벑 ?곷떒?댁슜 AI ?대?吏? AI TTS瑜??ㅼ젣 ?뚯씪濡??앹꽦??濡쒖뺄怨?Cloudflare Pages ?댁쁺 ?ъ씠?몄뿉 ??ν븯??寃껋씠??
+- ????앹꽦 ??곸쑝濡?珥덈벑 ?꾩닔 ?곷떒??泥??⑥썝 `媛議깃낵 ??? 珥덈벑 ?곷Ц踰?泥??⑦꽩 `紐낆궗? 愿??瑜?癒쇱? ?좏깮?쒕떎. ?댁쑀??諛⑷툑 ?낃렇?덉씠?쒗븳 AI ?쒖옉?ㅼ쓽 泥?吏꾩엯 寃쎈줈?쇱꽌 ?댁쁺 寃利앷낵 ?ъ슜???뺤씤??媛??鍮좊Ⅴ湲??뚮Ц?대떎.
+- 濡쒖뺄 ???寃쎈줈??`?몃Ⅴ???곸뼱 ?섑븰 ?숈썝(26.05.21)/academy-portal/assets/ai-elementary/`濡??붾떎. Cloudflare Pages?????대뜑瑜??뺤쟻 ?먯궛?쇰줈 洹몃?濡?諛고룷?쒕떎.
+- ?대?吏??臾대즺 ?⑤씪??AI ?대?吏 ?앹꽦 ?붾뱶?ъ씤?몄뿉??JPEG濡??대젮諛쏄퀬, TTS??濡쒖뺄 ?ㅼ튂??Coqui XTTS-v2 CLI濡?WAV瑜??앹꽦?쒕떎.
+- ?댄썑 TTS ?붿쭊 ?붿껌??Supertonic?쇰줈 蹂寃쎈릺?? Coqui CLI 諛⑹떇 ???`supertonic serve --host 127.0.0.1 --port 7788` ?쒕쾭瑜??꾩슦怨?`POST /v1/tts`瑜??몄텧?섎뒗 諛⑹떇?쇰줈 ?꾪솚?덈떎.
+- 遺꾨━ 湲곗?: 珥덈벑 ?곷떒?대뒗 12媛??⑥썝??`珥덇툒 1~4?⑥썝`, `以묎툒 5~8?⑥썝`, `怨좉툒 9~12?⑥썝`?쇰줈 ?섎늻怨? 珥덈벑 ?곷Ц踰?12媛??⑦꽩??`珥덇툒 1~4`, `以묎툒 5~8`, `怨좉툒 9~12`濡??섎늻?덈떎.
+- ?꾩옱 ?깆뿉 ?댁옣??珥덈벑 ?꾩닔 ?곷떒??????명듃??240媛쒖씠硫? 援먯쑁泥??꾩껜 800媛??먮Ц 紐⑸줉? ?꾩쭅 ?꾨줈?앺듃 ?덉뿉 ?녿떎. ?곕씪???꾩옱 ?ㅼ젣 ?앹꽦 踰붿쐞?????댁옣 240媛??꾩껜? 珥덈벑 ?곷Ц踰?12媛??꾩껜??
+- Supertonic ?쒕쾭 諛⑹떇 TTS ?꾨즺: `assets/ai-elementary/words/...` ?꾨옒 ?⑥뼱 WAV 240媛? `assets/ai-elementary/grammar/...` ?꾨옒 臾몃쾿 WAV 12媛? 珥?252媛??앹꽦 ?꾨즺. WAV ?⑷퀎????115,214,120 bytes??
+- ?대?吏 ?앹꽦? 臾대즺 ?대?吏 ?쒕쾭 ?묐떟 吏?곗쑝濡?遺遺?吏꾪뻾 ?곹깭?? ?꾩옱 ?⑥뼱 ?대?吏 15媛? 臾몃쾿 ?대?吏 0媛쒓? ??λ릺???덇퀬, ????섑뵆 ?대?吏 2媛쒕뒗 `assets/ai-elementary/` 猷⑦듃???⑥븘 ?덈떎.
+
+## 珥덈벑 ?곷떒?는룹쁺臾몃쾿 AI ?꾩옄遺??낃렇?덉씠??(2026-05-24)
+- ?붿껌 紐⑺몴??`珥덈벑 ?⑥뼱 ?숈썝 ?꾩옄遺??쒖옉 猷⑦듃(26.0524).md`瑜?湲곗??쇰줈 珥덈벑 ?곷떒?댁? 珥덈벑 ?곷Ц踰뺤쓣 ?명꽣?숉떚釉? ?대?吏, TTS, 寃뚯엫?? ?숈뒿 異붿쟻??寃고빀??怨좏뭹吏??꾩옄遺곹삎 ?숈뒿?쇰줈 ?낃렇?덉씠?쒗븯??寃껋씠??
+- 湲곗〈 `academy-portal`?먮뒗 `js/english-core-sites.js` 湲곕컲 珥덈벑 ?꾩닔 ?곷떒?댁? 珥덈벑 ?곷Ц踰?怨쇰ぉ???대? ?덇퀬, `js/views.js`??`renderEnglishCoreLab`, `renderVocabLab`, `renderGrammarLab`???ㅼ젣 ?숈뒿??UI瑜??뚮뜑留곹븳??
+- 臾대즺 ?⑤씪??AI ?대?吏?????놁씠 URL 湲곕컲?쇰줈 ?몄텧?????덈뒗 Pollinations 怨꾩뿴 ?대?吏 ?앹꽦 ?붾뱶?ъ씤?몃? ?ъ슜?섍퀬, 濡쒖뺄 ?대?吏???대? ?ㅼ튂??Stable Diffusion WebUI/DirectML??遺숈뿬 ?ｌ쓣 ???덈뒗 ?꾨＼?꾪듃? 遺???꾨＼?꾪듃瑜??쒓났?섎뒗 諛⑺뼢?쇰줈 ?ㅺ퀎?쒕떎.
+- 臾대즺 TTS??釉뚮씪?곗? Web Speech API `SpeechSynthesis`瑜?湲곗〈 `actions.speakText`? ?곌껐?섍퀬, 濡쒖뺄 怨좏뭹吏?TTS???ㅼ튂??Coqui XTTS-v2 CLI??紐낅졊 ?먮? ?붾㈃???쒓났?섎뒗 諛⑺뼢?쇰줈 ?ㅺ퀎?쒕떎.
+- 援ы쁽 ?꾨즺: `js/views.js`??珥덈벑 ?곸뼱 肄붿뼱 ?숈뒿?ㅼ뿉 `elementary-ai-studio`瑜?異붽??덈떎. 珥덈벑 ?곷떒?대뒗 ?꾩옱 ?⑥뼱 6媛?湲곕컲 ?뱁댆???λ㈃ ?꾨＼?꾪듃瑜?留뚮뱾怨? 珥덈벑 ?곷Ц踰뺤? 臾몃쾿 ?⑦꽩怨??덈Ц 湲곕컲 ?λ㈃ ?꾨＼?꾪듃瑜?留뚮뱺??
+- 援ы쁽 ?꾨즺: ?붾㈃?먮뒗 臾대즺 AI ?대?吏 ?닿린, 釉뚮씪?곗? TTS ?ｊ린, ?대?吏 ?꾨＼?꾪듃 蹂듭궗, Coqui 紐낅졊 蹂듭궗 踰꾪듉怨?Stable Diffusion Prompt, Negative Prompt, Coqui XTTS-v2 PowerShell ?먭? ?쒖떆?쒕떎.
+- 援ы쁽 ?꾨즺: `assets/styles.css`??AI ?쒖옉??諛섏쓳???덉씠?꾩썐??異붽??덇퀬, 390px 紐⑤컮?쇱뿉?쒕룄 媛濡?overflow媛 ?녿룄濡?1?대줈 ?꾪솚?쒕떎.
+- 寃利??꾨즺: `node --check js/views.js`, `node --check js/english-core-sites.js`, `npm run build` ?듦낵. Pollinations ?대?吏 ?붾뱶?ъ씤?몃뒗 HTTP 200 諛?`image/jpeg`濡??묐떟?덈떎.
+- 諛고룷 ?꾨즺: `npm run deploy`濡?Cloudflare Pages??諛섏쁺?덇퀬 preview URL? `https://8378007c.purunet-academy.pages.dev`?? ?댁쁺 URL `https://purunet-academy.pages.dev/`?먯꽌 珥덈벑 ?꾩닔 ?곷떒??U1怨?珥덈벑 ?곷Ц踰?G1??AI ?쒖옉?? Pollinations ?대?吏, 紐⑤컮??overflow 0, 肄섏넄 ?ㅻ쪟 0???뺤씤?덈떎.
+
+## Cloudflare ?ㅼ젣 濡쒓렇?????몃Ⅴ???곸뼱쨌?섑븰 吏꾪뻾?ы빆 ?ш?利?(2026-05-24)
+- ?붿껌 紐⑺몴??Cloudflare???ㅼ젣 濡쒓렇?명븳 ?곹깭?먯꽌 ?댁쁺 `purunet-academy`???몃Ⅴ???곸뼱쨌?섑븰 吏꾪뻾?ы빆???ㅼ떆 寃利앺븯??寃껋씠??
+- ?꾩옱 湲곕낯 PATH?먮뒗 Node/npm/npx媛 ?놁뼱???꾨줈?앺듃 `.node-version`??留욎텣 Node `22.16.0` ZIP ?ㅽ뻾 ?섍꼍??`C:\Users\paten\node-v22.16.0-win-x64`??以鍮꾪뻽??
+- `npx wrangler@latest login` OAuth ?뚮줈?곌? ?깃났?덇퀬, `wrangler whoami` 寃곌낵 `scalpertv@gmail.com` OAuth ?좏겙?쇰줈 濡쒓렇?몃릺???덉쑝硫?怨꾩젙? `Scalpertv@gmail.com's Account`, Account ID??`419eed7ea1fec882ca2358aab66bf815`??
+- Pages ?꾨줈?앺듃 紐⑸줉?먯꽌 `purunet-academy`? ?꾨찓??`purunet-academy.pages.dev`媛 ?뺤씤?섏뿀??
+- ?먭꺽 D1? `purunet_academy_learning_db`, database ID `373856c5-aed3-46d6-b55d-37dec2c4479a`?대ŉ, `wrangler d1 execute ... --remote`濡?吏곸젒 議고쉶?덈떎.
+- ?먭꺽 D1 ?뚯씠釉??섎웾? ?숈깮 2紐? 援먯궗 0紐? ?대옒??0媛? 吏꾪뻾 湲곕줉 1嫄댁씠??
+- ?숈깮? `Test Student`? `Academy E2E 1779348652370` 2紐낆씠硫?????payload 湲곗? ?뱀씤 ?꾨즺, ?섑븰쨌?곸뼱쨌吏꾨룄쨌臾몄젣吏 沅뚰븳??耳쒖졇 ?덇퀬 contentEdit 沅뚰븳? 爰쇱졇 ?덈떎.
+- 吏꾪뻾 湲곕줉? `guest` ?숈깮??`math:g1-m03` 1嫄대퓧?대ŉ subject??`math`, 吏꾪뻾瑜좎? 11%, ?ㅽ떚而ㅻ뒗 1媛? ?꾨즺 ?좏뵿? `g1-op-m03-picture-add`, 媛깆떊 ?쒓컖? `2026-05-20T21:46:40.306Z`??
+- `student_progress`?먯꽌 `subject_id='english'` ?먮뒗 `module_id LIKE 'english:%'` 議곌굔?쇰줈 議고쉶???곸뼱 吏꾪뻾 湲곕줉? 0嫄댁씠??
+- ?댁쁺 API `https://purunet-academy.pages.dev/api/snapshot`??HTTP 200?대ŉ D1 吏곸젒 議고쉶? ?숈씪?섍쾶 援먯궗 0紐? ?대옒??0媛? ?숈깮 2紐? 吏꾪뻾 1嫄? ?섑븰 1嫄? ?곸뼱 0嫄댁쓣 諛섑솚?덈떎.
+
+## Cloudflare ?몃Ⅴ???곸뼱쨌?섑븰 吏꾪뻾?ы빆 ?먭? (2026-05-24)
+- ?붿껌 紐⑺몴??Cloudflare??濡쒓렇?명븳 ???댁쁺 URL `https://purunet-academy.pages.dev`???몃Ⅴ???곸뼱쨌?섑븰 ?숈뒿 吏꾪뻾?ы빆???뺤씤?섎뒗 寃껋씠??
+- ?곗꽑 濡쒖뺄 Wrangler ?몄쬆 ?몄뀡怨?`academy-portal`??D1 諛붿씤?? sync API, ?ㅽ궎留덈? ?뺤씤?????댁쁺 D1 ?곗씠?곕? 吏곸젒 議고쉶?쒕떎.
+- ?꾩옱 PowerShell ?몄뀡? 湲곕낯 PATH??`npx`媛 ?놁뼱 `C:\Program Files\nodejs`瑜?PATH ?욎뿉 遺숈뿬 Wrangler 紐낅졊???ㅽ뻾?댁빞 ?쒕떎.
+- 濡쒖뺄 `.wrangler/cache/wrangler-account.json`?먮뒗 `Scalpertv@gmail.com's Account` 怨꾩젙 罹먯떆媛 ?⑥븘 ?덉뿀??
+- ?꾩옱 PC?먮뒗 Node/npm/npx ?ㅽ뻾 ?뚯씪??PATH? ?쇰컲 ?ㅼ튂 寃쎈줈?먯꽌 ?뺤씤?섏? ?딆븘 Wrangler CLI 吏곸젒 議고쉶 ????댁쁺 Pages Function `/api/snapshot`???몄텧?덈떎.
+- ???D1? `purunet_academy_learning_db`, 諛붿씤?⑹? `ACADEMY_DB`?대떎.
+- `/api/snapshot` ?묐떟 湲곗? 援먯궗 0紐? ?대옒??0媛? ?숈깮 2紐? 吏꾪뻾 湲곕줉 1嫄댁씠 ?덈떎.
+- ?숈깮 2紐낆? `Test Student`, `Academy E2E 1779348652370`?대ŉ ?????뱀씤 ?꾨즺, ?섑븰쨌?곸뼱쨌吏꾨룄???沅뚰븳??耳쒖졇 ?덈떎.
+- 吏꾪뻾 湲곕줉? `guest` ?숈깮??`math:g1-m03` 1嫄대퓧?대ŉ subject??`math`, 吏꾪뻾瑜좎? 11%, ?ㅽ떚而ㅻ뒗 1媛? ?꾨즺 ?좏뵿? `g1-op-m03-picture-add`, 媛깆떊 ?쒓컖? `2026-05-20T21:46:40.306Z`?대떎.
+- ?곸뼱 subject??`english` 諛?以묐벑쨌珥덈벑쨌怨좊벑 ?곸뼱 怨꾩뿴 吏꾪뻾 湲곕줉? ?댁쁺 ?ㅻ깄?룹뿉 ?녿떎.
+
+## Fish Speech 濡쒖뺄 ?ㅼ튂 (2026-05-24)
+- ?붿껌 紐⑺몴??Fish Speech瑜??꾩옱 Windows PC??濡쒖뺄 ?ㅼ튂?섎뒗 寃껋씠??
+- 怨듭떇 臾몄꽌 湲곗? Fish Speech??Python 3.12 ?섍꼍??沅뚯옣?섍퀬, CPU ?ㅼ튂??`pip install -e .[cpu]`濡?媛?ν븯??GPU ?鍮?留ㅼ슦 ?먮┛ ?뚯뒪?몄슜 寃쎈줈??
+- ?꾩옱 PC??AMD Radeon RX 570?쇰줈 CUDA 媛?띿쓣 ?ъ슜?????녾퀬, Fish Speech??怨듭떇 怨좎냽 ?ㅽ뻾 湲곗???NVIDIA GPU ?섍꼍怨?留욎? ?딅뒗??
+- ?ㅼ튂??CPU 湲곗??쇰줈 遺꾨━??`C:\Users\paten\fish-speech` ?대뜑? 蹂꾨룄 媛?곹솚寃쎌뿉 吏꾪뻾?쒕떎.
+
+## Wan2GP 濡쒖뺄 ?ㅼ튂 (2026-05-24)
+- ?붿껌 紐⑺몴??Wan2GP瑜??꾩옱 Windows PC???ㅼ튂?섎뒗 寃껋씠??
+- 怨듭떇 ??μ냼??`deepbeepmeep/Wan2GP`?대ŉ, 臾몄꽌??Windows ?먰겢由??ㅽ겕由쏀듃 ?먮뒗 ?섎룞 ?ㅼ튂瑜?吏?먰븳??
+- 怨듭떇 AMD Windows ?ㅼ튂 臾몄꽌??Python 3.11怨?TheRock ROCm PyTorch ?좎쓣 ?ъ슜?섎ŉ, 吏??GPU??RDNA2 ?댁긽 怨꾩뿴 以묒떖?대떎.
+- ?꾩옱 PC??Radeon RX 570 Series濡??뺤씤?섏뼱 怨듭떇 AMD Windows 吏??紐⑸줉??RDNA2/RDNA3/RDNA4 怨꾩뿴???ы븿?섏? ?딅뒗??
+- ?곕씪???ㅼ튂????μ냼? Python ?섍꼍, ?섏〈???뺤씤源뚯? 吏꾪뻾?섎릺, GPU 媛???ㅽ뻾 寃利앹뿉??誘몄??먯씠 ?뺤씤??媛?μ꽦???믩떎.
+
+## Coqui TTS XTTS-v2 濡쒖뺄 ?ㅼ튂 (2026-05-24)
+- ?붿껌 紐⑺몴??Coqui TTS??XTTS-v2 紐⑤뜽???꾩옱 Windows PC?먯꽌 濡쒖뺄 ?ㅽ뻾?????덇쾶 ?ㅼ튂?섎뒗 寃껋씠??
+- 怨듭떇 Coqui 臾몄꽌 湲곗? XTTS-v2 紐⑤뜽紐낆? `tts_models/multilingual/multi-dataset/xtts_v2`?대ŉ, ?쒓뎅??`ko`瑜??ы븿???ㅺ뎅??TTS? ?뚯꽦 蹂듭젣瑜?吏?먰븳??
+- ?꾩옱 PC??AMD Radeon RX 570?대?濡?CUDA 媛?????CPU ?ㅽ뻾 湲곗??쇰줈 ?ㅼ튂?쒕떎.
+- Stable Diffusion 寃利??꾩쨷 ?⑥븘 ?덈뜕 Python ?꾨줈?몄뒪?????묒뾽怨?異⑸룎?섏? ?딅룄濡?醫낅즺?덈떎.
+- XTTS-v2 紐⑤뜽? Coqui Public Model License瑜??곕Ⅴ誘濡?泥??ㅼ슫濡쒕뱶? ?ㅽ뻾 ???쎄? ?숈쓽 泥섎━媛 ?꾩슂?????덈떎.
+- ?ㅼ튂 ?꾩튂??`C:\Users\paten\coqui-xtts-v2`?대ŉ, Python 3.10 媛?곹솚寃쎌? `venv` ?섏쐞 ?대뜑??留뚮뱾?덈떎.
+- ?ㅼ튂 ?⑦궎吏??`coqui-tts==0.27.5`, `torch==2.8.0+cpu`, `torchaudio==2.8.0+cpu`, `transformers==4.57.1` 議고빀?쇰줈 怨좎젙?덈떎.
+- `transformers` 5.x??`isin_mps_friendly` import ?명솚??臾몄젣媛 ?덉뿀怨? PyTorch 2.12??`torchcodec`/FFmpeg ?섏〈?깆씠 媛뺥빐 Windows CPU ?섍꼍?먯꽌 遺덉븞?뺥븯??2.8 CPU 議고빀?쇰줈 ??톬??
+- 寃利?寃곌낵 `tts --model_name tts_models/multilingual/multi-dataset/xtts_v2 --list_language_idxs`媛 ?깃났?덇퀬, ?몄뼱 紐⑸줉??`ko`媛 ?ы븿?⑥쓣 ?뺤씤?덈떎.
+- ?쒓뎅???섑뵆 ?앹꽦 寃利앹쓣 ?꾨즺?덇퀬 寃곌낵 ?뚯씪? `C:\Users\paten\coqui-xtts-v2\xtts_v2_ko_test.wav`?대떎.
+
+## Stable Diffusion 1.5 濡쒖뺄 ?ㅼ튂 (2026-05-24)
+- ?붿껌 紐⑺몴???꾩옱 Windows ?묒뾽 ?섍꼍??Stable Diffusion 1.5瑜?濡쒖뺄?먯꽌 ?ㅽ뻾?????덇쾶 ?ㅼ튂?섎뒗 寃껋씠??
+- ?ㅼ튂 諛⑹떇? 踰붿슜?깆씠 ?믪? AUTOMATIC1111 Stable Diffusion WebUI 湲곗??쇰줈 吏꾪뻾?쒕떎.
+- 珥덇린 ?먭? 寃곌낵 湲곕낯 PATH??Python? Microsoft Store ?ㅽ뻾 蹂꾩묶泥섎읆 蹂댁씠硫??뺤긽 ?ㅽ뻾?섏? ?딆븯怨? Git? PATH?먯꽌 李얠쓣 ???놁뿀??
+- ?ㅼ튂?먮뒗 Python 3.10.x, Git, WebUI ??μ냼, Stable Diffusion 1.5 泥댄겕?ъ씤??紐⑤뜽 ?뚯씪???꾩슂?섎떎.
+- ?ㅽ듃?뚰겕 ?ㅼ슫濡쒕뱶? ?꾨줈洹몃옩 ?ㅼ튂???뚮뱶諛뺤뒪 諛?沅뚰븳 ?뱀씤???꾩슂?????덈떎.
+
+## ?섑븰 ?④퀎蹂??앹꽦 諛⑹떇 援먭낵?쒖떇쨌STEM ?묒슜 蹂닿컯 (2026-05-21)
+- ?붿껌 紐⑺몴???꾩옱 ?섑븰 ?숈뒿??`媛쒕뀗`, `?좏삎`, `怨좊궃?대룄` ?④퀎媛 ?⑥닚 ?곗궛??以묒떖?쇰줈 ?먭뺨吏吏 ?딅룄濡??④퀎蹂?臾명빆 ?쒗쁽怨??숈뒿 ?섎룄瑜?媛뺥솕?섎뒗 寃껋씠??
+- ?꾩옱 ??援ъ“?먯꽌??`learningArea`媛 二쇰줈 ?⑥썝쨌紐⑹감 ?꾪꽣濡??곗씠怨? ?ㅼ젣 臾명빆? `topic.generate()`媛 諛섑솚??`Problem`???숈뒿 ?붾㈃怨?臾몄젣吏 異쒕젰??洹몃?濡??꾨떖?쒕떎.
+- ?섏쿇 以꾩쓽 湲곗〈 ?앹꽦湲곕? 吏곸젒 ?섏젙?섎㈃ ?뚭? 踰붿쐞媛 而ㅼ?誘濡? ?앹꽦??`Problem`???숈뒿 ?곸뿭蹂꾨줈 蹂?섑븯??怨듯넻 寃쎈줈瑜?`App.tsx`???먭퀬 ?숈뒿 ?쒖옉怨?臾몄젣吏 異쒕젰??媛숈? 蹂닿컯 寃곌낵瑜??곕룄濡??쒕떎.
+- 寃利?湲곗?? `app/`?먯꽌 `npm run lint`, `npm run verify`, `npm run onefile`???듦낵?쒗궎怨? ?⑥씪 HTML怨?紐⑤컮??`study.html` ?곗텧臾쇱쓣 理쒖떊 鍮뚮뱶濡?諛섏쁺?섎뒗 寃껋씠??
+- 援ы쁽 寃곌낵 `媛쒕뀗`? 援먭낵?쒖떇 媛쒕뀗 ?ㅻ챸, ?ㅽ넗由ы뀛留??섑븰, STEM ?곌껐, 援먭낵???덉젣 援ъ“濡?蹂?섎맂?? `?좏삎`? ?뺣낫 ?쒖떆, 愿怨꾩떇 ?몄슦湲? 怨꾩궛, 寃?곗쓽 以묎컙 ?④퀎 ????꾨왂??遺숈씠怨? `怨좊궃?대룄`???꾩떎 議곌굔???섑븰 紐⑤뜽濡?諛붽씀???ㅽ넗由ы뀛留?STEM 誘몄뀡?쇰줈 蹂?섎맂??
+- ?숈뒿 ?붾㈃ ?쒖옉怨??좏깮 臾몄젣吏 異쒕젰 紐⑤몢 `buildTopicProblemSet()`???숈씪??蹂닿컯 寃쎈줈瑜?嫄곗튂?꾨줉 ?곌껐?덈떎. 湲곗〈 ?뺣떟, 蹂닿린, ?쒓컖 ?먮즺, 梨꾩젏 諛⑹떇? 洹몃?濡??좎??쒕떎.
+- 寃利??꾨즺: `npm run lint`, `npm run verify`, `npm run onefile` ?듦낵. ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?덇퀬, ??HTML??SHA256? `95E58925F2DECDB252561821535941571A4BD01A73394EB50ABF60FE00366ED2`濡??숈씪?섎떎.
+- 紐⑤컮???쒕퉬???뚯빱 罹먯떆??`codex-math-mobile-v81`濡?媛깆떊?덈떎.
+
+## ?좎튂???숈뒿 ??댄꽣 ?뚯썝媛?낃낵 援먯궗??3D 紐⑤땲?곕쭅 (2026-05-20)
+- ?붿껌 紐⑺몴???꾨줈洹몃옩 ?쒕ぉ??`?몃Ⅴ???좎튂???쇰줈 諛붽씀怨? ?숈깮?㈑룰탳?ъ슜 ?뚯썝媛?낃낵 ??븷 遺꾧린瑜?留뚮뱾硫? 援먯궗???붾㈃?먯꽌 ?깅줉 ?대옒?ㅼ? ?숈깮 ?숈뒿 ?댁슜???ㅼ떆媛꾩쑝濡?紐⑤땲?곕쭅?섍쾶 留뚮뱶??寃껋씠??
+- 湲곗〈 ???섑븰 ?깆쓽 援먯궗??紐⑤땲?곕쭅? ?대옒???붿빟怨??숈깮蹂?吏꾪뻾 ?됱쓣 以묒떖?쇰줈 援ъ꽦?섏뼱 ?덉뿀?? ?대쾲 ?좎튂???깆? ?⑥씪 HTML 援ъ“?대?濡?媛숈? 媛쒕뀗??localStorage roster? ?숈깮蹂?吏꾪뻾 ?ㅻ깄?룹쑝濡?異뺤냼 援ы쁽?덈떎.
+- ?숈깮?⑹? 湲곗〈 365???숈뒿 ??댄꽣瑜??좎??쒕떎. ?숈깮 怨꾩젙?쇰줈 ?숈뒿?섎㈃ `currentDay`, `currentWeek`, ?꾨즺 ?쒕룞, ?ㅽ떚而? 理쒓렐 ?쒕룞 ?쒓컙???숈깮 record???숆린?붾맂??
+- 援먯궗???붾㈃? `teacher-dashboard`濡?遺꾨━?덈떎. ?대옒?ㅒ룻븰???깅줉, ?대옒???꾪꽣, ?붿빟 移대뱶, ?숈깮蹂?吏꾪뻾 移대뱶, 3D 吏꾪뻾瑜?留됰?瑜??ы븿?쒕떎.
+- 寃利?寃곌낵??`kindergarten-learning-playground`?먯꽌 `npm run check`, `npm run smoke` ?듦낵?? Edge 湲곕컲 ?뚯씪 ?ㅽ뻾 ?먭??먯꽌???뚯썝媛?? 援먯궗????쒕낫?? ?숈깮 ?깅줉, 3D 罹붾쾭?? 紐⑤컮??overflow ?놁쓬???뺤씤?먮떎.
+
+## ?좎튂???숈뒿 ??댄꽣 365??肄붿뒪? ?숈뒿吏??紐⑤땲?곕쭅 (2026-05-20)
+- ?붿껌 紐⑺몴??`?몃Ⅴ???좎튂??26.05.20)/kindergarten-learning-playground`??湲곗〈 52二?肄붿뒪瑜?365??湲곗??쇰줈 ?뺤옣?섍퀬, ?꾩옱 ?숈뒿 ?꾩튂? 吏꾪뻾 ?곹솴??紐⑤땲?곕쭅?????덇쾶 留뚮뱶??寃껋씠??
+- 援ы쁽 諛⑺뼢? 52二??뚮쭏 ?곗씠?곕? ??젣?섏? ?딄퀬 `js/data.js`?먯꽌 365???쇱감 怨꾪쉷???앹꽦?섎뒗 諛⑹떇?대떎. 365?쇱감??52二쇱감 ?낇븰 以鍮?諛쒗몴?뚮줈 ?먭퀬 5醫??쒕룞??紐⑤몢 ?곌껐?덈떎.
+- `js/models.js`??`currentDay`瑜?異붽????쇱감 以묒떖?쇰줈 ?대룞?섍퀬, `currentWeek`???꾩옱 ?쇱감?먯꽌 ?먮룞 怨꾩궛?섎룄濡??덈떎. ?꾨즺 湲곕줉?먮뒗 ?꾨즺 ?뱀떆 ?쇱감? 二쇱감瑜???ν븳??
+- `js/views.js`??援먯떎 ?붾㈃???쇱감 ?щ씪?대뜑, 二쇱감 諛붾줈 ?대룞, 365???숈뒿吏?? ?ㅻ뒛 紐⑺몴? 二쇱감쨌?꾩껜 吏꾪뻾瑜? 媛??誘몄뀡怨?援먯궗 泥댄겕 臾멸뎄瑜??쒖떆?쒕떎. 蹂댁긽 ?뺤썝?먮룄 ?좏깮 援먯떎??365??吏꾪뻾 ?붿빟???쒖떆?쒕떎.
+- ?꾩옱 ???대뜑??寃利앹슜 `package.json`怨?`scripts/smoke.mjs`媛 ?놁뼱 蹂듦뎄?덈떎. 寃利앹? `npm run check`, `npm run smoke`, Edge 湲곕컲 `file://` Playwright ?먭????듦낵?덈떎.
+
+## Cloudflare ?쒕쾭? PC ?ㅼ튂 ?꾨줈洹몃옩 ?낅뜲?댄듃 (2026-05-20)
+- ?붿껌 紐⑺몴??吏곸쟾 援먯궗??roster 踰붿쐞 ?쒗븳 蹂寃쎌쓣 Cloudflare Pages ?댁쁺 ?쒕쾭? Windows PC ?ㅼ튂 ?꾨줈洹몃옩??諛섏쁺?섎뒗 寃껋씠??
+- ?묒뾽 湲곗?? `app` ?⑦궎吏??`npm run pages:deploy`濡?Cloudflare Pages production 諛고룷瑜??ㅽ뻾?섍퀬, ?댁쁺 URL??HTTP ?묐떟怨?李몄“ asset???뺤씤????`npm run installer:win`?쇰줈 Windows ?ㅼ튂 ?뚯씪???ㅼ떆 留뚮뱶??寃껋씠??
+- ?ㅼ튂 諛고룷 臾띠쓬??湲곗〈 猷⑦떞泥섎읆 `app/release.zip`?쇰줈 ?ㅼ떆 ?뺤텞?섍퀬, ?ㅼ튂 EXE쨌blockmap쨌app.asar쨌release.zip SHA256??湲곕줉?쒕떎.
+- Cloudflare Pages 諛고룷 ?꾨즺: `npm run pages:deploy` ?깃났. ??preview URL? `https://01c5414d.purunet-math-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://purunet-math-ebook.pages.dev/`??HTTP 200?대ŉ `assets/index-BMrGLTPt.js`瑜?李몄“?쒕떎. ?댁쁺 JS SHA256? 濡쒖뺄 鍮뚮뱶? 媛숈? `C494DE4CF8AAD721A69045DDEA76DEA7F35581B672777BB2E2F58A52397E7638`?닿퀬 `?대떦 援먯궗 踰붿쐞`, `?대떦 ?숈뒿???ㅼ떆媛?吏꾨룄留? 臾몄옄?댁쓣 ?뺤씤?덈떎.
+- Windows ?ㅼ튂 ?뚯씪 媛깆떊 ?꾨즺: `npm run installer:win` ?깃났 ??`app/release.zip`??理쒖떊 `app/release` 湲곗??쇰줈 ?ㅼ떆 ?뺤텞?덈떎. ?ㅼ튂 EXE ?ш린??`102797013` bytes, `release.zip` ?ш린??`250557183` bytes??
+- 理쒖떊 ?ㅼ튂 ?곗텧臾?SHA256: ?ㅼ튂 EXE `A1D5369042A86058C59E3437E2FAE8F58DEA317B2BC7363DC3D2F079EDC665B7`, blockmap `273E67341B439EE4CFB42C90DBCD3A6C00BF29DAC98060A5E1ED085E0E57F25B`, app.asar `2EDBDE3D8C978B9988858A0165222A3DB7828FE5D4557DDF8667F2E4C0B9771E`, release.zip `F03549A6BACD36E7FD8C7D4216AE30F19060EBFEB3B2B75EC018D58CD57BBF27`?대떎.
+- ?ㅼ튂蹂?`app.asar` ?대??먯꽌 `dist/index.html`, `assets/index-BMrGLTPt.js`, `assets/index-CZIj7P0w.css`, `electron/main.cjs` ?ы븿???뺤씤?덈떎. Electron Builder?????꾩씠肄?fallback 寃쎄퀬, Vite ??踰덈뱾 寃쎄퀬, DEP0190 寃쎄퀬??湲곗〈怨?媛숈? 鍮꾩감??寃쎄퀬??
+
+## 援먯궗??濡쒓렇??roster 踰붿쐞 ?쒗븳 (2026-05-20)
+- ?붿껌 紐⑺몴??援먯궗??怨꾩젙?쇰줈 濡쒓렇?명뻽?????대떦 ?좎깮?섏씠 留뚮뱺 ?대옒?ㅼ? 洹??대옒?ㅼ뿉 ?깅줉???숈깮留?蹂댁씠怨? ?ㅻⅨ ?좎깮?섏쓽 ?대옒?ㅻ굹 媛숈? ?대쫫???숈깮???욎뿬 ?몄텧?섏? ?딄쾶 ?섎뒗 寃껋씠??
+- ?꾩옱 援ъ“?먯꽌??`loadLearningRosterSnapshot()`???꾩껜 援먯궗쨌?대옒?ㅒ룻븰??紐⑸줉??諛섑솚?섍퀬, `App.tsx`???깅줉/愿由?紐⑤땲?곕쭅 UI媛 ??紐⑸줉??洹몃?濡??쒗쉶?섎뒗 寃쎈줈媛 ?덈떎. ?곕씪??援먯궗??濡쒓렇???곹깭?먯꽌??`activeTeacherAccount.teacherId`瑜?湲곗??쇰줈 ?붾㈃??紐⑸줉????踰???醫곹엳??寃껋씠 媛???묒? 蹂寃쎌씠??
+- ?댁쟾 濡쒓렇?몄씠??愿由ъ옄 ?由??ъ슜?쇰줈 ?ㅻⅨ 援먯궗??`classId`? `studentId`媛 settings???⑥븘 ?덉쓣 ???덉쑝誘濡? roster snapshot??留뚮뱾 ??active class? active student媛 active teacher 踰붿쐞 ?덉뿉 ?덈뒗吏???④퍡 ?뺤씤?쒕떎.
+- 寃利?湲곗?? `npm run lint`, `npm run verify`, `npm run onefile` ?듦낵? ?⑥씪 HTML ?곗텧臾?諛섏쁺?대떎.
+- 援ы쁽 ?꾨즺: `App.tsx`?먯꽌 援먯궗??濡쒓렇???곹깭??`teacherId`瑜?`teacherScopedId`濡??↔퀬, ?붾㈃???좎깮?샕룻겢?섏뒪쨌?숈깮쨌?숈깮 怨꾩젙쨌吏꾨룄 紐⑸줉????踰붿쐞濡??쒗븳?덈떎. ?숈깮 愿由? ?대옒??愿由? ?깅줉 ?ㅽ듃由? 紐⑤땲?곕쭅 ?⑤꼸, ?숈깮 怨꾩젙 議고쉶??媛숈? 紐⑸줉???ъ슜?쒕떎.
+- 援ы쁽 ?꾨즺: ?대옒???좏깮, ?숈깮 ?좏깮, ?대옒???섏젙, ?숈깮 ?섏젙, 鍮꾨?踰덊샇 珥덇린???몃뱾?ъ뿉 援먯궗 踰붿쐞 諛??곗씠???좏깮 諛⑹뼱瑜?異붽??덈떎. 援먯궗??紐⑤땲?곕쭅 臾멸뎄??`?대떦 援먯궗 踰붿쐞`濡?諛붽퓭 愿由?踰붿쐞瑜?紐낇솗???쒖떆?쒕떎.
+- 援ы쁽 ?꾨즺: `learnerDb.ts`?먯꽌 援먯궗 濡쒓렇?????⑥븘 ?덈뜕 ?ㅻⅨ ?대옒?ㅒ룻븰???좏깮媛믪쓣 鍮꾩슦怨? roster snapshot ?앹꽦 ??active class? active student媛 active teacher? ?쇱튂???뚮쭔 ?좎??섎룄濡?蹂닿컯?덈떎. `loadAllLearningProgress()`???좏깮?곸쑝濡?`teacherId`瑜?諛쏆븘 ?대떦 ?숈깮 吏꾨룄留?怨꾩궛?????덇쾶 ?덈떎.
+- 寃利??꾨즺: `npm run lint`, `npm run verify`, `npm run onefile` ?듦낵. ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?덇퀬, 紐⑤컮???쒕퉬???뚯빱 罹먯떆??`codex-math-mobile-v80`?쇰줈 ?щ졇?? ?⑥씪 HTML 3媛??뚯씪 SHA256? 紐⑤몢 `6DBC132F57D4A2235E32750A53531AAFF2059D3B80D498F42D5CCED0219BA507`?대떎.
+
+## 湲곗〈 Cloudflare 二쇱냼 理쒖떊 異쒕젰蹂??숆린??(2026-05-20)
+- ?먭? 寃곌낵 ?좉퇋 ?댁쁺 二쇱냼 `https://purunet-math-ebook.pages.dev/`??理쒖떊 `assets/index-BmUNbY-V.js`瑜?李몄“?섍퀬 `print-visual`, `renderToStaticMarkup` 肄붾뱶媛 ?ы븿?섏뼱 ?덉뿀??
+- 湲곗〈 二쇱냼 `https://prunet-math-ebook.pages.dev/`???꾩쭅 HTTP 200?쇰줈 ?댁븘 ?덉쑝???덉쟾 `assets/index-DJ_DOl9Q.js`瑜?李몄“?섍퀬 ?덉뿀?? ?ъ슜?먭? 湲곗〈 二쇱냼濡??묒냽?섎㈃ 臾몄젣吏쨌?듭븞吏 異쒕젰 蹂寃쎌씠 ?꾪? 蹂댁씠吏 ?딅뒗 寃껋씠 ?뺤긽?곸씤 利앹긽?대떎.
+- 議곗튂 諛⑺뼢? 怨듭떇 二쇱냼??`purunet`?쇰줈 ?좎??섎릺, 湲곗〈 遺곷쭏?ъ? ?ㅼ튂/?덈궡 ?붿〈 ?ъ슜?먮? ?꾪빐 湲곗〈 `prunet-math-ebook` Pages ?꾨줈?앺듃?먮룄 媛숈? 理쒖떊 鍮뚮뱶瑜?諛고룷?섎뒗 寃껋씠??
+- 湲곗〈 二쇱냼 ?숆린???꾨즺: `npx wrangler pages deploy dist --project-name prunet-math-ebook --branch main` ?깃났. ??preview URL? `https://51cd49fe.prunet-math-ebook.pages.dev`??
+- 理쒖쥌 寃利??꾨즺: `https://purunet-math-ebook.pages.dev/`, `https://prunet-math-ebook.pages.dev/`, `https://51cd49fe.prunet-math-ebook.pages.dev/` 紐⑤몢 HTTP 200?닿퀬 `assets/index-BmUNbY-V.js`, `assets/index-CZIj7P0w.css`瑜?李몄“?쒕떎. ?묒そ JS SHA256? 紐⑤몢 `4F6A1B1FD2EE6DB600141537378493E7E5F9C909578FB7259CCBA7996F15DA4C`?대ŉ `print-visual`, `renderToStaticMarkup` ?ы븿???뺤씤?덈떎.
+
+## ?쒓컖 ?먮즺 異쒕젰 蹂댁젙蹂??쒕쾭쨌?ㅼ튂 ?뚯씪 諛섏쁺 (2026-05-20)
+- ?붿껌 紐⑺몴??臾몄젣吏쨌?듭븞吏 異쒕젰?먯꽌 踰≫꽣 ?대?吏? ?꾪몴쨌洹몃옒?꽷룸룄?뺤씠 蹂댁씠?꾨줉 ?섏젙??理쒖떊 ?깆쓣 Cloudflare Pages ?댁쁺 ?쒕쾭? Windows ?ㅼ튂 ?뚯씪源뚯? 諛섏쁺?섎뒗 寃껋씠??
+- 諛고룷 湲곗?? `app/`?먯꽌 湲곗〈 `npm run pages:deploy`瑜??ъ슜??`purunet-math-ebook` production `main` 釉뚮옖移섏뿉 ?щ━怨? ?ㅼ튂 ?뚯씪? `npm run installer:win` ??理쒖떊 `app/release` 湲곗??쇰줈 `app/release.zip`???ㅼ떆 ?뺤텞?섎뒗 寃껋씠??
+- 寃利?湲곗?? Cloudflare ?댁쁺 URL HTTP 200, ?댁쁺 HTML??理쒖떊 asset 李몄“ ?뺤씤, Windows ?ㅼ튂 EXE쨌blockmap쨌app.asar쨌release.zip SHA256 湲곕줉?대떎.
+- Cloudflare Pages 諛고룷 ?꾨즺: `npm run pages:deploy` ?깃났. ??preview URL? `https://d119d65b.purunet-math-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://purunet-math-ebook.pages.dev/`??HTTP 200?대ŉ `assets/index-BmUNbY-V.js`, `assets/index-CZIj7P0w.css`瑜?李몄“?쒕떎. ?댁쁺 JS SHA256? 濡쒖뺄 鍮뚮뱶? 媛숈? `4F6A1B1FD2EE6DB600141537378493E7E5F9C909578FB7259CCBA7996F15DA4C`?닿퀬 `print-visual`, `renderToStaticMarkup` 臾몄옄?댁쓣 ?뺤씤?덈떎.
+- Windows ?ㅼ튂 ?뚯씪 媛깆떊 ?꾨즺: `npm run installer:win` ?깃났 ??`app/release.zip`??理쒖떊 `app/release` 湲곗??쇰줈 ?ㅼ떆 ?뺤텞?덈떎. ?ㅼ튂 EXE ?ш린??`102796617` bytes, `release.zip` ?ш린??`250556548` bytes??
+- 理쒖떊 ?ㅼ튂 ?곗텧臾?SHA256: ?ㅼ튂 EXE `0F49900588A19B4F7AECDA63AB082DF3DC3021A09DAF713145F0500DF25C4830`, blockmap `E0820BFE8286EBCD7D1BE042A53FCD5B8D6C3D4386DBC3C3BEC35131714FDF48`, app.asar `FC1B0AD66875EBA3EE5531F966B1F967AA3F9D081CA6B6E782106A004E33B559`, release.zip `556BB950CBA44DBCEDE04D4109CEC319E41DBDC354B409FEC37CA4A3F23476A4`??
+- 李멸퀬: Electron Builder?????꾩씠肄?fallback 寃쎄퀬, Vite ??踰덈뱾 寃쎄퀬, DEP0190 寃쎄퀬??湲곗〈怨?媛숈? 鍮꾩감??寃쎄퀬?대ŉ ?ㅼ튂 ?뚯씪 ?앹꽦怨?諛고룷???뺤긽 ?꾨즺?먮떎.
+
+## 臾몄젣吏쨌?듭븞吏 異쒕젰 ?쒓컖 ?먮즺 ?쒖떆 蹂댁젙 (2026-05-20)
+- ?붿껌 紐⑺몴??臾몄젣吏 異쒕젰怨??듭븞吏 異쒕젰?먯꽌 踰≫꽣 ?대?吏, ?꾪몴, 洹몃옒?? ?꾪삎 媛숈? 紐⑤뱺 臾몄젣 ?쒓컖 ?먮즺媛 ?ㅼ젣 洹몃┝?쇰줈 蹂댁씠寃??섎뒗 寃껋씠??
+- ?꾩옱 ?몄뇙 寃쎈줈??`Problem.visual`??`visualToPrintableText`濡??ㅻ챸 臾몄옣留?異쒕젰?쒕떎. ?숈뒿 ?붾㈃?먯꽌??`MathVisual` 而댄룷?뚰듃媛 媛숈? ?곗씠?곕? SVG? ?쒕줈 ?대? ?뚮뜑留곹븯誘濡? ?몄뇙 HTML?먯꽌???대떦 而댄룷?뚰듃瑜??뺤쟻 留덊겕?낆쑝濡?蹂?섑빐 ?ъ궗?⑺븯??寃껋씠 媛???묎퀬 ?꾨씫???곷떎.
+- 寃利?湲곗?? `npm run lint`, `npm run verify`, `npm run onefile`, ?⑥씪 HTML 諛?紐⑤컮??`study.html` 諛섏쁺, 紐⑤컮???쒕퉬???뚯빱 罹먯떆 踰꾩쟾 媛깆떊?대떎.
+- 援ы쁽 ?꾨즺: `app/src/App.tsx`?먯꽌 `MathVisual`??`renderToStaticMarkup`?쇰줈 ?몄뇙 HTML???ｊ퀬, ?앹뾽 臾몄꽌??SVG쨌?쑣룰렇?섑봽??`.print-visual` CSS瑜?異붽??덈떎. 媛숈? `printableProblemHtml` 寃쎈줈瑜??곕?濡?臾몄젣吏? ?듭븞吏 紐⑤몢 ?곸슜?쒕떎.
+- 寃利??꾨즺: `npm run lint`, `npm run verify`, `npm run onefile` ?듦낵. ?⑥씪 HTML 3媛??뚯씪 SHA256? 紐⑤몢 `B9359EFC82EE367700A354F0B5AE5A7A43CE13A9236CCA6FC425745C265C561B`?닿퀬, 紐⑤컮???쒕퉬???뚯빱 罹먯떆??`codex-math-mobile-v79`濡??щ졇??
+
+## 臾몄젣吏 異쒕젰 遺꾩닔쨌?섎닓???쒓린 蹂댁젙 (2026-05-20)
+- ?붿껌 紐⑺몴??臾몄젣吏 異쒕젰?먯꽌 遺꾩닔???섎닓???쒗쁽??`/`媛 蹂댁씠??寃껋쓣 ?섑븰 ?쒓린?듦쾶 諛붽씀??寃껋씠??
+- ?곸슜 踰붿쐞??臾몄젣吏쨌?듭븞吏 ?앹뾽 HTML ?앹꽦 寃쎈줈?? ?숈뒿 ?붾㈃??`MathText` ?뚮뜑留곴낵 臾몄젣 ?앹꽦 ?먮낯 ?곗씠?곕뒗 洹몃?濡??먭퀬, ?몄뇙??HTML 蹂???④퀎?먯꽌留??쒖떆瑜?蹂댁젙?섎뒗 寃껋씠 媛???묎퀬 ?덉쟾?섎떎.
+- 援ы쁽 湲곗?? `1/2`, `2 1/3`, `\\frac{1}{2}` 媛숈? 遺꾩닔 ?쒓린???몄뇙?먯꽌 遺꾩닔 留됰?濡?蹂댁씠寃??섍퀬, 怨듬갚?????섎닓??slash??`첨`濡?諛붽씀??寃껋씠?? ?숈깮 ?낅젰 ?덈궡? ?뺣떟 ?곗씠???먯껜??諛붽씀吏 ?딅뒗??
+- 寃利?湲곗?? `npm run lint`, `npm run verify`, `npm run onefile`, ?⑥씪 HTML 諛?紐⑤컮??`study.html` 諛섏쁺, 紐⑤컮???쒕퉬???뚯빱 罹먯떆 踰꾩쟾 媛깆떊?대떎.
+- 援ы쁽 ?꾨즺: `app/src/App.tsx`??臾몄젣吏쨌?듭븞吏 ?몄뇙??HTML 蹂???⑥닔?먯꽌 ?쇰컲 遺꾩닔, ?遺꾩닔, LaTeX `\\frac{}{}` ?쒓린瑜??몄뇙??遺꾩닔 留됰? HTML濡?諛붽씀怨?怨듬갚????`/` ?섎닓?덉? `첨`濡??쒖떆?섍쾶 ?덈떎.
+- 寃利??꾨즺: `npm run lint`, `npm run verify`, `npm run onefile` ?듦낵. ?⑥씪 HTML 3媛??뚯씪 SHA256? 紐⑤몢 `7495B1CFBAA6E62D61123C9EBAEF1D48E918C8FFF9CF5B6E76A9876CAE4291AD`?닿퀬, 紐⑤컮???쒕퉬???뚯빱 罹먯떆??`codex-math-mobile-v78`濡??щ졇??
+
+## Cloudflare ?섑븰 ?듯옒梨??댁쁺 二쇱냼 蹂寃?(2026-05-20)
+- ?붿껌 紐⑺몴???섑븰 ?듯옒梨??댁쁺 二쇱냼瑜?湲곗〈 `https://prunet-math-ebook.pages.dev`?먯꽌 ?좉퇋 `https://purunet-math-ebook.pages.dev`濡?蹂寃쏀븯怨? ?꾩옱 ?꾨줈?앺듃 ?뚯씪???쒕쾭 二쇱냼 李몄“??媛숈? 媛믪쑝濡?留욎텛??寃껋씠??
+- 蹂寃?踰붿쐞??Pages ?꾨줈?앺듃紐? 諛고룷 ?ㅽ겕由쏀듃, Electron ?쇱씠釉?URL, OAuth ?덈궡 臾멸뎄?? D1 ?곗씠?곕쿋?댁뒪 ?대쫫 `prunet_math_learning_db`???ㅼ젣 ?먭꺽 DB ?앸퀎?먯? 諛깆뾽/留덉씠洹몃젅?댁뀡 紐낅졊???곌껐?섏뼱 ?덉쑝誘濡?二쇱냼 ?쒓린 蹂寃쎄낵 遺꾨━???좎??쒕떎.
+- 寃利?湲곗?? `npm run lint`, `npm run verify`, `npm run onefile`, ?⑥씪 HTML 諛?紐⑤컮??`study.html` 諛섏쁺, 紐⑤컮???쒕퉬???뚯빱 罹먯떆 踰꾩쟾 媛깆떊, ?좉퇋 Pages ?댁쁺 URL HTTP 200 ?뺤씤, Electron ?ㅼ튂 ?뚯씪 ?ъ깮???щ? ?뺤씤?대떎.
+- 援ы쁽 ?꾨즺: `wrangler.toml`, `app/wrangler.toml`, `app/package.json`, `app/electron/main.cjs`, `app/main.cjs`, `app/src/App.tsx`???꾩옱 ?댁쁺 二쇱냼 李몄“瑜?`purunet-math-ebook` 湲곗??쇰줈 蹂寃쏀뻽??
+- 寃利??꾨즺: `npm run lint`, `npm run verify`, `npm run onefile` ?듦낵. ?⑥씪 HTML? `?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?덇퀬 紐⑤컮??罹먯떆??`codex-math-mobile-v77`濡??щ졇??
+- Cloudflare Pages ?좉퇋 ?꾨줈?앺듃 `purunet-math-ebook` ?앹꽦 ??production `main` 諛고룷 ?꾨즺. ??諛고룷 URL? `https://e9b59731.purunet-math-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://purunet-math-ebook.pages.dev/`??HTTP 200?대떎.
+- ?댁쁺 寃利??꾨즺: ?댁쁺 HTML? `assets/index-jWjpvSDu.js`瑜?李몄“?섍퀬, ?댁쁺 JS SHA256? 濡쒖뺄 `dist/assets/index-jWjpvSDu.js`? 媛숈? `08AF59391C0DA31E724079B32D99F7923D16883005023F73AB08A54F0179CEEA`?? `/api/learning/snapshot`?????꾨찓?몄뿉??HTTP 200?쇰줈 ?묐떟??湲곗〈 D1 諛붿씤???곌껐???뺤씤?덈떎.
+- Windows ?ㅼ튂 ?뚯씪 媛깆떊 ?꾨즺: `npm run installer:win` ?듦낵 ??`app/release.zip`??理쒖떊 `app/release` 湲곗??쇰줈 ?ㅼ떆 ?뺤텞?덈떎. `app.asar` ?대? `electron/main.cjs`??`https://purunet-math-ebook.pages.dev/`瑜??곗꽑 濡쒕뱶?섍퀬 湲곗〈 二쇱냼???ы븿?섏? ?딅뒗??
+- 理쒖떊 ?곗텧臾?SHA256: ?ㅼ튂 EXE `FDED0534483A5FAC5D74C59BD88E30D7D17F8BC0DB354D959815D15B78E259EF`, blockmap `3EA6E879DF34C179D2BCB7503E62D60280F7688266972F07E702842CD521905A`, app.asar `A0CFE6F2F774AE1DCB90C22B4BB3ACC47B45956B10755D57C132503130E1665D`, release.zip `5BE030FB565F77C7E144B3BB19F31E31DD6A5219D8546A48FAF80FEA4E05635F`??
+
+## 臾몄젣 ?명듃 ?좏깮怨?異쒕젰 湲곕뒫 異붽? (2026-05-20)
+- ?붿껌 紐⑺몴???⑥썝쨌?몃? ?⑥썝 臾몄젣 ?앹꽦 ?섎? 湲곗〈 10臾몄젣?먯꽌 20臾몄젣, 30臾몄젣源뚯? ?좏깮?????덇쾶 ?섍퀬, ?숈깮怨?援먯궗媛 ?좏깮???명듃瑜?臾몄젣吏? ?듭븞吏濡?異쒕젰?????덇쾶 ?섎뒗 寃껋씠??
+- 湲곗〈 援ъ“?먯꽌??`App.tsx`??`PROBLEMS_PER_TOPIC`怨?`buildTopicProblemSet()`???몃? ?좏삎 ?앹꽦湲곕? 10???몄텧?쒕떎. ?앹꽦湲??먯껜瑜?蹂듭젣?섍린蹂대떎 ?명듃 ?ш린 ?ㅼ젙????ν븯怨?媛숈? ?앹꽦湲곕? ?좏깮???잛닔留뚰겮 ?몄텧?섎룄濡?諛붽씀??諛⑹떇??媛???묎퀬 ?덉쟾?섎떎.
+- 臾몄젣吏쨌?듭븞吏??釉뚮씪?곗? ?앹뾽 ?몄뇙 諛⑹떇?쇰줈 援ы쁽?쒕떎. ?곷떒?먮뒗 ?꾩옱 ?쒖꽦 ?좎깮?? ?숈뒿?? 諛? ?좎쭨瑜??먮룞?쇰줈 ?ｊ퀬, ?듭븞吏??媛숈? 臾몄젣 諛곗뿴?먯꽌 ?뺣떟怨???대? 異쒕젰??臾몄젣吏? 遺덉씪移섑븯吏 ?딅룄濡??쒕떎.
+- Git ??μ냼媛 ?꾨땲誘濡??꾨즺 ??而ㅻ컠 ???蹂寃??뚯씪怨?寃利?寃곌낵瑜?蹂닿퀬?쒕떎.
+- 援ы쁽 ?꾨즺: `LearningSettings`??`problemSetSize`瑜?異붽???10쨌20쨌30臾몄젣 ?명듃瑜???ν븯怨? `buildTopicProblemSet()`???좏깮??媛쒖닔留뚰겮 ?몃? ?좏삎 ?앹꽦湲곕? ?몄텧?섍쾶 ?덈떎.
+- 援ы쁽 ?꾨즺: ?숈깮쨌援먯궗 怨듭슜 ?숈뒿 ?좏깮 硫붾돱??`臾몄젣 ?명듃` 肄ㅻ낫諛뺤뒪? `臾몄젣吏 異쒕젰`, `?듭븞吏 異쒕젰` 踰꾪듉??異붽??덈떎. ?⑥썝 ?꾩껜 ?좏깮 ?쒖뿉??媛??몃? ?댁슜留덈떎 ?좏깮???명듃 ?섎쭔???앹꽦?쒕떎.
+- 援ы쁽 ?꾨즺: 異쒕젰 ?앹뾽? ?좎깮???대쫫, ?숈깮 ?대쫫, 諛? 臾몄젣????좎쭨瑜??먮룞 ?쒖떆?쒕떎. 臾몄젣吏? ?듭븞吏??媛숈? 臾몄젣 諛곗뿴???ъ궗?⑺븯硫? ?듭븞吏?먮뒗 ?뺣떟怨???닿? ?④퍡 ?쒖떆?쒕떎.
+- 寃利??꾨즺: `npm run lint`, `npm run verify`, `npm run onefile` ?듦낵. Playwright? ?ㅼ튂??Chrome?쇰줈 20臾몄젣 臾몄젣吏 ?앹뾽 20臾명빆, 30臾몄젣 ?듭븞吏 ?앹뾽 30臾명빆 諛??먮룞 硫뷀??곗씠???쒖떆瑜??뺤씤?덈떎.
+- ?곗텧臾?諛섏쁺 ?꾨즺: ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??蹂듭궗?덇퀬, 紐⑤컮???쒕퉬???뚯빱 罹먯떆瑜?`codex-math-mobile-v76`?쇰줈 ?щ졇??
+
+## 臾몄젣 ?명듃 ?좏깮 湲곕뒫 ?쒕쾭쨌?ㅼ튂 ?뚯씪 諛섏쁺 (2026-05-20)
+- ?붿껌 紐⑺몴??諛⑷툑 援ы쁽??10쨌20쨌30臾몄젣 ?명듃 ?좏깮, 臾몄젣吏 異쒕젰, ?듭븞吏 異쒕젰 湲곕뒫??Cloudflare ?댁쁺 ?쒕쾭? Windows ?ㅼ튂 ?뚯씪源뚯? 諛섏쁺?섎뒗 寃껋씠??
+- 諛고룷 湲곗?? 湲곗〈 ?꾨줈?앺듃 ?ㅽ겕由쏀듃 洹몃?濡?`npm run pages:deploy`瑜??ъ슜?섍퀬, ?ㅼ튂 ?뚯씪? `npm run installer:win` ??`app/release.zip`??理쒖떊 `app/release` ?대뜑 湲곗??쇰줈 ?ㅼ떆 ?뺤텞?쒕떎.
+- Cloudflare Pages 諛고룷 ?꾨즺: `npm run pages:deploy` ?깃났. ??preview URL? `https://f2ad7607.prunet-math-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`??HTTP 200?대떎.
+- ?댁쁺 ?쒕쾭 ?뺤씤 ?꾨즺: ?댁쁺 HTML??`index-DJ_DOl9Q.js`, `index-CZIj7P0w.css`瑜?李몄“?섍퀬, `curl`濡??대젮諛쏆? ?댁쁺 JS SHA256??濡쒖뺄 `dist/assets/index-DJ_DOl9Q.js`? 媛숈? `F00722EB60B8F31BBAC438A38B3F6615FC75A87C3CCB49704215426AC0661462`?대떎. ?댁쁺 JS ?덉뿉??`臾몄젣 ?명듃`, `臾몄젣吏 異쒕젰`, `?듭븞吏 異쒕젰`, `20臾몄젣 ?명듃`, `30臾몄젣 ?명듃` 臾몄옄?댁쓣 ?뺤씤?덈떎.
+- Windows ?ㅼ튂 ?뚯씪 媛깆떊 ?꾨즺: `npm run installer:win` ?깃났. ?꾩씠肄??뚯씪 誘몄???寃쎄퀬? Vite ??踰덈뱾 寃쎄퀬??湲곗〈 ?깃꺽??寃쎄퀬?대ŉ 鍮뚮뱶? NSIS ?앹꽦? ?꾨즺?먮떎.
+- 理쒖떊 ?곗텧臾??댁떆: ?ㅼ튂 EXE `B5618FAE4827F8DF3535991BFB0C4A52C84BB05F70B950493222D960F99B8628`, blockmap `3E9F79D4585D510E598BCC0264FE3460C8DD19938137B5F93235CC22F178F028`, app.asar `B840489B09297B52F3B8C1DF4435AFE1E261AACB91EBA49A3B90A2613E67484C`, release.zip `E13C4F95D5480EA54C209431A4A08D797A323C671B7F5961C55A31AAFD0856B2`?대떎.
+
+## ?몃Ⅴ???곸뼱 紐⑤컮??踰꾪듉 媛?낆꽦 蹂닿컯 (2026-05-20)
+- ?붿껌 紐⑺몴??紐⑤컮???붾㈃?먯꽌 ?앹뾽??踰꾪듉怨??숈뒿 踰꾪듉??湲?④? ?쒖꽦???꾩뿉??蹂댁씠?꾨줉 媛?낆꽦???믪씠??寃껋씠??
+- 吏꾨떒 寃곌낵 ?쇱씠??紐⑤뱶????臾몄젣媛 ?놁뿀怨? ?ㅽ겕 紐⑤뱶?먯꽌 `primary`, `danger`, ?쒖꽦 stage/axis 踰꾪듉? 諛곌꼍???덈Т 諛앹븘 ??湲???鍮꾧? ??븯?쇰ŉ 鍮꾪솢??stage/axis 踰꾪듉? 湲?먯깋怨??대몢??諛곌꼍??嫄곗쓽 遺숈뼱 蹂댁???
+- 援ы쁽 ?꾨즺: ?ㅽ겕 紐⑤뱶 `--teal`, `--blue`, `--coral`??媛곴컖 `#087b72`, `#0b6e8a`, `#b93a30`?쇰줈 源딄쾶 議곗젙?섍퀬, 鍮꾪솢??`axis-btn`, `stage-btn`, `choice-btn`? `#123f3a` 諛곌꼍怨?`var(--ink)` 湲?먯깋?쇰줈 遺꾨━?덈떎.
+- 援ы쁽 ?꾨즺: 紐⑤컮????뿉??二쇱슂 踰꾪듉??`font-weight`瑜?950?쇰줈 媛뺥솕?섍퀬 `text-shadow`瑜??쒓굅???묒? ?붾㈃?먯꽌??踰덉쭚 ?놁씠 ?쏀엳寃??덈떎.
+- 寃利??꾨즺: `npm run check` ?듦낵. ?뺤쟻 ?鍮?怨꾩궛?먯꽌 ?ㅽ겕 primary 5.14:1, active 5.81:1, danger 5.66:1, inactive 11.2:1濡??뺤씤?덇퀬, Edge 梨꾨꼸 Playwright 紐⑤컮???ㅽ겕 ?ㅽ겕由곗꺑?먯꽌 踰꾪듉 湲?먭? 蹂댁씠??寃껋쓣 ?뺤씤?덈떎.
+- ?댁쁺 諛고룷 ?꾨즺: `npm run pages:deploy` ?깃났. 理쒖떊 preview URL? `https://9f1b6274.purunet-english-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://purunet-english-ebook.pages.dev/`??HTTP 200, ?댁쁺 CSS?먯꽌 ???ㅽ겕 踰꾪듉 ?좏겙怨?紐⑤컮??湲???먭퍡 洹쒖튃 諛섏쁺???뺤씤?덈떎.
+
+## ?몃Ⅴ???곸뼱 ?먮㉧?꾨뱶 ?붾젅??媛?낆꽦 蹂댁젙 (2026-05-20)
+- ?붿껌 紐⑺몴???먮㉧?꾨뱶 諛붾떎鍮??붾젅???곸슜 ???쇰? ?붿냼??湲??媛?낆꽦???⑥뼱吏?臾몄젣瑜?諛붾줈?〓뒗 寃껋씠??
+- 吏꾨떒 湲곗?? Playwright濡??ㅼ젣 DOM???뚮뜑留곹븳 ???띿뒪???됯낵 諛곌꼍???鍮꾨? 怨꾩궛?섍퀬, 4.5:1 誘몃쭔 ?꾨낫瑜??곗꽑 蹂댁젙?섎뒗 寃껋씠??
+- 1李?吏꾨떒?먯꽌 ??湲?④? ?щ씪媛??primary 踰꾪듉, ?쒖꽦 ?④퀎 踰꾪듉, ?몃옓 肄붾뱶, ?꾪뿕 踰꾪듉, ?쇰? muted label??湲곗?蹂대떎 ?쏀븯寃??섏솕?? gradient 諛곌꼍 異붿젙 ?쒓퀎媛 ?덈뒗 ?붿냼???덉뿀吏留? ?ㅼ젣 ?ъ슜???쒖빞?먯꽌 ?쏀빐吏????덈뒗 ?됱? ?④퍡 蹂댁젙?쒕떎.
+- 援ы쁽 湲곗?? ?먮㉧?꾨뱶 諛붾떎鍮?諛⑺뼢? ?좎??섎㈃??`--teal`, `--blue`, `--coral`, `--focus`, `--muted`瑜???源딄쾶 ??텛怨? hero ?대? secondary 踰꾪듉? 蹂꾨룄 洹쒖튃?쇰줈 ?대몢??hero 諛곌꼍怨?援щ텇?섍쾶 留뚮뱶??寃껋씠??
+- 援ы쁽 ?꾨즺: `--muted`瑜?`#335f5b`, `--teal`??`#00786f`, `--blue`瑜?`#086f8c`, `--coral`??`#bd3f34`, `--focus`瑜?`#005d56`?쇰줈 議곗젙?덈떎. hero gradient????源딆? 諛붾떎鍮쏆쑝濡???텛怨?`.learner-hero .secondary-btn`? `#004f48` ?띿뒪?몄? 諛앹? ?꾩퓼??諛곌꼍?쇰줈 遺꾨━?덈떎.
+- 寃利??꾨즺: Playwright ?鍮??먭??먯꽌 4.5:1 誘몃쭔 ?꾨낫媛 0媛쒕줈 以꾩뿀?? `npm run check` ?듦낵, ?곗뒪?ы넲쨌390px 紐⑤컮?쇱뿉??hero? 16媛??몃옓???뚮뜑留곷릺怨?媛濡?overflow媛 ?녿뒗 寃껊룄 ?뺤씤?덈떎.
+- ?댁쁺 諛고룷 ?꾨즺: `npm run pages:deploy` ?깃났. 理쒖떊 preview URL? `https://f0b6662e.purunet-english-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://purunet-english-ebook.pages.dev/`??HTTP 200, ?댁쁺 CSS?먯꽌 ?鍮?蹂댁젙 ?좏겙怨?hero 踰꾪듉 蹂댁젙 洹쒖튃 諛섏쁺???뺤씤?덈떎.
+
+## ?몃Ⅴ???곸뼱 ?먮㉧?꾨뱶 諛붾떎鍮??붾젅???꾪솚 (2026-05-20)
+- ?붿껌 紐⑺몴???곸뼱 ?숈뒿 ?붾㈃???됱긽???먮㉧?꾨뱶 諛붾떎鍮??됱긽?ㅼ씠 留롮씠 ?ㅼ뼱媛?꾨줉 諛붽씀??寃껋씠??
+- 援ы쁽 湲곗?? 湲곗〈 ?덉씠?꾩썐怨?Cloudflare D1 湲곕뒫???좎??섎㈃??CSS ?붿옄???좏겙, body 諛곌꼍, topbar 諛곗?, hero 諛곌꼍, ?몃옓 移대뱶, 吏꾪뻾瑜? 蹂댁“ ?⑤꼸, SVG ?쒓컖 ?먯궛源뚯? ?먮㉧?꾨뱶쨌?꾩퓼?꽷룸컮??泥?줉 怨꾩뿴??二쇱깋?쇰줈 蹂댁씠寃?留뚮뱶??寃껋씠??
+- ?섎??됱? 理쒖냼?뷀븳?? ?꾪뿕쨌?ㅻ떟 ?섎???coral? ?④린?? ?쇰컲 媛뺤“?됯낵 吏꾪뻾 ?됱? 踰좎씠吏쨌?몃옉쨌?⑥깋 以묒떖?먯꽌 emerald sea palette濡?援먯껜?쒕떎.
+- 寃利?湲곗?? `npm run check`, Playwright ?뚮뜑留곸뿉??hero? SVG媛 ?뺤긽 濡쒕뵫?섍퀬 媛濡?overflow媛 ?녿뒗吏 ?뺤씤, Cloudflare Pages production ?щ같?? ?댁쁺 CSS? SVG 諛섏쁺 ?뺤씤?대떎.
+- 援ы쁽 ?꾨즺: `assets/styles.css`??湲곕낯 ?붾젅?몃? `--bg: #e7fbf8`, `--teal: #009b8e`, `--blue: #0c8fb3`, `--amber: #22c6b5`, `--lime: #4ed7b2` 以묒떖?쇰줈 諛붽씀怨? body 諛곌꼍쨌hero쨌諛곗?쨌踰꾪듉쨌吏꾪뻾瑜졖룹씫湲??⑥뼱/臾몃쾿 ?⑤꼸 蹂댁“?됱쓣 emerald sea 怨꾩뿴濡?議곗젙?덈떎.
+- 援ы쁽 ?꾨즺: `assets/learning-studio.svg`??諛곌꼍 stop, ?먰삎 ?ъ씤?? ?ㅻ뱶?? ?띿뒪???쇱씤, 洹몃옒???됱뿉??湲곗〈 ?몃옉쨌?뚮옉 ?ъ씤?몃? ?쒓굅?섍퀬 emerald쨌aqua 怨꾩뿴濡??ㅼ떆 移좏뻽??
+- 寃利??꾨즺: `npm run check` ?듦낵. Playwright?먯꽌 ?곗뒪?ы넲 ?붾젅???좏겙 `#e7fbf8`, `#009b8e`, `#0c8fb3`, `#22c6b5`, hero 議댁옱, SVG 濡쒕뵫, 16媛?吏꾪뻾瑜?諛? ?곗뒪?ы넲쨌紐⑤컮??媛濡?overflow ?놁쓬???뺤씤?먮떎.
+- ?댁쁺 諛고룷 ?꾨즺: `npm run pages:deploy` ?깃났. 理쒖떊 preview URL? `https://4e1aadf3.purunet-english-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://purunet-english-ebook.pages.dev/`??HTTP 200, ?댁쁺 CSS? SVG??emerald sea palette 諛섏쁺???뺤씤?덈떎.
+
+## ?몃Ⅴ???곸뼱 醫뚯슦 ?⑤꼸 ?ㅽ겕濡ㅻ컮 理쒖냼??(2026-05-20)
+- ?붿껌 紐⑺몴???쇱そ ?쒖뼱 ?⑤꼸???몃줈 ?ㅽ겕濡ㅻ컮瑜??щ챸?섍퀬 理쒖냼 援듦린濡?諛붽씀怨? ?ㅻⅨ履??ㅽ겕濡ㅻ컮??媛숈? ?⑦꽩?쇰줈 留욎텛??寃껋씠??
+- 援ы쁽 湲곗?? `track-panel`怨?`teacher-panel`??Firefox??`scrollbar-width: thin`, `scrollbar-color`, Chromium/WebKit??`::-webkit-scrollbar` 4px, transparent track, ?쏀븳 opacity thumb, hover ?쒖뿉留?議곌툑 ??蹂댁씠??thumb???곸슜?섎뒗 寃껋씠??
+- ?ㅻⅨ履??⑤꼸? ?곗뒪?ы넲?먯꽌 sticky ?대? ?ㅽ겕濡ㅼ쓣 ?ъ슜?섍퀬, 1280px ?댄븯?먯꽌???꾩껜??洹몃━?쒕줈 ?대젮媛誘濡?sticky? internal scroll???댁젣??紐⑤컮???먮쫫??源⑥? ?딄쾶 ?쒕떎.
+- 寃利?湲곗?? `npm run check`, 釉뚮씪?곗??먯꽌 醫뚯슦 ?⑤꼸??scrollbar CSS 怨꾩궛媛??뺤씤, Cloudflare Pages production ?щ같?? ?댁쁺 CSS 諛섏쁺 ?뺤씤?대떎.
+- 援ы쁽 ?꾨즺: `assets/styles.css`?먯꽌 `track-panel`怨?`teacher-panel`??`scrollbar-width: thin`, transparent track, 4px WebKit scrollbar, ?쏀븳 teal thumb, hover opacity 利앷?瑜??곸슜?덈떎. ?ㅻⅨ履?`teacher-panel`? ?곗뒪?ы넲?먯꽌 `position: sticky`, `max-height: calc(100vh - 112px)`, `overflow: auto`濡?留욎톬怨?1280px ?댄븯?먯꽌??`position: static`, `overflow: visible`濡??섎룎由곕떎.
+- 寃利??꾨즺: `npm run check` ?듦낵. Playwright 怨꾩궛媛믪뿉???곗뒪?ы넲 `track-panel`怨?`teacher-panel` 紐⑤몢 `overflow-y: auto`, `scrollbar-width: thin`?쇰줈 ?뺤씤?먭퀬, 900px ??뿉?쒕뒗 ?ㅻⅨ履??⑤꼸??`position: static`, `overflow-y: visible`濡??뺤씤?먮떎.
+- ?댁쁺 諛고룷 ?꾨즺: `npm run pages:deploy` ?깃났. 理쒖떊 preview URL? `https://80c261cd.purunet-english-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://purunet-english-ebook.pages.dev/`??HTTP 200, ?댁쁺 CSS?먯꽌 醫뚯슦 ?⑤꼸 scrollbar selector? transparent thin ?ㅼ젙 諛섏쁺???뺤씤?덈떎.
+
+## ?몃Ⅴ???곸뼱 ?숈뒿 ?ъ씠???꾨㈃ 由щ뵒?먯씤 (2026-05-20)
+- ?붿껌 紐⑺몴??吏곸쟾 由ы봽?덉떆媛 ?ъ쟾???뺤쟻?닿퀬 ?숈뒿??移쒗솕?곸씠吏 ?딅떎???됯?瑜?諛섏쁺?? ?곸뼱 ?숈뒿???ъ씠?몄쓽 ???붿옄?몄쓣 遺遺??섏젙???꾨땲???꾩껜 援ъ“ 湲곗??쇰줈 ?ㅼ떆 諛붽씀??寃껋씠??
+- ?대쾲 媛쒗렪? 湲곕뒫 濡쒖쭅怨?Cloudflare D1 API???좎??섍퀬, ?붾㈃ 寃쏀뿕??`?곷떒 釉뚮옖??諛????숈뒿??hero cockpit ???몃옓 吏꾪뻾瑜??덉씪 ??以묒븰 ?섏뾽 移대뱶 ???ㅻⅨ履?肄붿묶쨌?ы듃?대━???⑤꼸`濡??ш뎄?깊븳??
+- ?숈뒿??移쒗솕??湲곗?? 泥??붾㈃?먯꽌 ?ㅻ뒛 ?숈뒿 紐⑺몴, ?꾩옱 TESOL ?④퀎, 紐⑤뜽 ?뚯꽦 ?ｊ린, ?④퀎 ?꾨즺, ?꾨즺?? ?숈뒿 利앷굅, ?⑥뼱쨌臾몃쾿 ?뺥솗?? ?쒕쾭 ????곹깭媛 利됱떆 蹂댁씠?꾨줉 ?섎뒗 寃껋씠??
+- ?쒓컖 ?먯궛 湲곗?? ?몃? ?섏〈 ?놁씠 `assets/learning-studio.svg`瑜?濡쒖뺄 ?먯궛?쇰줈 異붽???梨? 留먰뭾?? ?ㅻ뵒???⑥씠釉? ?숈뒿 移대뱶媛 蹂댁씠???숈뒿 ?ㅽ뒠?붿삤 遺꾩쐞湲곕? 留뚮뱺??
+- ?붿옄??湲곗?? bento???뺣낫 援ъ“, 紐⑹쟻 ?덈뒗 microinteraction, accessible contrast, 紐⑤컮???⑥씪 ???꾪솚, dark mode, reduced-motion ??묒씠?? ?μ떇留??덈뒗 ?쒕뵫 ?섏씠吏媛 ?꾨땲???ㅼ젣 ?숈뒿 議곗옉??泥??붾㈃?먯꽌 諛붾줈 ?????덇쾶 ?좎??쒕떎.
+- 寃利?湲곗?? `npm run check`, ?곗뒪?ы넲쨌紐⑤컮??Playwright ?뚮뜑留곸뿉??hero 議댁옱, SVG 濡쒕뵫, 16媛??몃옓, 16媛?吏꾪뻾瑜?諛? 媛濡?overflow ?놁쓬 ?뺤씤, Cloudflare Pages production ?щ같?? ?댁쁺 URL 諛섏쁺 ?뺤씤?대떎.
+- 援ы쁽 ?꾨즺: `index.html`??釉뚮옖?쒕챸??`?몃Ⅴ???곸뼱 ?명꽣?숉떚釉??ㅽ뒠?붿삤`濡?諛붽씀怨?`learner-hero` ?곸뿭??異붽??덈떎. `views.js`???좏깮 ?몃옓 湲곕컲 hero cockpit, hero action, floating status, hero stats, ?몃옓蹂?吏꾪뻾瑜좎쓣 ?뚮뜑留곹븯?꾨줉 ?뺤옣?덈떎.
+- 援ы쁽 ?꾨즺: `assets/learning-studio.svg`瑜?異붽??섍퀬 `assets/styles.css`瑜????붿옄???쒖뒪?쒖쑝濡??꾨㈃ 援먯껜?덈떎. ??CSS???숈뒿??hero, SVG float motion, 吏꾪뻾瑜??몃옓 移대뱶, ?④퀎 ?꾨즺 ?쒖떆, 肄붿묶 ?⑤꼸 accent, dark mode, reduced-motion, 1280px쨌900px쨌560px 諛섏쓳?뺤쓣 ?ы븿?쒕떎.
+- 寃利??꾨즺: `npm run check` ?듦낵. 濡쒖뺄 Playwright? ?댁쁺 URL Playwright 紐⑤몢 ?곗뒪?ы넲怨?390px 紐⑤컮?쇱뿉??hero 議댁옱, SVG 濡쒕뵫, 16媛??몃옓, 16媛?吏꾪뻾瑜?諛? 媛濡?overflow ?놁쓬???뺤씤?먮떎.
+- ?댁쁺 諛고룷 ?꾨즺: `npm run pages:deploy` ?깃났. 理쒖떊 preview URL? `https://84836731.purunet-english-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://purunet-english-ebook.pages.dev/`??HTTP 200, ??hero 援ъ“? CSS, `assets/learning-studio.svg` 濡쒕뵫???뺤씤?덈떎.
+
+## ?몃Ⅴ???곸뼱 ?숈뒿 ?ъ씠??理쒖떊 UI ?붿옄??媛쒖꽑 (2026-05-20)
+- ?붿껌 紐⑺몴??`mvc-english-learning` ?곸뼱 ?숈뒿???ъ씠???붾㈃???ㅻ옒???ㅽ??쇰줈 蹂댁씠??臾몄젣瑜??닿껐?섍퀬 理쒖떊 ?덊럹?댁?쨌?숈뒿 ?뚮옯???몃젋?쒖뿉 留욊쾶 媛쒖꽑?섎뒗 寃껋씠??
+- 2026??UI ?먮쫫? bento??紐⑤뱢 諛곗튂, ?덉젣??translucent surface, ?ㅽ겕 紐⑤뱶 ?깆닕?? 紐낇솗???뺣낫 ?꾧퀎, ?묎렐???곗꽑 ?鍮? 紐⑤컮???곗꽑 諛섏쓳?뺤씠 ?듭떖?대떎. ?대쾲 ?묒뾽? ?μ떇???쒕뵫 ?섏씠吏媛 ?꾨땲???ㅼ젣 ?숈뒿 ?붾㈃???앹궛?깆쓣 ?좎??섎뒗 ?깊삎 ?덊럹?댁? 由ы봽?덉떆濡?吏꾪뻾?쒕떎.
+- ?섏젙 踰붿쐞??`index.html`???곷떒 ?곹깭 諛곗?? `assets/styles.css`???꾩껜 ?붿옄???좏겙쨌?덉씠?꾩썐쨌而댄룷?뚰듃 ?ㅽ??쇱씠?? ?숈뒿 ?곗씠?? MVC 濡쒖쭅, Cloudflare D1 API 援ъ“??諛붽씀吏 ?딅뒗??
+- 寃利?湲곗?? `npm run check`, 釉뚮씪?곗??먯꽌 16媛??몃옓怨??쒕쾭 DB ???踰꾪듉 ?뚮뜑留??뺤씤, 紐⑤컮?????덉씠?꾩썐 ?뺤씤, Cloudflare Pages production ?щ같?ъ? ?댁쁺 URL HTTP 200 ?뺤씤?대떎.
+- 援ы쁽 ?꾨즺: ?곷떒 ?ㅻ뜑瑜??깊삎 command bar濡??뺣━?섍퀬 `16 Tracks`, `D1 Live Sync`, `TESOL Flow` ?곹깭 諛곗?瑜?異붽??덈떎. CSS??諛앹? ?뚮쭏쨌?ㅽ겕 ?뚮쭏, translucent panel, 紐⑤뱢???몃옓 紐⑸줉, ?꾨???踰꾪듉 hover, 紐낇솗??focus, 紐⑤컮???⑥씪 ???먮쫫, reduced-motion ??묒쑝濡?援먯껜?덈떎.
+- 寃利??꾨즺: `npm run check` ?듦낵. Playwright ?뚮뜑留??먭??먯꽌 ?곗뒪?ы넲怨?390px 紐⑤컮??紐⑤몢 16媛??몃옓???뚮뜑留곷릺怨?媛濡?overflow媛 ?녿뒗 寃껋쓣 ?뺤씤?덈떎.
+- ?댁쁺 諛고룷 ?꾨즺: `npm run pages:deploy` ?깃났. 理쒖떊 preview URL? `https://ae1a7ff7.purunet-english-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://purunet-english-ebook.pages.dev/`??HTTP 200, `D1 Live Sync` 臾멸뎄, `assets/styles.css`??`top-meta`, dark mode, dark chip ?鍮?蹂댁젙, reduced-motion ?ㅽ???諛섏쁺???뺤씤?덈떎.
+
+## ?몃Ⅴ???곸뼱 Cloudflare Pages? D1 ?쒕쾭 DB ?꾪솚 (2026-05-19)
+- ?붿껌 紐⑺몴???낅┰ ?곸뼱 MVC ?숈뒿 ?꾨줈洹몃옩??Cloudflare Pages ?꾨줈?앺듃 `purunet-english-ebook`濡??댁쁺?섍퀬, ?묒냽 二쇱냼瑜?`https://purunet-english-ebook.pages.dev`濡?怨좎젙?섎ŉ, ?숈뒿 ?곗씠????μ냼瑜?Cloudflare D1 ?쒕쾭 DB濡??뺤옣?섎뒗 寃껋씠??
+- 湲곗〈 ?섑븰 ?꾩옄遺?Pages ?꾨줈?앺듃 `prunet-math-ebook`怨?D1 DB `prunet_math_learning_db`???좎??섍퀬, ?곸뼱 ?깆? `媛뺥깭?덉깦_?몃Ⅴ?룹쁺?댁콉(26.05.19)/mvc-english-learning` ?덉뿉 蹂꾨룄 `wrangler.toml`, Pages Function, D1 migration???붾떎.
+- Cloudflare 怨꾩젙? Wrangler OAuth 濡쒓렇???곹깭濡??뺤씤?먭퀬, ??D1 ?곗씠?곕쿋?댁뒪 `purunet_english_learning_db`瑜?APAC 由ъ쟾???앹꽦?덈떎. database_id??`e0d4cb13-db16-4272-846b-6515ac3bc2ab`?대떎.
+- D1 ?ㅽ궎留덈뒗 ?숈뒿 利앷굅, ?ы듃?대━?? ?깆같, ?곷떒???숇젴?? ?곷Ц踰??숇젴?? ?꾩껜 吏꾪뻾 ?ㅻ깄?룹쓣 ??ν븯?꾨줉 援ъ꽦?쒕떎. ?대씪?댁뼵?몃뒗 localStorage瑜?怨꾩냽 ?ㅽ봽?쇱씤 罹먯떆濡??곌퀬, ?댁쁺 Pages 二쇱냼?먯꽌??`/api/progress`濡??쒕쾭 DB???낆꽌?명븳??
+- 寃利?湲곗?? `npm run check`, `npm run db:migrate`, Cloudflare Pages production 諛고룷, ?댁쁺 URL HTTP 200, `/api/progress` D1 ??Β룹“???뺤씤?대떎.
+- 援ы쁽 ?꾨즺: `wrangler.toml`, `migrations/0001_english_learning.sql`, `functions/api/progress.js`, ?곸뼱 MVC??Model쨌View쨌Controller, `package.json`, `README.md`瑜?媛깆떊?덈떎. ?붾㈃?먮뒗 `Cloudflare D1 ?쒕쾭 DB` ?곹깭? `?쒕쾭 DB ??? 踰꾪듉??異붽??먮떎.
+- 寃利??꾨즺: `npm run check` ?듦낵, `npm run db:migrate`濡?remote D1??12媛?SQL 荑쇰━ ?곸슜, Pages ?꾨줈?앺듃 `purunet-english-ebook` ?앹꽦, production `main` 諛고룷 ?꾨즺. ??preview URL? `https://b7807dc4.purunet-english-ebook.pages.dev`?닿퀬 ?댁쁺 URL? `https://purunet-english-ebook.pages.dev`??
+- ?댁쁺 ?뺤씤: `https://purunet-english-ebook.pages.dev/`??HTTP 200?닿퀬 HTML title? `媛뺥깭???몃Ⅴ???곸뼱 MVC ?숈뒿 ?꾨줈洹몃옩`?대떎. `/api/progress?learnerId=local-demo`??D1 binding???듯빐 HTTP 200?쇰줈 ?묐떟?덇퀬, POST smoke?먯꽌 ?숈뒿 利앷굅쨌?ы듃?대━?ㅒ룹꽦李걔룸떒?는룸Ц踰빧룹뒪?낆꺑 ??μ쓣 ?뺤씤?덈떎.
+
+## Cloudflare Pages? Windows ?ㅼ튂 ?뚯씪 理쒖떊 ??룆 肄붾뱶 諛섏쁺 (2026-05-19)
+- ?대쾲 ?붿껌? ??湲곕뒫 異붽?媛 ?꾨땲??吏곸쟾 ??룆 ?섑븰 湲고샇 ?쎄린 蹂댁젙蹂몄쓣 Cloudflare Pages ?댁쁺 諛고룷? Windows ?ㅼ튂 ?뚯씪源뚯? 諛섏쁺?섎뒗 諛고룷 ?묒뾽?대떎.
+- Cloudflare 諛고룷 湲곗?? `app/`?먯꽌 寃利앷낵 鍮뚮뱶瑜??ㅼ떆 ?듦낵?쒗궓 ??`npm run pages:deploy`濡?`prunet-math-ebook` production `main` 釉뚮옖移섏뿉 ?щ━??寃껋씠??
+- ?ㅼ튂 ?뚯씪 湲곗?? `npm run installer:win`?쇰줈 `app/release`瑜??ㅼ떆 留뚮뱾怨? 理쒖떊 `app/release` 湲곗??쇰줈 `app/release.zip`???ㅼ떆 ?뺤텞?섎뒗 寃껋씠??
+- 寃利앹? 濡쒖뺄 `dist`? ?ㅼ튂蹂?`app.asar` ?덉뿉????룆 蹂댁젙 肄붾뱶 ?먮뒗 ???臾몄옄?댁쓣 ?뺤씤?섎뒗 諛⑹떇?쇰줈 留덈Т由ы븳??
+- `npm run lint`, `npm run verify`, `npm run smoke:learning-db`, `npm run onefile`???듦낵?덇퀬 ?⑥씪 HTML, 猷⑦듃 HTML, 紐⑤컮??`study.html` ?댁떆??紐⑤몢 媛숈븯??
+- Cloudflare Pages??`npm run pages:deploy`濡??щ같?ы뻽怨?諛고룷 URL? `https://c650d33a.prunet-math-ebook.pages.dev`?? ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`??HTTP 200怨???踰덈뱾 李몄“瑜??뺤씤?덈떎.
+- `npm run installer:win`?쇰줈 Windows ?ㅼ튂 ?뚯씪???ㅼ떆 留뚮뱾怨?`app/release.zip`???ъ븬異뺥뻽?? ?ㅼ튂 ?뚯씪 SHA256? `F0B04147B733AEDB15B23BD5610D8FB2674407EB82760D9A6A80CB19F72318D5`, `release.zip` SHA256? `2B872966476CA464D4BD2A73BE93D78CC845E77B653D6630F6BE21704FC85187`?대떎.
+- `dist`? ?ㅼ튂蹂?`app.asar`?먯꽌 `voiceschanged`, `臾몄젣 ?앹?`, `?뷀븯湲? 臾몄옄?댁쓣 ?뺤씤??理쒖떊 ??룆 蹂댁젙 肄붾뱶媛 諛고룷 ?곗텧臾??묒そ???ы븿??寃껋쓣 寃利앺뻽??
+
+## ??룆 ?뚯꽦 ?덉쭏, ?숈뒿 ?붾㈃ ?ㅽ겕濡ㅻ컮, ?대옒????젣 ?묎렐 媛쒖꽑 (2026-05-19)
+- 紐⑺몴??湲곗〈 ?숈뒿 ?먮쫫???좎??섎㈃????룆 ?뚯꽦?????먯뿰?ㅻ읇寃?怨좊Ⅴ怨? ?ㅻⅨ履??숈뒿 ?붾㈃???ㅽ겕濡ㅻ컮 ?쒓컖 ?몄텧??以꾩씠怨? ?대옒???깅줉 ?붾㈃?먯꽌 ??젣 ?숈꽑??諛붾줈 ?쒓났?섎뒗 寃껋씠??
+- ??룆? 臾대즺 議곌굔???좎??댁빞 ?섎?濡??몃? ?좊즺 TTS API瑜?遺숈씠吏 ?딄퀬 釉뚮씪?곗? `speechSynthesis`?먯꽌 ?쒓났?섎뒗 ?쒓뎅???먯뿰/?좉꼍留?怨꾩뿴 ?뚯꽦???곗꽑 ?좏깮?쒕떎.
+- ?대옒????젣???대? ?덈뒗 `removeClassRecord`? ?대옒??愿由???젣 ?먮쫫???ъ궗?⑺빐 DB ?ㅽ궎留덈? 諛붽씀吏 ?딅뒗??
+- 寃利?湲곗?? `npm run lint`, `npm run verify`, `npm run onefile` ?듦낵? 猷⑦듃 ?⑥씪 HTML, 紐⑤컮??`study.html`, 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾 媛깆떊?대떎.
+- 援ы쁽 寃곌낵 `AI ??룆` 踰꾪듉???쒓뎅???먯뿰???꾨낫瑜??곗꽑 ?좏깮?섍퀬, ?섏씠吏? ?곗뒿 ?붾㈃ ?ㅽ겕濡ㅻ컮媛 4px ?щ챸 怨꾩뿴濡??뺣━?섏뿀??
+- ?대옒???깅줉 ?붾㈃??`???대옒?? ?놁뿉 `?대옒????젣` 踰꾪듉??異붽??덇퀬, ??λ맂 ?대옒??移⑹뿉???대옒???깅줉 ?붾㈃?먯꽌 諛붾줈 ?곕뒗 `??젣` 踰꾪듉??遺숈???
+- `npm run lint`, `npm run verify`, `npm run onefile`??紐⑤몢 ?듦낵?덇퀬 ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??蹂듭궗?덈떎.
+- 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾? `codex-math-mobile-v74`濡??щ졇??
+
+## ??룆 ?섑븰 湲고샇 ?쎄린 蹂댁젙 (2026-05-19)
+- 臾몄젣 ?먯씤? ?뚯꽦 紐⑤뜽 ?좏깮留뚯씠 ?꾨땲??`+`, `-`, `횞`, `첨`, `/`, `=` 媛숈? ?섏떇 湲고샇媛 ?먮Ц 洹몃?濡?TTS???꾨떖?섎뒗 寃껋씠??
+- 臾대즺 議곌굔? ?좎??섎릺, ?좊즺 ?몃? TTS API瑜?遺숈씠吏 ?딄퀬 釉뚮씪?곗? ?먯뿰???꾨낫瑜?怨꾩냽 ?ъ슜?쒕떎.
+- ?닿껐 諛⑺뼢? ??룆 ?꾩슜 臾몄옄?댁뿉???ъ튃?곗궛, ?깊샇, 鍮꾧탳, 遺꾩닔, 鍮덉뭏 湲고샇瑜??쒓뎅??臾몄옣?쇰줈 蹂?섑븳 ??`SpeechSynthesisUtterance`???꾨떖?섎뒗 寃껋씠??
+- 寃利?湲곗?? `npm run lint`, `npm run verify`, `npm run onefile` ?듦낵? ?⑥씪 HTML, 紐⑤컮??`study.html`, ?쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾 媛깆떊?대떎.
+- 援ы쁽 寃곌낵 `3 + 4`, `36 첨 12 횞 13`, `3/5`, `?? 媛숈? ??룆 ?먮Ц??`?뷀븯湲?, `?섎늻湲?, `怨깊븯湲?, `5遺꾩쓽 3`, `鍮덉뭏`泥섎읆 ?쎈룄濡?諛붽엥??
+- `speechSynthesis.getVoices()`媛 泥섏쓬??鍮?諛곗뿴??諛섑솚?섎뒗 釉뚮씪?곗?瑜??꾪빐 `voiceschanged`瑜?理쒕? 450ms 湲곕떎由????먯뿰???꾨낫瑜?怨좊Ⅴ寃??덈떎.
+- `npm run lint`, `npm run verify`, `npm run onefile`???듦낵?덇퀬 ?⑥씪 HTML??猷⑦듃? 紐⑤컮??`study.html`??蹂듭궗?덈떎.
+- 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾? `codex-math-mobile-v75`濡??щ졇??
+
+## 臾댁뾿??留뚮뱶?붽?
+?낅줈?쒗븳 PDF(?몃Ⅴ?룹닔??5?숇뀈 3???뚮윭?ㅻ턿 ?대떟)???숈뒿 ?댁슜??諛뷀깢?쇰줈
+???명꽣?숉떚釉??섑븰 ?곗뒿 ?뱀빋. ?꾨????꾩옄遺??ㅽ???
+
+## ?ъ슜???좏깮 (吏덈Ц ?묐떟)
+- 寃곌낵臾? **React ?뱀빋 ?꾨줈?앺듃** (Vite + React + TypeScript)
+- 肄섑뀗痢?踰붿쐞: **???⑥썝 ?듭떖 + ?섑뵆** ??1?⑥썝(?먯뿰?섏쓽 ?쇳빀 怨꾩궛),
+  2?⑥썝(?쎌닔? 諛곗닔)??????좏삎???먮룞 ?앹꽦?뺤쑝濡?援ы쁽
+- ?듭떖 湲곕뒫: **?먮룞 梨꾩젏 + 利됱떆 ?쇰뱶諛?*
+
+## ?ㅺ퀎 寃곗젙
+- **?먮룞 ?앹꽦??臾몄젣**: PDF??怨좎젙 臾명빆??洹몃?濡???린吏 ?딄퀬, 媛숈? ?좏삎??  臾몄젣瑜??쒖닔濡??앹꽦. "鍮꾩듂???댁슜?쇰줈 ?섏젙" ?붽뎄??遺?⑺븯硫?臾댄븳 ?곗뒿 媛??
+- **?뺤닔 蹂댁옣**: ?뚰겕遺곸? ?먯뿰??踰붿쐞. ?섎닓?덉? ??긽 ?섎늻?대뼥?댁??꾨줉,
+  以묎컙/理쒖쥌媛믪씠 ?뚯닔媛 ?섏? ?딅룄濡?嫄곕? ?쒕낯異붿텧(retry) + ?덉쟾 ?대갚.
+- **?곗궛 ?쒖꽌 ?됯?湲?*: ?ъ튃?곗궛 ?쇳빀? 援ъ“?붾맂 ???쒗뵆由?+ ?뺤닔 ?됯?湲곕줈
+  ?곗궛 ?쒖꽌瑜?寃利앺빐 ?뺣떟???곗텧(吏곸젒 ?뚯떛 ????쒗뵆由?湲곕컲?대씪 ?덉쟾).
+- **利됱떆 ?쇰뱶諛??곗꽑**: ?ㅻ떟 ???뺣떟 + ??以?????쒖떆. ?④퀎蹂??좊땲硫붿씠??  ?댁꽕/吏꾨룄 ??μ? ?ъ슜?먭? ?좏깮?섏? ?딆븘 踰붿쐞?먯꽌 ?쒖쇅(?⑥닚???곗꽑).
+- **?몄뀡 ?먯닔**: ?뺣떟/?꾩껜 移댁슫?몃쭔. ?덈줈怨좎묠 ??珥덇린?????誘몄꽑??.
+- **?섏〈??理쒖냼??*: Vite/React/TS ??異붽? ?쇱씠釉뚮윭由??놁쓬. ?좊땲硫붿씠?섏?
+  CSS ?꾪솚/?ㅽ봽?덉엫?쇰줈 泥섎━.
+- **?붿옄????*: ?먮낯 梨??됯컧(誘쇳듃쨌肄붾엫)??怨꾩듅???꾨????꾩옄遺?UI.
+  Pretendard ?뱁룿?? 湲?섏뒪/洹몃씪?곗씠??移대뱶, 諛섏쓳??
+
+## ?대뜑
+- ?꾨줈?앺듃 猷⑦듃: `app/` (?쒓?/怨듬갚 寃쎈줈 ?뚰뵾 ?꾪빐 ASCII ?섏쐞?대뜑)
+
+## ?먰겢由??ㅽ뻾 (異붽? ?붿껌)
+- Vite ?쇰컲 鍮뚮뱶??JS媛 蹂꾨룄 紐⑤뱢 ?뚯씪?대씪 `file://` ?붾툝?대┃ ??  釉뚮씪?곗???紐⑤뱢 CORS ?뺤콉?쇰줈 鍮??붾㈃ ??**紐⑤뱺 ?먯궛???몃씪?명븳
+  ?⑥씪 HTML**濡??⑹퀜 ?닿껐 (`app/scripts/bundle-singlefile.mjs`,
+  `npm run onefile`). 寃곌낵: 猷⑦듃??`?몃Ⅴ?룹닔???곗뒿.html`.
+- 諛뷀깢?붾㈃??`?몃Ⅴ?룹닔???곗뒿.lnk` 諛붾줈媛湲??앹꽦 ???붾툝?대┃?쇰줈 ?ㅽ뻾.
+- Pretendard ?고듃??CDN 留곹겕 ?좎?(?⑤씪?????곸슜, ?ㅽ봽?쇱씤 ???쒖뒪??  ?쒓? ?고듃濡??먮룞 ?泥? ??湲瑗??뚯씪源뚯? ?몃씪?명븯吏???딆쓬.
+- **踰꾧렇/?숈뒿**: `String.replace(s, 移섑솚臾몄옄??`? 移섑솚臾몄옄?댁쓽
+  `` $` ``쨌`$&`쨌`$'`媛 ?뱀닔 ?⑦꽩?쇰줈 ?댁꽍?? ?뺤텞 JS瑜??몃씪?명븷 ??  head媛 23踰?蹂듭젣?섎뒗 ?먯씤?댁뿀????移섑솚??**?⑥닔 肄쒕갚**(`() => ...`)?쇰줈
+  諛붽퓭 ?닿껐. ?뺤텞 肄붾뱶 ?쎌엯 ????긽 ?⑥닔 移섑솚????寃?
+
+## 4쨌5???⑥썝 異붽? (2026-05-17)
+- ?ъ슜???좏깮: **湲곗〈怨??숈씪???먮룞 ?앹꽦??*, **3쨌4쨌5?⑥썝 紐⑤몢**.
+- 4??= 3?⑥썝(???愿怨? + 4?⑥썝(?쎈텇怨??듬텇), 5??= 5?⑥썝(遺꾩닔??  ?㏃뀍怨?類꾩뀍). ?⑥썝蹂????5?좏삎???쒖닔 ?앹꽦.
+- **遺꾩닔 梨꾩젏 ?명봽???좎꽕**: 湲곗〈 梨꾩젏湲곕뒗 ?뺤닔/?섏쓽 吏묓빀留?吏????  `frac.ts`(遺꾩닔 ?뚯떛쨌?쎈텇쨌?듬텇쨌?遺꾩닔)? ??醫낅쪟
+  `fraction`/`fractionPair`/`compare` 異붽?. 媛?援먯감怨? ?숈튂濡?梨꾩젏?섎릺,
+  - 湲곗빟遺꾩닔 ?좏삎? `requireReduced`濡?湲곗빟?뺣쭔 ?뺣떟,
+  - ?ш린媛 媛숈? 遺꾩닔 ?좏삎? `requireDenominator`濡?遺꾨え 媛뺤젣,
+  - ?듬텇 ?좏삎? `commonDenominator`(=??遺꾨え 理쒖냼怨듬같??濡?遺꾨え 媛뺤젣.
+  ??"?쎈텇/?듬텇???ㅼ젣濡??섑뻾"?섎뒗 ?숈뒿 ?섎룄瑜?梨꾩젏??諛섏쁺.
+- ?쒖떆/媛?遺꾨━: `answerText`(?좏깮)濡??ㅻ떟 ??蹂댁뿬以??쒓린瑜???댁? ?쇱튂.
+- **3?⑥썝 寃利?媛?μ꽦**: ???愿怨꾨뒗 臾몄옣?뺤씠?????됯?媛 ?대젮? ??  ??대? ??긽 `?? a 횞 b = r` ?뺤떇?쇰줈 ?앸궡怨?verify媛 ??以꾩쓣 ?뚯떛쨌?됯?.
+  (?숈깮 ??댁뿉?????愿怨??앹쓣 蹂댁뿬二쇱뼱 援먯옱 ?섎룄???遺??)
+- verify.mjs????肄붾뱶瑜?import?섏? ?딄퀬 **?낅┰ 遺꾩닔 援ы쁽**?쇰줈 援먯감寃利?  (湲곗〈 泥좏븰 ?좎?). ?⑥썝 prefix(topicId)濡?遺꾧린.
+
+## CLAUDE.md ?묒뾽 湲곗? ?곸슜 (2026-05-17)
+- 猷⑦듃 `CLAUDE.md`瑜??꾩옱 ?꾨줈?앺듃??怨듯넻 ?묒뾽 湲곗??쇰줈 ?좎??쒕떎.
+- Codex媛 諛붾줈 ?몄떇?????덈룄濡?猷⑦듃 `AGENTS.md`瑜?異붽???`CLAUDE.md` 李몄“瑜?紐낆떆?덈떎.
+- ???꾨줈?앺듃?먮뒗 `scripts/apply-claude-standard.ps1`濡?`CLAUDE.md`, `AGENTS.md`, 湲곕낯 `checklist.md`, 湲곕낯 `context-notes.md`瑜??곸슜?쒕떎.
+- ???대뜑??Git ??μ냼媛 ?꾨땲誘濡??섎? ?⑥쐞 而ㅻ컠 洹쒖튃? ?꾩옱 蹂寃쎌뿉???곸슜?섏? 紐삵뻽?? ???蹂寃??뚯씪怨?寃利?寃곌낵瑜?蹂닿퀬???④릿??
+
+## 6?숇뀈 3???ㅼ쓬 ??2??怨쇱젙 異붽? (2026-05-17)
+- ?낅줈?쒕맂 6?숇뀈 PDF 12醫낆쓣 ?붾퀎濡??議고빐 3??遺꾩닔???섎닓?덈????ㅼ쓬 ??2???쇱감諛⑹젙??以鍮꾧퉴吏 ?먮쫫???≪븯??
+- 6?숇뀈 ?숈뒿?먭? ?곸슜?섎㈃ 6?숇뀈 ?⑥썝留?蹂댁씠?꾨줉 湲곗〈 4?숇뀈/5?숇뀈 ?꾪꽣??`6?숇뀈` 遺꾧린瑜?異붽??덈떎.
+- 泥??ㅽ뻾 ?붾㈃? 湲곕낯 ?숈뒿?먮? `6?숇뀈`?쇰줈 ?↔퀬, 紐⑤컮??泥??섏씠吏?먮뒗 4쨌5쨌6?숇뀈 諛붾줈 ?쒖옉 踰꾪듉???붾떎.
+- `study.html?grade=6`泥섎읆 URL濡??ㅼ뼱???숇뀈媛믪쓣 ?쎌뼱 泥섏쓬 ?????대떦 ?숇뀈 怨쇱젙?쇰줈 諛붾줈 吏꾩엯?섎룄濡??덈떎.
+- 以鍮??숇뀈 ?쒓린??蹂꾨룄 怨쇱젙?쇰줈 ?먯? ?딄퀬 4?숇뀈 1~2???숈뒿?쇰줈 ?쒖떆?쒕떎. URL??`grade=pre5`??吏곸젒 ?낅젰??以鍮??숇뀈 媛믩룄 4?숇뀈?쇰줈 ?뺢퇋?뷀븳??
+- 臾몄젣??PDF ?먮Ц??洹몃?濡?蹂듭젣?섏? ?딄퀬 媛숈? ?숈뒿 紐⑺몴???먮룞 ?앹꽦?뺤쑝濡?援ъ꽦?덈떎. ?붾퀎 6媛??몃? 泥닿퀎, ?꾩껜 72媛??좏삎???깅줉?덈떎.
+- 洹몃옒?꽷룰났媛꽷룹썝 ?⑥썝? ?깆쓽 ?섑븰 ?뚮뜑留??뺤콉??留욎떠 ?띿뒪??怨꾩궛?앷낵 踰≫꽣 湲곕컲 蹂댁“ ?쒖떆媛 寃고빀?????덈룄濡?topicId瑜?遺꾨━?덈떎.
+- 諛고룷 湲곗?? `npm run lint`, `npm run verify`, `npm run onefile` ?듦낵 ???⑥씪 HTML??猷⑦듃? 紐⑤컮???꾩슜 ?대뜑???숆린?뷀븯??諛⑹떇?쇰줈 ?좎??쒕떎.
+
+## 6?숇뀈 ?쒓컖 ?먮즺 怨좊룄??(2026-05-17)
+- 6?숇뀈 PDF瑜??ㅼ떆 ?뺤씤??3?붋??붋???遺꾩닔 留됰?, 5?붋???鍮꾩쑉 ?? 6???먭렇?섑봽, 10???볤린?섎Т, 11?????꾪삎????臾몄젣??吏곸젒 ?곌껐?덈떎.
+- `MathVisual`??`fraction-strip`, `ratio-strip`, `circle-chart`, `circle-diagram`??異붽????몃? ?대?吏 ?놁씠 SVG 踰≫꽣濡??뚮뜑留곹븳??
+- 6?숇뀈 ?앹꽦湲곕뒗 ?レ옄留??대낫?댁? ?딄퀬, ?대떦 ?⑥썝?먯꽌 ?꾩슂??蹂댁“ ?꾪삎??`visual` ?꾨뱶濡??④퍡 諛섑솚?섎룄濡?蹂닿컯?덈떎.
+
+## ?숈뒿 ?④퀎쨌臾몄젣 ?섏? ?꾪꽣 (2026-05-17)
+- ?숇뀈 ?꾨옒??`珥덇툒/以묎툒/怨좉툒` ?숈뒿 ?④퀎 硫붾돱? `湲곗큹?곗궛/媛쒕뀗/?좏삎/怨좊궃?대룄` 臾몄젣 ?섏? 硫붾돱瑜?異붽??덈떎.
+- ?꾩옱源뚯? ?묒꽦??4쨌5쨌6?숇뀈 PDF 湲곕컲 臾몄젣??紐⑤몢 湲곕낯 `珥덇툒`?쇰줈 吏?뺥븳?? 以묎툒쨌怨좉툒? ?댄썑 ?먮즺媛 ?ㅼ뼱?ㅻ㈃ 媛숈? 硫뷀??곗씠?곕줈 遺꾨━?쒕떎.
+- 臾몄젣 ?섏?? topicId, ?쒕ぉ, ?ㅻ챸???ㅼ썙?쒕? 諛뷀깢?쇰줈 ?먮룞 遺꾨쪟?쒕떎. 紐낆떆 硫뷀??곗씠?곌? ?덉쑝硫?`Topic.learningArea`瑜??곗꽑?섍퀬, ?놁쑝硫?湲곗큹?곗궛/媛쒕뀗/?좏삎/怨좊궃?대룄 以??섎굹濡??먯젙?쒕떎.
+- ?좏깮???④퀎쨌臾몄젣 ?섏?? localStorage????λ릺???ㅼ쓬 ?숈뒿 ?뚮룄 ?좎??쒕떎.
+
+## 6?숇뀈 ?곗궛 怨쇱젙 異붽? (2026-05-17)
+- ?낅줈???대뜑?먯꽌 6?숇뀈 ?섑븰?곗궛 PDF??3?? 4?? 5?? 6?? 8?? 9?? 10?? 12?? 1?? 2??珥?10醫낆쓣 ?뺤씤?덈떎. 7?붽낵 11??PDF???꾩옱 ?대뜑???놁뼱??援먭낵 ?먮쫫 蹂댁셿 ?⑥썝?쇰줈 援ъ꽦?덈떎.
+- `6?숇뀈 ?곗궛`? ?쇰컲 6?숇뀈 怨쇱젙怨?遺꾨━???숈뒿???좏깮媛믪쑝濡??붾떎. URL? `study.html?grade=6-op`瑜??ъ슜?쒕떎.
+- 12媛쒖썡 媛곴컖 6媛??몃? ?좏삎???깅줉???꾩껜 72媛??곗궛 ?좏삎??援ъ꽦?덈떎. 湲곗〈 ?뺤콉?濡??몃? ?좏삎 ?섎굹??10臾몄젣 ?숈뒿 ?먮쫫???좎??쒕떎.
+- ?앹꽦湲곕뒗 湲곗〈 6?숇뀈 ?섑븰 ?쒗쁽怨??쒓컖 ?먮즺瑜??ъ궗?⑺븳?? 遺꾩닔 ?섎닓?? ?뚯닔 ?섎닓?? 鍮꾩쑉쨌諛깅텇?? ?좉렇?섑봽쨌?먭렇?섑봽, ?볤린?섎Т, ?먯＜쨌?먯쓽 ?볦씠, ?뚯씤?섎텇?? ?쇱감諛⑹젙???좏삎???곗궛 怨쇱젙???곌껐?덈떎.
+- 紐⑤컮??泥??붾㈃, ?ㅼ튂 留ㅻ땲?섏뒪?? ?쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾???④퍡 媛깆떊?덈떎.
+- 寃곌낵 蹂닿퀬?쒕뒗 `6?숇뀈_?섑븰?곗궛_PDF_?議?異붽?_蹂닿퀬??26.05.17).md`???④꼈??
+- 寃利앹? `npm run lint`, `npm run verify`, `npm run onefile` ?쒖꽌濡??듦낵?덇퀬, ?⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`???ㅼ떆 蹂듭궗?덈떎.
+
+## 6?숇뀈 ?섑븰?곗궛 PDF ?щ?議곗? ?쒓컖 ?먮즺 蹂닿컯 (2026-05-17)
+- 6?숇뀈 ?섑븰?곗궛 PDF瑜??ㅼ떆 ?議고빐 湲곗〈 6?숇뀈 ?곗궛 ?붾퀎 諛곗튂媛 ?ㅼ젣 PDF ?먮쫫怨??ㅻⅨ 遺遺꾩쓣 ?섏젙?덈떎.
+- 3?붿? 媛곴린?Β룰컖肉붽낵 ?꾧컻?? 4?붿? 遺꾩닔첨遺꾩닔? ?뚯닔 ?섎닓?? 5?붿? 鍮꾩쑉怨??먯＜, 6?붿? ?먯쓽 ?볦씠? 吏곸쑁硫댁껜 寃됰꼻?는룸??쇰줈 ?щ같移섑뻽??
+- 8?붿? ?좉렇?섑봽쨌?먭렇?섑봽쨌?뺣퉬濡쨌諛섎퉬濡, 9?붿? ?볤린?섎Т? 鍮꾨?諛곕텇, 10?붿? ?먭린?Β룹썝肉붋룰뎄? ?먭렇?섑봽濡??щ같移섑뻽??
+- 12?붾????ㅼ쓬 ??2?붽퉴吏???뚯씤?섎텇?? ?뺤닔 ?섏쭅?? ?뺤닔 ?곗궛, 臾몄옄?? ?깆떇, 諛⑹젙?? 醫뚰몴?됰㈃, ?⑥닔 洹몃옒???먮쫫??諛섏쁺?덈떎.
+- `MathVisual`??`solid-shape`瑜?異붽???媛곴린?? 媛곷퓭, ?먭린?? ?먮퓭, 援щ? ?몃? ?대?吏 ?놁씠 SVG 踰≫꽣濡??쒖떆?쒕떎.
+- 6?숇뀈 ?곗궛 72媛??좏뵿???앹꽦湲??곌껐???뺤씤?덇퀬 ?꾨씫? ?놁뿀??
+- `npm run verify`?먯꽌 諛섎퉬濡 臾몄옣?쒖쓽 ?꾨낫 ?놁쓬 ?쒖닔 議고빀??諛쒓껄???꾨낫媛 ?덈뒗 議고빀留??앹꽦?섎룄濡?怨좎낀??
+- `npm run lint`, `npm run verify`, `npm run onefile`???듦낵?덇퀬 ?⑥씪 HTML??猷⑦듃? 紐⑤컮???꾩슜 `study.html`??諛섏쁺?덈떎.
+
+## 珥덇린 ?ㅽ뻾?붾㈃ 6?숇뀈 ?곗궛 蹂닿컯 (2026-05-17)
+- ?덈줈 ?ㅽ뻾?섎뒗 湲곕낯 ?숈뒿??怨쇱젙??`6?숇뀈 ?곗궛`?쇰줈 蹂寃쏀뻽??
+- 紐⑤컮???덊럹?댁???????쒖옉 踰꾪듉怨?鍮좊Ⅸ ?숈뒿 移대뱶媛 `study.html?grade=6-op`濡?諛붾줈 吏꾩엯?섎룄濡?蹂寃쏀뻽??
+- 紐⑤컮???곗궛 怨쇱젙 洹몃━?쒖뿉?쒕뒗 `6?숇뀈 ?곗궛`??湲곕낯 媛뺤“ ??ぉ?쇰줈 ?쒖떆?쒕떎.
+- `npm run lint`, `npm run verify`, `npm run onefile` ?듦낵 ???앹꽦 HTML??猷⑦듃? 紐⑤컮???숈뒿 ?뚯씪??諛섏쁺?섍퀬 紐⑤컮??罹먯떆瑜?v48濡?媛깆떊?덈떎.
+
+## Windows ?ㅼ튂 ?뚯씪 諛고룷 (2026-05-18)
+- ?붿껌 紐⑺몴???꾨줈?앺듃瑜?Windows?먯꽌 ?ㅼ튂 媛?ν븳 ?낅┰ ?ㅽ뻾 ?깆쑝濡?留뚮뱾怨? ?ㅼ튂 ??諛뷀깢?붾㈃ 諛붾줈媛湲곗뿉???ㅽ뻾?섍쾶 ?섎뒗 寃껋씠??
+- 湲곗〈 ?깆? Vite React ?뱀빋?대?濡?Electron?쇰줈 `dist/index.html`??媛먯떥怨? `electron-builder`??NSIS ?ㅼ튂 ?꾨줈洹몃옩???ъ슜?쒕떎.
+- ?ㅼ튂 諛붾줈媛湲곕뒗 ?섎룞 ?ㅽ겕由쏀듃 ???NSIS ?ㅼ젙??`createDesktopShortcut`, `createStartMenuShortcut`, `shortcutName`?쇰줈 泥섎━?쒕떎.
+- ?앹꽦 ?곗텧臾쇱? `app/release/` ?꾨옒 Windows ?ㅼ튂 ?뚯씪濡??붾떎.
+- ?꾩옱 PC??`C:\Program Files\nodejs`媛 ?놁뼱 `winget`?쇰줈 Node.js LTS 24.15.0怨?npm 11.12.1???ㅼ튂?????묒뾽?덈떎.
+- `winCodeSign` ?뺤텞 ?댁젣 以??щ낵由?留곹겕 沅뚰븳 ?ㅻ쪟媛 諛쒖깮??`win.signAndEditExecutable=false`? `CSC_IDENTITY_AUTO_DISCOVERY=false`瑜??곸슜?덈떎. ???ㅽ뻾怨?NSIS ?ㅼ튂 ?뚯씪 ?앹꽦?먮뒗 ?곹뼢???녾퀬, 肄붾뱶 ?쒕챸留??섏? ?딅뒗 援ъ꽦?대떎.
+- ?ㅼ튂 ?뚯씪? `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe`濡??앹꽦?섏뿀?? ?ㅼ튂?섎㈃ 諛뷀깢?붾㈃怨??쒖옉 硫붾돱??`?몃Ⅴ?룹닔???꾩옄遺? 諛붾줈媛湲곌? ?앹꽦?쒕떎.
+- 寃利앹? `npm run installer:win`, `npm run lint`, `npm run verify`, `npm run onefile`???듦낵?덈떎.
+
+## 1?숇뀈 臾몄젣 ?뺣떟 ?④? (2026-05-18)
+- ?붿껌 紐⑺몴??1?숇뀈 怨쇱젙?먯꽌 臾몄젣? ?④퍡 ?몄텧?섎뒗 ?뺣떟???숈깮 ????붾㈃?먯꽌 ?④린??寃껋씠??
+- 梨꾩젏 濡쒖쭅怨??ㅻ떟 ?쇰뱶諛깆뿉???곕뒗 ?뺣떟 ?곗씠?곕뒗 ?좎??섍퀬, 臾몄젣 蹂몃Ц?대굹 蹂댁“ ?쒓컖 ?먮즺???욎뿬 蹂댁씠???뺣떟留??쒓굅?섎뒗 諛⑺뼢?쇰줈 ?뺤씤?쒕떎.
+- ?섏젙 ???꾨줈?앺듃 湲곕낯 寃利앹씤 `npm run lint`, `npm run verify`, `npm run onefile`???ㅽ뻾?섍퀬 ?⑥씪 HTML ?곗텧臾쇱쓣 猷⑦듃? 紐⑤컮???뚯씪??諛섏쁺?쒕떎.
+- ?먯씤? 1?숇뀈 ?앹꽦湲??쇰?媛 `object-array`, `ten-frame`, ?먮━媛?釉붾줉, 怨꾩궛 寃곌낵 留됰?洹몃옒?꾩뿉 ?뺣떟 ?レ옄 ?쇰꺼???④퍡 ?ｋ뒗 援ъ“???
+- `GENERATORS` 諛섑솚 吏곹썑 1?숇뀈 臾몄젣留??꾩쿂由ы빐 ?쒓컖 ?먮즺???뺣떟 ?レ옄 ?쇰꺼???꾧퀬, 梨꾩젏??`answer`? ?ㅻ떟 ?쇰뱶諛깆슜 ?쒖떆 媛믪? ?좎??쒕떎.
+- `verify.mjs`?먮뒗 1?숇뀈 ?쒓컖 ?먮즺媛 ?ㅼ떆 ?뺣떟 ?レ옄 ?쇰꺼??耳쒕㈃ ?ㅽ뙣?섎뒗 ?뚭? 寃利앹쓣 異붽??덈떎.
+- ???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?섍퀬, 紐⑤컮??罹먯떆 踰꾩쟾??`v49`濡??щ졇??
+
+## 1?숇뀈 ?뺣떟 ?④? ?ㅼ튂 ?뚯씪 諛섏쁺 (2026-05-18)
+- 湲곗〈 `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe`??2026-05-18 ?ㅽ썑 2???곗텧臾쇱씠???대쾲 ?섏젙???ㅼ뼱媛吏 ?딆? ?곹깭???
+- `npm run installer:win`?쇰줈 Electron/NSIS ?ㅼ튂 ?뚯씪???ㅼ떆 ?앹꽦???꾩옱 ??肄붾뱶媛 ?ㅼ튂蹂몄뿉 ?ы븿?섎룄濡??쒕떎.
+- ?ъ깮??寃곌낵 `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe`??2026-05-18 ?ㅽ썑 9:48, 102,737,377諛붿씠?멸? ?섏뿀??
+- `app/release.zip`???꾩옱 `release` ?대뜑 湲곗??쇰줈 ?ㅼ떆 ?뺤텞??2026-05-18 ?ㅽ썑 9:48, 250,396,890諛붿씠?멸? ?섏뿀??
+
+## ?좎깮?샕룻겢?섏뒪쨌?숈깮 ?곴뎄 ?깅줉怨?吏꾨룄 紐⑤땲?곕쭅 (2026-05-18)
+- 紐⑺몴?????댁슜 ?낅뜲?댄듃 ?꾩뿉???숈깮蹂????湲곕줉, ?ㅻ떟 湲곕줉, ?깅줉 ?뺣낫媛 ?좎??섎룄濡??곗씠?곕쿋?댁뒪瑜??뺤옣?섎뒗 寃껋씠??
+- 湲곗〈 `learnerDb.ts`???대? `kang-taehoon-math-learner-db` IndexedDB? localStorage ?泥???μ쓣 ?ъ슜?쒕떎. ?대쾲 ?섏젙? DB 踰꾩쟾???щ젮 ??μ냼? ?몃뜳?ㅻ쭔 異붽??섍퀬, 湲곗〈 `attempts` 湲곕줉? ??젣?섏? ?딅뒗??
+- ?좎깮?? ?대옒?? ?숈깮 ?깅줉 ?뺣낫??肄섑뀗痢?DB? 遺꾨━???숈뒿 湲곕줉 DB????ν븳?? ?숈깮???ㅼ젣 ?숈뒿??ID??湲곗〈 `readerPrefs` ?숈뒿??ID 洹쒖튃???ъ궗?⑺빐 湲곗〈 ?⑥썝蹂??듦퀎? ?곌껐?쒕떎.
+- ?곷떒 硫붾돱諛붾뒗 ?깅줉 吏꾩엯?먯쓣 鍮좊Ⅴ寃??몄텧?섎뒗 ?⑸룄?닿퀬, ?ㅼ젣 紐⑤땲?곕쭅? ?대옒??蹂대뱶?먯꽌 ?대떦 ?좎깮?? ?숈깮蹂?吏꾨룄, 肄붿묶 臾멸뎄, 吏꾨룄留듭쓣 ??踰덉뿉 ?뺤씤?섎룄濡?援ъ꽦?쒕떎.
+- `learnerDb.ts`??DB 踰꾩쟾??2濡??щ━怨?`teachers`, `classes`, `students`, `settings` ??μ냼瑜?異붽??덈떎. ?낃렇?덉씠?쒕뒗 ??μ냼? ?몃뜳??異붽?留??섑뻾?섎?濡?湲곗〈 ???湲곕줉? ?좎??쒕떎.
+- ???湲곕줉?먮뒗 `teacherId`, `teacherName`, `classId`, `className`???④퍡 ??ν븳?? ?덉쟾 湲곕줉? ?숈깮??`learnerId`濡??ㅼ떆 ?쎄린 ?뚮Ц???깅줉 ?댄썑?먮룄 媛숈? ?숈깮??湲곗〈 吏꾨룄? ?ㅻ떟 湲곕줉???대옒??蹂대뱶?먯꽌 蹂????덈떎.
+- ?좎깮???대쫫??諛붽씀硫??대? ?곌껐???대옒?ㅼ? ?숈깮 ?덉퐫?쒖쓽 ?좎깮???대쫫??媛숈씠 媛깆떊?쒕떎. ?대옒???대쫫?대굹 ?대떦 ?좎깮?섏쓣 諛붽씀硫??대떦 ?대옒???숈깮???대옒?ㅻ챸怨??대떦 ?좎깮?섎룄 媛숈씠 留욎텣??
+- ?곷떒??`?좎깮???대쫫 ?깅줉`, `?대옒???깅줉`, `?숈깮 ?깅줉` 硫붾돱諛붾? 異붽??덇퀬, ?깅줉???좎깮???대쫫? 硫붿씤 ?쒕ぉ怨?釉뚮씪?곗? ?쒕ぉ, ?숈뒿 ?붾㈃ ?쇰꺼??諛섏쁺?쒕떎.
+- ?대옒??紐⑤땲?곕쭅 ?⑤꼸? ?깅줉 ?숈깮 ?? ?대옒???꾩쟻 ??? ?됯퇏 ?뺣떟瑜? 肄붿묶 ?꾩슂 ?숈깮 ?섎? 蹂댁뿬二쇨퀬 ?숈깮蹂??뺣떟瑜? ?ㅻ떟瑜? 吏꾨룄留? ?ㅼ쓬 異붿쿇 ?숈뒿???쒖떆?쒕떎.
+- 寃利앹? `npm run lint`, `npm run verify`, `npm run onefile`???듦낵?덈떎. ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?섍퀬 紐⑤컮??罹먯떆瑜?`v50`?쇰줈 ?щ졇??
+
+## 援먯궗?㈑룻븰?앹슜 濡쒓렇??遺꾨━? 怨꾩젙 愿由?(2026-05-18)
+- 紐⑺몴??援먯궗??愿由?紐⑤뱶? ?숈깮???숈뒿 紐⑤뱶瑜?遺꾨━?섍퀬, 援먯궗???꾩씠??鍮꾨?踰덊샇? ?숈깮???꾩씠??鍮꾨?踰덊샇瑜?蹂꾨룄 ?곗씠?곕쿋?댁뒪 ??μ냼濡?愿由ы븯??寃껋씠??
+- 湲곗〈 ?숈깮 ???湲곕줉? 洹몃?濡??좎??댁빞 ?섎?濡?`attempts`, `teachers`, `classes`, `students` ??μ냼瑜???젣?섍굅???ъ옉?깊븯吏 ?딄퀬, 怨꾩젙 ??μ냼留?異붽??섎뒗 IndexedDB ?낃렇?덉씠?쒕줈 泥섎━?쒕떎.
+- 濡쒖뺄 ?꾩옄遺?援ъ“???쒕쾭 ?몄쬆? ?녿떎. 鍮꾨?踰덊샇???됰Ц ??μ쓣 ?쇳븯怨?釉뚮씪?곗? Web Crypto SHA-256 ?댁떆瑜??곗꽑 ?ъ슜?섎ŉ, Web Crypto媛 ?녿뒗 ?ㅽ뻾 ?섍꼍?먯꽌??濡쒖뺄 ?댁떆 ?泥닿컪????ν븳??
+- ?뚯썝媛?낆? ?곷떒 硫붾돱?먯꽌 ??븷??怨좊Ⅴ寃??섍퀬 ?쎄? ?숈쓽 ???앹꽦?쒕떎. 援먯궗??媛?낆? ?좎깮???덉퐫?쒖? ?곌껐?섍퀬, ?숈깮??媛?낆? ?좏깮???대옒?ㅼ쓽 ?숈깮 ?덉퐫?쒖? ?곌껐?쒕떎.
+- `learnerDb.ts`??DB 踰꾩쟾??3?쇰줈 ?щ━怨?`teacherAccounts`, `studentAccounts` ??μ냼瑜?異붽??덈떎. 湲곗〈 ?숈뒿 湲곕줉怨??깅줉 ?뺣낫 ??μ냼???좎??쒕떎.
+- 援먯궗??濡쒓렇?몄? `teacherAccountId`, ?숈깮??濡쒓렇?몄? `studentAccountId`濡?`settings`???곕줈 ??ν븳?? ?숈깮??濡쒓렇?몄? ?곌껐???숈깮 ?덉퐫?쒕? ?쒖꽦 ?숈뒿?먮줈 ?꾪솚?쒕떎.
+- ?곷떒 硫붾돱諛붾뒗 `援먯궗??濡쒓렇??, `?숈깮??濡쒓렇??, `?뚯썝媛???쎄?`, `?좎깮???대쫫 ?깅줉`, `?대옒???깅줉`, `?숈깮 ?깅줉`?쇰줈 ?뺤옣?덈떎.
+- ?숈깮??濡쒓렇?몄씠 ?놁쑝硫??숈뒿 ?쒖옉 ?⑥닔媛 ?숈깮 濡쒓렇??硫붾돱濡??뚮젮蹂대궡怨??숈뒿???쒖옉?섏? ?딅뒗?? 援먯궗??濡쒓렇?몄씠 ?놁쑝硫??좎깮???대옒???숈깮 愿由ъ? ?대옒??紐⑤땲?곕쭅? ?좉툑 ?덈궡瑜??쒖떆?쒕떎.
+- ?뚯썝媛???⑤꼸?먮뒗 ??븷 ?좏깮, ?꾩씠?? 鍮꾨?踰덊샇, 鍮꾨?踰덊샇 ?뺤씤, ?대쫫, ?숈깮 ?대옒???숇뀈, ?쎄? 蹂닿린, ?쎄? ?숈쓽 泥댄겕瑜??ｌ뿀??
+- 寃利앹? `npm run lint`, `npm run verify`, `npm run onefile`???듦낵?덈떎. ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?섍퀬 紐⑤컮??罹먯떆瑜?`v51`濡??щ졇??
+
+## 援먯궗?㈑룻븰?앹슜 濡쒓렇??遺꾨━ ?ㅼ튂 ?뚯씪 諛섏쁺 (2026-05-18)
+- ?붿껌 紐⑺몴??援먯궗?㈑룻븰?앹슜 濡쒓렇??遺꾨━? ?뚯썝媛???쎄? UI媛 Windows ?ㅼ튂 ?뚯씪?먮룄 ?ㅼ뼱媛?꾨줉 `app/release` ?곗텧臾쇱쓣 ?ㅼ떆 留뚮뱶??寃껋씠??
+- 湲곗〈 `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe`??2026-05-18 ?ㅽ썑 9:48 ?곗텧臾쇱씠誘濡??ㅽ썑 10:32 ?댄썑 諛섏쁺??濡쒓렇??遺꾨━ 蹂寃쎌씠 ?ㅼ뼱媛吏 ?딆? ?곹깭??
+- `npm run installer:win`?쇰줈 Electron/NSIS ?ㅼ튂 ?뚯씪???ㅼ떆 ?앹꽦?섍퀬, `app/release.zip`???꾩옱 `release` ?대뜑 湲곗??쇰줈 ?ㅼ떆 ?뺤텞?쒕떎.
+- ?ъ깮??寃곌낵 `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe`??2026-05-18 ?ㅽ썑 10:38, 102,744,107諛붿씠?멸? ?섏뿀??
+- `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe.blockmap`? 2026-05-18 ?ㅽ썑 10:38, 106,548諛붿씠?멸? ?섏뿀??
+- `app/release.zip`? ?꾩옱 `release` ?대뜑 湲곗??쇰줈 ?ㅼ떆 ?뺤텞??2026-05-18 ?ㅽ썑 10:39, 250,411,663諛붿씠?멸? ?섏뿀??
+- `app/dist/assets/index-mFZOYMcP.js`?먯꽌 `援먯궗??濡쒓렇??, `?숈깮??濡쒓렇??, `?뚯썝媛???쎄?`, `teacherAccounts`, `studentAccounts` 臾멸뎄媛 ?뺤씤?섏뿀怨? `app/release/win-unpacked/resources/app.asar`??媛숈? `dist` 鍮뚮뱶 ?뚯씪???ы븿?섏뼱 ?덈떎.
+
+## ?숈깮 ?깅줉 ???대옒??愿由?(2026-05-18)
+- ?붿껌 紐⑺몴???곷떒 ?깅줉 硫붾돱?먯꽌 `?숈깮 ?깅줉` ?놁뿉 `?대옒??愿由? 踰꾪듉???몄텧?섍퀬, ?깅줉???대옒?ㅻ? 蹂꾨룄 ?⑤꼸?먯꽌 諛붾줈 愿由ы븷 ???덇쾶 ?섎뒗 寃껋씠??
+- 湲곗〈?먮뒗 `?대옒???깅줉` ?쇨낵 ?섎떒 ?대옒??移??좏깮留??덉뿀?쇰?濡? ???⑤꼸? ??μ냼瑜??덈줈 留뚮뱾吏 ?딄퀬 湲곗〈 `classes`, `students`, `settings` ?곗씠?곗? `registerClassRecord`, `selectLearningRosterClass` ?먮쫫???ъ궗?⑺븳??
+- ?대옒??愿由щ뒗 援먯궗??愿由?湲곕뒫?대?濡?援먯궗??濡쒓렇?몄씠 ?놁쓣 ?뚮뒗 濡쒓렇???덈궡瑜?蹂댁뿬二쇨퀬, 濡쒓렇???꾩뿉???대옒?ㅻ퀎 ?숈깮 ?섏? ?대떦 ?좎깮?섏쓣 ?뺤씤?섎㈃???좏깮, ?섏젙, ?숈깮 異붽?濡??대룞?????덇쾶 ?쒕떎.
+- ?곷떒 硫붾돱 ?쒖꽌??`?숈깮 ?깅줉` ?ㅼ쓬??`?대옒??愿由?媛 ?ㅻ룄濡??뺤옣?덈떎. ?대옒??愿由?移대뱶??`?좏깮`? ?꾩옱 ?대옒???꾪솚, `?섏젙`? 湲곗〈 ?대옒???깅줉 ?쇱뿉 ?대떦 ?대옒??媛믪쓣 梨꾩썙 ?대룞, `?숈깮 異붽?`???숈깮 ?깅줉 ?쇱뿉 ?대떦 ?대옒?ㅼ? ?숇뀈??梨꾩썙 ?대룞?쒕떎.
+- 寃利앹? `npm run lint`, `npm run verify`, `npm run onefile` ?쒖꽌濡??듦낵?덈떎. ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?섍퀬 紐⑤컮??罹먯떆 踰꾩쟾??`v52`濡??щ졇??
+
+## ?대옒??愿由??ㅼ튂 ?뚯씪 諛섏쁺 (2026-05-18)
+- ?붿껌 紐⑺몴??`?숈깮 ?깅줉` ??`?대옒??愿由? 踰꾪듉怨?愿由?濡쒖쭅??Windows ?ㅼ튂 ?뚯씪?먮룄 ?ы븿?섎룄濡?`app/release` ?곗텧臾쇱쓣 ?ㅼ떆 留뚮뱶??寃껋씠??
+- 湲곗〈 `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe`??2026-05-18 ?ㅽ썑 10:38 ?곗텧臾쇱씠誘濡??ㅽ썑 10:51 ?댄썑 諛섏쁺???대옒??愿由?蹂寃쎌씠 ?ㅼ뼱媛吏 ?딆? ?곹깭???
+- `npm run installer:win`?쇰줈 Electron/NSIS ?ㅼ튂 ?뚯씪???ㅼ떆 ?앹꽦?섍퀬, `app/release.zip`???꾩옱 `release` ?대뜑 湲곗??쇰줈 ?ㅼ떆 ?뺤텞?덈떎.
+- ?ъ깮??寃곌낵 `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe`??2026-05-18 ?ㅽ썑 10:55, 102,742,731諛붿씠?멸? ?섏뿀??
+- `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe.blockmap`? 2026-05-18 ?ㅽ썑 10:55, 106,591諛붿씠?멸? ?섏뿀??
+- `app/release.zip`? ?꾩옱 `release` ?대뜑 湲곗??쇰줈 ?ㅼ떆 ?뺤텞??2026-05-18 ?ㅽ썑 10:55, 250,411,556諛붿씠?멸? ?섏뿀??
+- `app/dist`? `app/release/win-unpacked/resources/app.asar`?먯꽌 `?대옒??愿由?, `classManage`, `class-management` 臾멸뎄媛 ?뺤씤?섏뼱 ?ㅼ튂蹂몄뿉 ??UI媛 ?ы븿??寃껋쓣 ?뺤씤?덈떎.
+
+## Cloudflare Pages ?쒕쾭 ?댁쁺 理쒖쟻??(2026-05-18)
+- ?붿껌 紐⑺몴???꾩옱 ?꾩옄遺곸쓣 蹂꾨룄 Node ?쒕쾭 ?놁씠 Cloudflare Pages ?뺤쟻 ?몄뒪??湲곗??쇰줈 ?댁쁺?섍린 ?쎄쾶 留뚮뱶??寃껋씠??
+- 怨듭떇 臾몄꽌 湲곗??쇰줈 Pages??鍮뚮뱶 異쒕젰 ?붾젆?곕━瑜??뺤쟻 ?먯궛?쇰줈 ?쒕튃?섍퀬, `_headers` ?뚯씪? 鍮뚮뱶 ?곗텧臾??덉뿉 ?덉쓣 ???뺤쟻 ?묐떟 ?ㅻ뜑濡??곸슜?쒕떎.
+- ?꾩옱 ?깆? Vite React ?뺤쟻 ?깆씠誘濡??쒕쾭 肄붾뱶瑜?留뚮뱾吏 ?딄퀬 `app/dist`瑜?Pages 異쒕젰臾쇰줈 怨좎젙?섎뒗 諛⑹떇??媛???묐떎.
+- `wrangler.toml`? ?꾩옱 ?대뜑瑜??꾨줈?앺듃 猷⑦듃濡?蹂대뒗 吏곸젒 諛고룷? CI 諛고룷?먯꽌 `app/dist`瑜??ъ슜?섎룄濡?猷⑦듃???붾떎.
+- Cloudflare Pages v3 鍮뚮뱶 ?대?吏??湲곕낯 Node.js??`22.16.0`?닿퀬 ?꾩옱 Vite 8 ?붿쭊 議곌굔??`^20.19.0 || >=22.12.0`?대?濡? 猷⑦듃? `app`??`.node-version`???먯뼱 鍮뚮뱶 ?ы쁽?깆쓣 留욎텣??
+- `app/public/_headers`??Vite 鍮뚮뱶 ??`dist/_headers`濡?蹂듭궗?쒕떎. ?댁떆媛 遺숇뒗 `/assets/*`??1??immutable 罹먯떆瑜?二쇨퀬, `/`? `/*.html`? 利됱떆 ?ш?利앺븯?꾨줉 ?섏뿬 ??諛고룷媛 ?ㅻ옒 臾띠씠吏 ?딄쾶 ?쒕떎.
+- CSP???꾩옱 React 而댄룷?뚰듃媛 ?몃씪??style ?띿꽦???щ윭 怨녹뿉???곌퀬 ?몃? Pretendard CSS瑜?濡쒕뱶?섎?濡? ?대쾲 ?묒뾽?먯꽌??湲곕뒫??源⑥? ?딅뒗 蹂댁븞 ?ㅻ뜑留??곸슜?덈떎.
+- Cloudflare Pages ?꾨줈?앺듃 猷⑦듃媛 ?꾩옱 ?대뜑?쇰㈃ 鍮뚮뱶 紐낅졊? `cd app && npm ci && npm run pages:build`, 異쒕젰 ?붾젆?곕━??`app/dist`?? ?꾨줈?앺듃 猷⑦듃媛 `app`?대씪硫?鍮뚮뱶 紐낅졊? `npm ci && npm run pages:build`, 異쒕젰 ?붾젆?곕━??`dist`??
+- 寃利앹? `npm run lint`, `npm run verify`, `npm run onefile` ?쒖꽌濡??듦낵?덈떎. `onefile`??Vite 鍮뚮뱶?먯꽌 500kB 珥덇낵 泥?겕 寃쎄퀬??湲곗〈 ?⑥씪 踰덈뱾 ?ш린 寃쎄퀬?대ŉ 鍮뚮뱶 ?ㅽ뙣???꾨땲??
+- 鍮뚮뱶 ??`app/dist/_headers`媛 ?앹꽦?섏뼱 Pages ?곗텧臾쇱뿉 罹먯떆? 蹂댁븞 ?ㅻ뜑 ?뺤콉???ы븿?섎뒗 寃껋쓣 ?뺤씤?덈떎.
+- ?⑥씪 HTML ?곗텧臾?`CODEX ?섑븰 ?듯옒遺??꾩옄遺?26.05.17)/CODEX-?섑븰-?듯옒遺??꾩옄遺?html`, `?몃Ⅴ?룹닔???곗뒿.html`, `紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??SHA256??紐⑤몢 `9C25EA7D105ADED1B34EDB993267E5B4D76ADEE9F3F3D427B654E1AC08E760DA`濡?媛숈븘??蹂꾨룄 蹂듭궗 媛깆떊? ?꾩슂?섏? ?딆븯??
+
+## Cloudflare Pages ?쒕쾭 ?깅줉怨?泥?諛고룷 (2026-05-18)
+- Wrangler OAuth 濡쒓렇?몄쓣 ?꾨즺?덇퀬, Cloudflare Pages ?꾨줈?앺듃 `prunet-math-ebook`???앹꽦?덈떎.
+- ?꾨줈?앺듃??Git ?곌껐 ?놁씠 吏곸젒 ?낅줈??諛⑹떇?쇰줈 ?깅줉?섏뿀怨? ?꾨찓?몄? `prunet-math-ebook.pages.dev`??
+- `npm run pages:build`濡?`app/dist`瑜??ㅼ떆 ?앹꽦????`npx wrangler pages deploy dist --project-name prunet-math-ebook --branch main`?쇰줈 production 諛고룷?덈떎.
+- ?ㅼ젣 諛고룷 紐낅졊怨?留욎텛湲??꾪빐 `npm run pages:deploy`??`--branch main`???ы븿?섎룄濡?媛깆떊?덈떎.
+- 泥?諛고룷 ID??`7cbad7e8-2665-44b9-a9c4-ddb53ea59bf2`?닿퀬, Wrangler媛 諛섑솚??諛고룷 URL? `https://7cbad7e8.prunet-math-ebook.pages.dev`??
+- ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`??HTTP 200?쇰줈 ?묐떟?덇퀬 HTML title? `媛뺥깭?덉깦 ?섑븰 ?듯옒梨??쇰줈 ?뺤씤?덈떎.
+- `https://prunet-math-ebook.pages.dev/`??`Cache-Control`? `public, max-age=0, must-revalidate`濡??뺤씤?덈떎.
+- `https://prunet-math-ebook.pages.dev/assets/index-BhqB9KXi.js`??`Cache-Control`? `public, max-age=31536000, immutable`濡??뺤씤?덈떎.
+- Windows Schannel?먯꽌 踰꾩쟾蹂?諛고룷 URL HEAD ?붿껌? TLS ?ㅻ쪟媛 ?ъ?留? production Pages URL怨?asset URL? ?뺤긽 ?묐떟?덈떎.
+
+## ?숈뒿 DB쨌?뚯썝媛?끒룻겢?섏뒪쨌?숈깮 愿由??먭? (2026-05-18)
+- ?붿껌 紐⑺몴???숈뒿??IndexedDB/localStorage ???寃쎈줈媛 ?ㅼ젣 ?붾㈃ ?먮쫫?먯꽌 ?숈옉?섎뒗吏, ?뚯썝媛?낃낵 ?대옒??愿由? ?숈깮 愿由ш? 源⑥?吏 ?딅뒗吏 ?뺤씤?섎뒗 寃껋씠??
+- ?먭? 踰붿쐞??援먯궗???뚯썝媛?? 援먯궗??濡쒓렇???곹깭, ?대옒???깅줉, ?대옒??愿由ъ쓽 ?좏깮쨌?섏젙쨌?숈깮 異붽? ?대룞, ?숈깮 ?깅줉, ?숈깮???뚯썝媛?? ?숈깮??濡쒓렇?? ?숈뒿 湲곕줉 ??μ씠??
+- Browser Use ?뚮윭洹몄씤 吏移⑥쓣 ?뺤씤?덉?留??꾩옱 ?몄뀡??Node REPL 釉뚮씪?곗? ?쒖뼱 ?꾧뎄媛 ?몄텧?섏? ?딆븘, 濡쒖뺄 Vite ?쒕쾭? Playwright 湲곕컲 ?ㅻえ???뚯뒪?몃줈 ?泥댄븳??
+
+## 愿由ъ옄 濡쒓렇?멸낵 ?꾩껜 ?숈뒿 ?곗씠??紐⑤땲?곕쭅 (2026-05-18)
+- ?붿껌 紐⑺몴??援먯궗??濡쒓렇???쇱そ??愿由ъ옄 濡쒓렇?몄쓣 異붽??섍퀬, 援먯궗?⑹? ?꾩껜 ?숈깮 吏꾨룄 紐⑤땲?곕쭅, 愿由ъ옄??援먯궗쨌?숈깮쨌怨꾩젙쨌?숈뒿 湲곕줉 ?꾩껜 議고쉶? 諛깆뾽??媛?ν븯?꾨줉 留뚮뱶??寃껋씠??
+- 湲곗〈 怨꾩젙 援ъ“??`teacherAccounts`, `studentAccounts`媛 鍮꾨?踰덊샇 ?됰Ц???꾨땶 ?댁떆瑜???ν븳?? ??愿由ъ옄 湲곕뒫???됰Ц 鍮꾨?踰덊샇瑜???ν븯吏 ?딄퀬 `adminAccounts` ??μ냼??`passwordHash`留???ν븳??
+- IndexedDB 踰꾩쟾? 湲곗〈 ?숈뒿 ?쒕룄? 援먯궗쨌?대옒?ㅒ룻븰???곗씠?곕? 吏?곗? ?딅뒗 ?낃렇?덉씠?쒕줈 ?щ━怨? localStorage fallback?먮룄 愿由ъ옄 怨꾩젙 諛곗뿴??異붽??쒕떎.
+- 援먯궗??紐⑤땲?곕쭅? 湲곗〈 ?쒖꽦 ?대옒??湲곗? ?붾㈃?먯꽌 ?꾩껜 ?숈깮 湲곗? `loadAllLearningProgress()`濡?諛붽씀怨? 5珥?二쇨린濡?媛깆떊???숈깮蹂?????? ?뺣떟瑜? ?ㅻ떟瑜? 肄붿묶???뺤씤?섎룄濡??쒕떎.
+- 愿由ъ옄 ?붾㈃? 怨꾩젙 ?댁떆 紐⑸줉, ?꾩껜 ?숈뒿??吏꾨룄, 理쒓렐 ?숈뒿 ?곗씠?? 諛깆뾽 JSON 蹂듭궗? ?뚯씪 ??μ쓣 ?쒓났?쒕떎.
+- 寃利앹? `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db`, 留덉?留?`npm run lint` ?쒖꽌濡??듦낵?덈떎.
+- `npm run smoke:learning-db`??愿由ъ옄 怨꾩젙 ?앹꽦, `adminAccounts` ??? 援먯궗???뚯썝媛?? ?대옒???깅줉怨?愿由? ?숈깮 ?깅줉, ?숈깮???뚯썝媛?낃낵 濡쒓렇?? ?숈뒿 湲곕줉 ??? 愿由ъ옄 ?붾㈃??怨꾩젙 ?댁떆? 理쒓렐 ?숈뒿 ?곗씠???쒖떆瑜??뺤씤?쒕떎.
+- ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?덇퀬, ???뚯씪??SHA256? `B3FD367DE898777997E4EA017E874C8FB90E40A89AE2A9E9A82C830BCE5B183E`濡??쇱튂?쒕떎.
+- 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾? `codex-math-mobile-v53`?쇰줈 ?щ졇??
+- Cloudflare Pages??`npm run pages:deploy`濡?production `main` 釉뚮옖移섏뿉 ?щ같?ы뻽?? 諛고룷 URL? `https://68036e85.prunet-math-ebook.pages.dev`?닿퀬, ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`??HTTP 200怨?`Cache-Control: public, max-age=0, must-revalidate`濡??뺤씤?덈떎.
+
+## Google 愿由ъ옄 ?몄쬆怨?援먯궗???숈깮 怨꾩젙쨌吏꾨룄 愿由?(2026-05-19)
+- ?붿껌 紐⑺몴??愿由ъ옄 紐⑤뱶瑜?Google 濡쒓렇???몄쬆?쇰줈 ?꾪솚?섍퀬, 愿由ъ옄 ?덉슜 ?대찓?쇱쓣 吏?뺥븯硫? 援먯궗??濡쒓렇???곹깭?먯꽌 ?대옒?ㅒ룻븰?씲룻븰??怨꾩젙쨌?숈깮 吏꾨룄 ?섏젙源뚯? 媛?ν븯?꾨줉 ?뺤옣?섎뒗 寃껋씠??
+- Cloudflare Pages ?뺤쟻 ?깅쭔?쇰줈??Google ID ?좏겙 ?쒕챸 寃利앹쓣 ?쒕쾭?먯꽌 媛뺤젣?????놁쑝誘濡? ?대쾲 援ы쁽? Google Identity Services ?꾨윴?몄뿏??濡쒓렇??寃뚯씠?몄? Client ID쨌?대찓?셋룸쭔猷뚯떆媛??뺤씤???곸슜?쒕떎. ?댁쁺 蹂댁븞????媛뺥븯寃??섎젮硫?Cloudflare Worker?먯꽌 Google ID ?좏겙 寃利앹쓣 異붽??댁빞 ?쒕떎.
+- 愿由ъ옄 怨꾩젙 ??μ냼??鍮꾨?踰덊샇 怨꾩젙????留뚮뱾吏 ?딄퀬 Google ?대찓?? ?쒖떆 ?대쫫, Google subject, ?좏겙 audience? 留뚮즺 ?쒓컖????ν븳?? ?꾩옱 愿由ъ옄 濡쒓렇?몄? `purunetkangtaehun@gmail.com`???대찓???뺤씤????Google ?묐떟?먯꽌留??대┛??
+- Google OAuth Client ID??`VITE_GOOGLE_CLIENT_ID` ?섍꼍蹂???먮뒗 愿由ъ옄 濡쒓렇???붾㈃?먯꽌 ??ν븳 濡쒖뺄 ?ㅼ젙???ъ슜?쒕떎. Cloudflare Pages ?댁쁺 ?섍꼍?먯꽌??鍮뚮뱶 蹂?섎줈 ?ｋ뒗 諛⑹떇??媛???ы쁽 媛?ν븯??
+- 援먯궗???숈깮 ?깅줉 ?쇱? ?숈깮 ?대쫫쨌?숇뀈쨌?대옒?ㅼ뿉 ?뷀빐 ?숈깮 濡쒓렇???꾩씠?? ??鍮꾨?踰덊샇, 鍮꾨?踰덊샇 ?뺤씤, ?섏젙 吏꾨룄, ?섏젙 ?뺣떟 ?섎? ?낅젰?????덇쾶 ?덈떎.
+- 湲곗〈 ?숈깮 怨꾩젙???댁뼱 吏꾨룄留??섏젙??????鍮꾨?踰덊샇瑜?媛뺤젣濡??붽뎄?섏? ?딅룄濡? 湲곗〈 ?꾩씠???좎?? 怨꾩젙 蹂寃??붿껌??遺꾨━?덈떎.
+- ?숈뒿??紐⑤땲?곕쭅 紐⑸줉怨?愿由ъ옄 ?꾩껜 吏꾨룄 紐⑸줉??`怨꾩젙쨌吏꾨룄 ?섏젙` 踰꾪듉??異붽????좏깮???숈깮??怨꾩젙怨?吏꾨룄 ?섏젙 ?쇱쑝濡?諛붾줈 ?대룞?쒕떎.
+- 釉뚮씪?곗? ?ㅻえ???뚯뒪?몃뒗 Google Identity Services瑜??뚯뒪?몄슜?쇰줈 紐?泥섎━???ㅼ젣 OAuth ?앹뾽 ?놁씠 愿由ъ옄 Google ?몄쬆, 援먯궗 ?뚯썝媛?? ?대옒??愿由? ?숈깮 媛?끒룸줈洹몄씤, ?숈뒿 湲곕줉, ?숈깮 怨꾩젙 鍮꾨?踰덊샇 蹂寃? ?숈깮 吏꾨룄 override ??μ쓣 寃利앺븯?꾨줉 媛깆떊?덈떎.
+- 寃利앹? `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` ?쒖꽌濡??듦낵?덈떎. `npm run onefile`怨?Pages 鍮뚮뱶??500kB 珥덇낵 泥?겕 寃쎄퀬??湲곗〈 ?⑥씪 踰덈뱾 ?ш린 寃쎄퀬?대ŉ 鍮뚮뱶 ?ㅽ뙣???꾨땲??
+- ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?덇퀬, ???뚯씪??SHA256? `867F7643D2129659BCEF21BFCC7171009475592F0E49422D448C2D67844F7D66`?쇰줈 ?쇱튂?쒕떎.
+- 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾? `codex-math-mobile-v54`濡??щ졇??
+- Cloudflare Pages??`npm run pages:deploy`濡?production `main` 釉뚮옖移섏뿉 ?щ같?ы뻽?? 諛고룷 URL? `https://bf3b24a4.prunet-math-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`??HTTP 200, HTML 罹먯떆 `public, max-age=0, must-revalidate`, asset 罹먯떆 `public, max-age=31536000, immutable`濡??뺤씤?덈떎.
+
+## ?묓옒??愿由?硫붾돱 UI 理쒖쟻??(2026-05-19)
+- ?붿껌 紐⑺몴??愿由ъ옄 濡쒓렇?? 援먯궗??濡쒓렇?? ?숈깮??濡쒓렇?? ?뚯썝媛???쎄?, ?좎깮???대쫫 ?깅줉, ?대옒???깅줉, ?숈깮 ?깅줉, ?대옒??愿由?踰꾪듉怨??낅젰 ?⑤꼸???숈뒿 肄섑뀗痢??곷떒??怨꾩냽 李⑥??섏? ?딄쾶 ?섎뒗 寃껋씠??
+- 湲곕낯 ?붾㈃? ?숈뒿 肄섑뀗痢?媛?낆꽦???곗꽑???곷떒??`愿由?硫붾돱`? `?ㅻ뒛 ?숈뒿`留??④릿??
+- `愿由?硫붾돱`瑜??댁뿀???뚮쭔 濡쒓렇?맞룻쉶?먭??끒룸벑濡씲룰?由?踰꾪듉怨??좏깮???낅젰 ?쇱쓣 蹂댁뿬二쇨퀬, ?レ쑝硫??낅젰 UI???뚮뜑留곹븯吏 ?딅뒗??
+- ?숈깮 濡쒓렇?몄씠 ?꾩슂???숈뒿 ?쒖옉??留됰뒗 寃쎌슦, ?대옒?ㅒ룻븰??愿由ъ뿉???섏젙?쇰줈 ?대룞?섎뒗 寃쎌슦泥섎읆 ?낅젰???꾩슂???먮쫫? 愿由?硫붾돱媛 ?먮룞?쇰줈 ?대━?꾨줉 泥섎━?쒕떎.
+- 援ы쁽 寃곌낵 湲곕낯 ???붾㈃?먯꽌???깅줉 硫붾돱諛붿? ?낅젰 ?⑤꼸???뚮뜑留곷릺吏 ?딄퀬, ?ㅻ뜑 ?ㅻⅨ履쎌쓽 `愿由?硫붾돱` 踰꾪듉???뚮?????`registration-drawer` ?덉뿉 湲곗〈 硫붾돱? ?쇱씠 ?쒖떆?쒕떎.
+- 釉뚮씪?곗? ?ㅻえ???뚯뒪?몃뒗 泥??붾㈃?먯꽌 `nav.registration-menu-bar`媛 蹂댁씠吏 ?딅뒗吏 ?뺤씤???? `愿由?硫붾돱`瑜??댁뼱 湲곗〈 Google 愿由ъ옄 濡쒓렇?? 援먯궗???뚯썝媛?? ?대옒??愿由? ?숈깮 濡쒓렇?? ?숈뒿 湲곕줉, ?숈깮 怨꾩젙쨌吏꾨룄 ?섏젙 ?먮쫫??寃利앺븳??
+- 寃利앹? `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` ?쒖꽌濡??듦낵?덈떎.
+- ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?덇퀬, ???뚯씪??SHA256? `9CBECA52C0B28D723769B648F4E16ED90BFDAFE934477660AE5C16762D92BBFD`濡??쇱튂?쒕떎.
+- 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾? `codex-math-mobile-v55`濡??щ졇??
+- Cloudflare Pages??`npm run pages:deploy`濡?production `main` 釉뚮옖移섏뿉 ?щ같?ы뻽?? 諛고룷 URL? `https://f5f6da1c.prunet-math-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`??HTTP 200, ??asset `/assets/index-CioVF-Ua.js`, asset 罹먯떆 `public, max-age=31536000, immutable`濡??뺤씤?덈떎.
+
+## 援먯궗???쇱씪 ?숈뒿 吏꾨떒?쒖? ?숇?紐??곷떞?쇱? ?먮룞 ?앹꽦 (2026-05-19)
+- ?붿껌 紐⑺몴??愿由ъ옄 Google ?대찓?쇱쓣 `purunetkangtaehun@gmail.com`?쇰줈 蹂寃쏀븯怨? 援먯궗??濡쒓렇???곹깭?먯꽌 ?숈깮蹂꽷룸궇吏쒕퀎 ?숈뒿 吏꾨떒?쒖? ?숇?紐??곷떞?쇱?瑜??먮룞 ?앹꽦?섎뒗 寃껋씠??
+- 由ы룷??湲곗?? ASCA???곗씠??湲곕컲 ?숆탳?곷떞, CASEL??SEL 5媛???웾, IES 珥덈벑 ?섑븰 以묒옱 媛?대뱶??泥닿퀎??紐낆떆 吏??愿?먯쓣 李멸퀬?쒕떎.
+- 臾멸뎄???꾩긽???щ━ 吏꾨떒???꾨땲???숈뒿 ?곗씠??湲곕컲 援먯쑁 ?곷떞 李멸퀬 臾몄꽌濡??쒗븳?쒕떎. ?뺤꽌쨌?숆린 ?쒗쁽? 愿李?媛?ν븳 ?숈뒿 ?됰룞怨?媛???묐젰 ?쒖븞?쇰줈留??묒꽦?쒕떎.
+- 湲곗〈 `ClassLearningProgressSnapshot`???숈깮蹂??붿빟留뚯쑝濡쒕뒗 ?좎쭨蹂?蹂닿퀬?쒕? 留뚮뱾 ???놁쑝誘濡? ?숈깮蹂??ㅼ젣 ???湲곕줉 諛곗뿴??吏꾪뻾 ?곗씠?곗뿉 ?ы븿??援먯궗??紐⑤땲?곕쭅?먯꽌 ?좎쭨蹂꾨줈 臾띕뒗??
+- 援ы쁽 寃곌낵 援먯궗???숈뒿??紐⑤땲?곕쭅?먯꽌 ?숈깮 移대뱶蹂꾨줈 `?좎쭨蹂??숈뒿 吏꾨떒?쑣룻븰遺紐??곷떞?쇱?` ?묓옒 ?곸뿭???쒖떆?섍퀬, ?좎쭨蹂????湲곕줉???덈뒗 ?숈깮? ?숈뒿 吏꾨떒?쒖? ?숇?紐??곷떞?쇱?媛 ?먮룞 ?앹꽦?쒕떎.
+- 寃利앹? `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` ?쒖꽌濡??듦낵?덈떎.
+- ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?덇퀬, ???뚯씪??SHA256? `232C5DE5B0FA7F5A39F35E72FCC83FD563279CB7500BAF8FC049FBC615E29EEE`濡??쇱튂?쒕떎.
+- 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾? `codex-math-mobile-v56`?쇰줈 ?щ졇??
+- Cloudflare Pages??`npm run pages:deploy`濡?production `main` 釉뚮옖移섏뿉 ?щ같?ы뻽?? 諛고룷 URL? `https://d6f9da6e.prunet-math-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`??HTTP 200, ??asset `/assets/index-BJ-bbl9J.js`, asset 罹먯떆 `public, max-age=31536000, immutable`濡??뺤씤?덈떎.
+
+## ?숈뒿 蹂닿퀬??怨듭쑀 踰꾪듉 ?쒓굅? 愿由ъ옄쨌援먯궗???곷떞 臾몄꽌 ?⑤꼸 諛곗튂 (2026-05-19)
+- ?붿껌 紐⑺몴???숈뒿 蹂닿퀬???ㅻ뜑???붾젅洹몃옩쨌移댁뭅?ㅽ넚 ?꾩넚 踰꾪듉???쒓굅?섍퀬, 愿由ъ옄 ?먮뒗 援먯궗 濡쒓렇???곹깭?먯꽌 ?숈뒿 蹂닿퀬???꾨옒???숈깮蹂??숈뒿 吏꾨떒?쒖? ?숇?紐??곷떞???붾㈃??蹂댁씠寃??섎뒗 寃껋씠??
+- 蹂닿퀬??蹂듭궗 湲곕뒫? ?좎??쒕떎. ?몃? 硫붿떊? 吏곸젒 ?꾩넚 ?곹깭? ?⑥닔???쒓굅??UI? 媛쒖씤?뺣낫 ?몄텧 媛?μ꽦??以꾩씤??
+- 湲곗〈 援먯궗???숈뒿??紐⑤땲?곕쭅 移대뱶??吏꾨룄? 肄붿묶 ?붿빟 以묒떖?쇰줈 ?④린怨? 湲?吏꾨떒?쑣룹긽?댁꽌 蹂몃Ц? ?숈뒿 蹂닿퀬???꾨옒??蹂꾨룄 愿由ъ옄쨌援먯궗??臾몄꽌 ?⑤꼸濡?紐⑥???
+- 援ы쁽 寃곌낵 ?숈뒿 蹂닿퀬???ㅻ뜑?먮뒗 `蹂닿퀬??蹂듭궗`留??④퀬, 愿由ъ옄 ?먮뒗 援먯궗??濡쒓렇???곹깭?먯꽌???숈뒿 蹂닿퀬??諛붾줈 ?꾨옒 `?숈깮蹂??숈뒿 吏꾨떒?쒖? ?숇?紐??곷떞?? ?⑤꼸???쒖떆?쒕떎.
+- 寃利앹? `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` ?쒖꽌濡??듦낵?덈떎.
+- ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?덇퀬, ???뚯씪??SHA256? `BB3C9EA64903293E5866064047D94927A90B3C31110E368375F33F5DAE6E24F6`濡??쇱튂?쒕떎.
+- 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾? `codex-math-mobile-v57`濡??щ졇??
+- Cloudflare Pages??`npm run pages:deploy`濡?production `main` 釉뚮옖移섏뿉 ?щ같?ы뻽?? 諛고룷 URL? `https://d913c00f.prunet-math-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`??HTTP 200, ??asset `/assets/index-DKXHMy54.js`, asset 罹먯떆 `public, max-age=31536000, immutable`濡??뺤씤?덈떎.
+- ?댁쁺 asset?먯꽌 `manager-counsel-panel`怨?`student-counsel-report` ?대옒?ㅺ? ?ы븿?섍퀬, `kakaotalk://`? `https://t.me/share/url` ?몃? ?꾩넚 寃쎈줈???ы븿?섏? ?딅뒗 寃껋쓣 ?뺤씤?덈떎.
+
+## 紐⑦뿕 吏??STEM ?ㅽ넗由ы뀛留?怨좊룄??(2026-05-19)
+- ?붿껌 紐⑺몴??`紐⑦뿕 吏??> ?ㅽ넗由??⑥썝 蹂닿린`瑜?1?숇뀈遺??6?숇뀈源뚯? ?꾩옱 ?좏깮???⑥썝怨?紐⑹감??留욌뒗 ?꾨Ц ?ㅽ넗由ы뀛留??섑븰 ?댁빞湲곕줈 梨꾩슦??寃껋씠??
+- 援ы쁽 湲곗?? National Academies???듯빀 STEM 愿?? ISTE??而댄벂???ш퀬? ?곗씠?걔룹븣怨좊━利샕룹텛?곹솕 愿?? OECD PISA 2025???붿????멸퀎 臾몄젣?닿껐怨??먭린議곗젅 ?숈뒿 愿?먯쓣 李멸퀬?쒕떎.
+- 肄섑뀗痢좊뒗 ?몃? 蹂몃Ц??蹂듭궗?섏? ?딄퀬, ?꾩옱 ?꾩옄遺??⑥썝쨌紐⑹감 ?쒕ぉ怨??ㅻ챸??湲곕컲?쇰줈 ?⑥썝蹂??댁빞湲? 紐⑹감蹂?誘몄뀡, STEM ?ㅺ퀎 怨쇱젣, 洹몃옒?꽷룸룄?쑣룹닔?씲룸깹???λ㈃???먮룞 ?앹꽦?쒕떎.
+- 湲곗〈 `CHAPTERS`??5?숇뀈 以묒떖 ?쒕ぉ??怨좎젙?섏뼱 ?덉뼱 1~6?숇뀈 ?꾩껜?먮뒗 留욎? ?딅뒗?? ??諛⑹떇? `contentUnits`瑜?諛쏆븘 ?꾩옱 ?숇뀈쨌?곗궛 怨쇱젙??紐⑤뱺 ?⑥썝??留욎떠 ?ㅽ넗由?梨뺥꽣瑜??숈쟻?쇰줈 留뚮뱺??
+- 援ы쁽 寃곌낵 `app/src/lib/story.ts`??`buildStemStoryChapters`瑜?異붽????꾩옱 ?좏깮??`contentUnits` ?꾩껜瑜??⑥썝蹂?STEM ?ㅽ넗由?梨뺥꽣濡?蹂?섑븳?? 媛?梨뺥꽣?먮뒗 ?⑥썝 ?댁빞湲? STEM 珥덉젏, ?ㅺ퀎 怨쇱젣, ?곗씠??吏덈Ц, ?듭떖 ?섏떇, 紐⑹감蹂?誘몄뀡???ы븿?쒕떎.
+- `app/src/App.tsx`??紐⑦뿕 吏?꾨뒗 怨좎젙 `CHAPTERS` ???`stemStoryChapters`瑜??ъ슜?섎ŉ, ?⑥썝 移대뱶瑜??대㈃ ?몃씪??SVG 踰≫꽣 ?λ㈃, ??웾 遺꾪룷 留됰? ?꾪몴, ?먭뎄 ?쒖씠????洹몃옒?? 紐⑹감蹂??먭뎄 誘몄뀡 踰꾪듉???쒖떆?쒕떎.
+- 寃利앹? `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` ?쒖꽌濡??듦낵?덈떎.
+- ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?덇퀬, ???뚯씪??SHA256? `3F0F194A37EFC15B261430BEC20AF9634523C0667512EBDFCE48B15276B82955`濡??쇱튂?쒕떎.
+- 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾? `codex-math-mobile-v58`濡??щ졇??
+- Cloudflare Pages??`npm run pages:deploy`濡?production `main` 釉뚮옖移섏뿉 ?щ같?ы뻽?? 諛고룷 URL? `https://ceea1a0c.prunet-math-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`??HTTP 200, ??asset `/assets/index-C-20szea.js`? `/assets/index-2RUyZAMS.css`, asset 罹먯떆 `public, max-age=31536000, immutable`濡??뺤씤?덈떎.
+- ?댁쁺 asset?먯꽌 `story-vector`, `story-chapter-card`, `story-topic-mission` ?대옒?ㅺ? ?ы븿?섎뒗 寃껋쓣 ?뺤씤?덈떎.
+
+## ?숈깮??濡쒓렇???숈뒿???대쫫 ?먮룞 諛섏쁺怨?媛쒕퀎 ?숈뒿 ?좏깮 (2026-05-19)
+- ?붿껌 紐⑺몴???숈깮??濡쒓렇?????숈뒿???대쫫???숈깮 ?깅줉 ?대쫫?쇰줈 ?먮룞 ?쒖떆?섍퀬, ?숈깮???⑥썝怨?紐⑹감瑜?吏곸젒 怨⑤씪 媛쒕퀎 ?숈뒿???쒖옉?????덇쾶 留뚮뱶??寃껋씠??
+- 湲곗〈 `applyStudentRecordToLearner`???숈깮 ?덉퐫?쒕? ?숈뒿???곹깭濡?諛섏쁺?섏?留? 濡쒓렇??吏곹썑?먮뒗 ?몄쬆 怨꾩젙??`studentId`瑜??곗꽑?쇰줈 ?뺤씤?섎뒗 蹂닿컯???꾩슂?섎떎.
+- ?숈깮 紐⑤뱶?먯꽌???대쫫쨌?숇뀈 ?낅젰??怨꾩젙 ?숈깮 ?뺣낫濡?怨좎젙?섍퀬, ?숈뒿 ?댁슜 ?좏깮 ?곸뿭? `?숈깮 ?좏깮 ?숈뒿`?쇰줈 紐낇솗???쒖떆???⑥썝쨌怨듬????댁슜 ?쒕∼?ㅼ슫??諛붾줈 ?ъ슜?????덇쾶 ?쒕떎.
+- 援ы쁽 ?꾨즺: ?숈깮??濡쒓렇??怨꾩젙??`studentId`瑜????媛?쒕줈 ?뺤씤?????대떦 ?숈깮 ?덉퐫?쒕? ?숈뒿???꾨줈?꾩뿉 ?곗꽑 諛섏쁺?섍퀬, ?숈깮 紐⑤뱶?먯꽌???숈뒿???대쫫쨌?숇뀈 ?낅젰怨??숇뀈 鍮좊Ⅸ ?좏깮 踰꾪듉???좉? 怨꾩젙媛믪씠 ?좎??섎룄濡??덈떎.
+- 援ы쁽 ?꾨즺: ?숈깮 濡쒓렇???곹깭???숈뒿 李⑤? UI瑜?`?숈깮 ?좏깮 ?숈뒿`?쇰줈 ?쒖떆?섍퀬, ?⑥썝쨌紐⑹감 ?쒕∼?ㅼ슫?먯꽌 ?숈깮??吏곸젒 ?좏깮??紐⑹감瑜?`?좏깮??紐⑹감 ?숈뒿` 踰꾪듉?쇰줈 ?쒖옉?????덇쾶 ?덈떎.
+- 寃利??꾨즺: `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` ?듦낵. ?ㅻえ??寃곌낵??`learnerName`? ?깅줉 ?숈깮紐?`?먭? ?숈깮 mpbfacjq`濡??뺤씤?먮떎.
+- ?곗텧臾?諛섏쁺: ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??蹂듭궗?덇퀬, ???뚯씪 SHA256? `BD25146014F8A781E857951F9D129DCE55D9BC6C6AB7F950F7FF2B0F4C6E6D07`濡??쇱튂?쒕떎.
+- 紐⑤컮??罹먯떆: `紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/sw.js`??`CACHE_NAME`??`codex-math-mobile-v59`濡?媛깆떊?덈떎.
+- Cloudflare Pages 諛고룷: `npm run pages:deploy` ?듦낵, ??URL `https://e0401159.prunet-math-ebook.pages.dev` ?묐떟 `200`, ??踰덈뱾 `index-TKy7bg9g.css`? `index-DHvkym_Z.js` 李몄“ ?뺤씤.
+
+## ?덈룄???ㅼ튂 ?뚯씪 諛섏쁺 (2026-05-19)
+- ?붿껌 紐⑺몴??吏곸쟾 ?숈깮??濡쒓렇???대쫫 ?먮룞 諛섏쁺怨?媛쒕퀎 ?숈뒿 ?좏깮 湲곕뒫??Windows ?ㅼ튂 ?뚯씪?먮룄 ?ы븿?쒗궎??寃껋씠??
+- ?꾩옱 Windows ?ㅼ튂 ?뚯씪? `app/package.json`??`installer:win` ?ㅽ겕由쏀듃媛 `dist/**/*`, `electron/**/*`, `package.json`??Electron Builder NSIS ?⑦궎吏濡?臾띠뼱 `app/release`???앹꽦?섎뒗 援ъ“??
+- 湲곗〈 ?ㅼ튂 ?곗텧臾쇱? `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe`, `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe.blockmap`, `app/release/win-unpacked`濡??뺤씤?먮떎.
+- 諛섏쁺 ?꾨즺: `npm run installer:win` ?듦낵. ???ㅼ튂 ?뚯씪? `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe`?대ŉ ?ш린??`102752917` bytes, ?섏젙 ?쒓컖? `2026-05-19 ?ㅼ쟾 1:38:15`??
+- 寃利??꾨즺: `app/release/win-unpacked/resources/app.asar` ?덉뿉 理쒖떊 踰덈뱾 `dist/assets/index-TKy7bg9g.css`, `dist/assets/index-DHvkym_Z.js`, `dist/index.html`, `electron/main.cjs`媛 ?ы븿?섏뼱 ?덈떎.
+- 湲곕뒫 ?ы븿 ?뺤씤: `app.asar` ?대? CSS/JS?먯꽌 `student-study-selector`, `input[readonly]`, `learner-name` 臾몄옄?댁쓣 ?뺤씤???숈깮??媛쒕퀎 ?숈뒿 ?좏깮 UI? ?숈뒿???대쫫 ?먮룞 諛섏쁺 寃쎈줈媛 ?ㅼ튂 ?⑦궎吏?먮룄 ?ㅼ뼱媛?寃껋쓣 寃利앺뻽??
+- SHA256: ?ㅼ튂 EXE `DA4106F93451BBE64C8984DE050AF0D39C7FBFB2B23BE04F1F2D31DFEAACAC0D`, blockmap `F13341BD655B329819CDA885AD9BB3806917DEE4E5955659DE4BCB7B8DCFC0C4`, app.asar `E3409C0F8F2F8C9DD54FFD6C68E56550776A85F52447190A65A1E9A21C00213D`.
+- 李멸퀬: Electron Builder 異쒕젰?먯꽌 蹂꾨룄 ???꾩씠肄??뚯씪???놁뼱 湲곕낯 Electron ?꾩씠肄섏씠 ?ъ슜?쒕떎??寃쎄퀬媛 ?덉뿀?쇰굹, NSIS ?ㅼ튂 ?뚯씪 ?앹꽦? ?뺤긽 ?꾨즺?먮떎.
+
+## 援먯궗??濡쒓렇???숈뒿 吏꾪뻾 ?덉슜 (2026-05-19)
+- ?붿껌 紐⑺몴??援먯궗??怨꾩젙?쇰줈 濡쒓렇?명븳 ?곹깭?먯꽌???ㅻ뒛 ?숈뒿, ?좏깮 ?⑥썝, ?좏깮 紐⑹감, ?꾩껜 ?숈뒿 ??紐⑤뱺 ?숈뒿 ?쒖옉 踰꾪듉??諛붾줈 吏꾪뻾?????덇쾶 ?섎뒗 寃껋씠??
+- ?먯씤? `App.tsx`??怨듯넻 `start()` ?⑥닔媛 ?숈깮??濡쒓렇?몃쭔 ?숈뒿 ?쒖옉 沅뚰븳?쇰줈 ?몄젙?? 援먯궗??濡쒓렇???곹깭?먯꽌???숈깮??濡쒓렇???붾㈃?쇰줈 ?섎룎由щ뒗 議곌굔?댁뿀??
+- ?숈뒿 湲곕줉 ???援ъ“? ?숈깮 怨꾩젙 ?먮룞 ?곸슜 濡쒖쭅? 嫄대뱶由ъ? ?딅뒗?? 援먯궗媛 ?숈뒿???쒖옉?섎㈃ ?꾩옱 ?좏깮???숈뒿???꾨줈?꾧낵 ?쒖꽦 ?대옒??湲곗??쇰줈 湲곗〈 湲곕줉 ???寃쎈줈瑜?洹몃?濡??ъ슜?쒕떎.
+- 援ы쁽 諛⑺뼢? 怨듯넻 沅뚰븳媛?`canStartLearning`???먭퀬 ?숈깮??濡쒓렇???먮뒗 援먯궗??濡쒓렇??以??섎굹媛 ?덉쑝硫?`start()`媛 ?숈뒿 ?붾㈃?쇰줈 吏꾩엯?섎룄濡??섎뒗 寃껋씠??
+- 誘몃줈洹몄씤 ?곹깭???덈궡 臾멸뎄???숈깮???먮뒗 援먯궗???꾩씠?붾줈 濡쒓렇?명븯?쇰뒗 臾멸뎄濡?留욎톬??
+- `npm run onefile` 泥??ㅽ뻾? `app/index.html`???댁쟾 鍮뚮뱶 ?곗텧臾?`./assets/index-DHvkym_Z.js`瑜?吏곸젒 李몄“?섍퀬 ?덉뼱 ?ㅽ뙣?덈떎. ?먮낯 Vite ?뷀듃由ъ씤 `/src/main.tsx` ?ㅽ겕由쏀듃濡?蹂듦뎄?????ш?利앺뻽??
+- 寃利앹? `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` ?쒖꽌濡??듦낵?덈떎. ?ㅻえ??寃곌낵??援먯궗 怨꾩젙 1媛? ?숈깮 怨꾩젙 1媛? ???湲곕줉 1媛? `learnerName` `?먭? ?숈깮 mpbg8fth`濡??뺤씤?먮떎.
+- ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?덇퀬, ???뚯씪 SHA256? `1146D9FE00EBC750D1D4AE61FA8AD2C2914ED6AF8802F75A2BE11673CA15E77E`濡??쇱튂?쒕떎.
+- 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾? `codex-math-mobile-v60`?쇰줈 ?щ졇??
+
+## 援먯궗??濡쒓렇???숈뒿 吏꾪뻾 ?덉슜 ?ㅼ튂 ?뚯씪 諛섏쁺 (2026-05-19)
+- ?붿껌 紐⑺몴??援먯궗??濡쒓렇?몄쑝濡?紐⑤뱺 ?숈뒿 ?댁슜??吏꾪뻾?????덇쾶 ??理쒖떊 ??肄붾뱶瑜?Windows ?ㅼ튂 ?뚯씪?먮룄 ?ы븿?섎뒗 寃껋씠??
+- 湲곗〈 ?ㅼ튂 ?뚯씪? `app/package.json`??`installer:win` ?ㅽ겕由쏀듃媛 `dist/**/*`, `electron/**/*`, `package.json`??Electron Builder NSIS ?⑦궎吏濡?臾띠뼱 `app/release`???앹꽦?섎뒗 援ъ“??
+- 諛섏쁺 ?꾨즺: `npm run installer:win` ?듦낵. ???ㅼ튂 ?뚯씪? `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe`?대ŉ ?ш린??`102752984` bytes, ?섏젙 ?쒓컖? `2026-05-19 ?ㅼ쟾 2:02:33`?대떎.
+- ??blockmap? `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe.blockmap`?대ŉ ?ш린??`106541` bytes, ?섏젙 ?쒓컖? `2026-05-19 ?ㅼ쟾 2:02:35`?대떎.
+- 寃利??꾨즺: `app/release/win-unpacked/resources/app.asar` ?대? 紐⑸줉??`\dist\index.html`, `\dist\assets\index-B1eUpA_g.js`, `\dist\assets\index-TKy7bg9g.css`, `\electron\main.cjs`媛 ?ы븿?섏뼱 ?덈떎.
+- 湲곕뒫 ?ы븿 ?뺤씤: `app.asar`瑜??꾩떆 ?대뜑??????뺤씤??寃곌낵 `dist/index.html`? `index-B1eUpA_g.js`? `index-TKy7bg9g.css`瑜?李몄“?섍퀬, 踰덈뱾 JS?먮뒗 ?숈뒿 ?쒖옉 沅뚰븳 議곌굔??`Ge=Re||Le`濡??ㅼ뼱媛 ?숈깮 濡쒓렇???먮뒗 援먯궗??濡쒓렇?몄쓣 ?덉슜?쒕떎.
+- SHA256: ?ㅼ튂 EXE `C26953D881C20C8656E667C80B9399C3F3B41EE530FEC764E139C4D158491EB9`, blockmap `0F7C7932D3FB9B2EA15BD7D6723ABAB50881D02CE038D56C807691844EAF5EFF`, app.asar `360F6C5CED9B444F92C805800DF75C8DD3AD9B2AA2D1D094E83B2FDB3EF2B7F3`.
+- 李멸퀬: Electron Builder 異쒕젰?먯꽌 蹂꾨룄 ???꾩씠肄??뚯씪???놁뼱 湲곕낯 Electron ?꾩씠肄섏씠 ?ъ슜?쒕떎??寃쎄퀬? ??踰덈뱾 ?ш린 寃쎄퀬媛 ?덉뿀?쇰굹, NSIS ?ㅼ튂 ?뚯씪 ?앹꽦怨??대? 踰덈뱾 寃利앹? ?뺤긽 ?꾨즺?먮떎.
+
+## 援먯궗??怨꾩젙 ?꾩껜 ?숈뒿 ?곗씠???묎렐 蹂닿컯 (2026-05-19)
+- ?붿껌 紐⑺몴??援먯궗???꾩씠?붾줈留?濡쒓렇?명븳 ?곹깭?먯꽌??紐⑤뱺 ?숈깮???숈뒿 ?곗씠?곗뿉 ?묎렐?섍퀬, 紐⑤뱺 ?숈뒿 肄섑뀗痢좊? 諛붾줈 ?ㅽ뻾?????덇쾶 ?섎뒗 寃껋씠??
+- ?꾩옱 ?숈뒿 ?쒖옉 沅뚰븳? ?대? 援먯궗??濡쒓렇?몄쓣 ?덉슜?섏?留? 理쒓렐 ?숈뒿 湲곕줉怨??꾩껜 ?먯떆 ?곗씠???ㅻ깄?룹? 愿由ъ옄 濡쒓렇?몄씪 ?뚮쭔 媛깆떊?섏뼱 援먯궗???⑤룆 濡쒓렇???곹깭?먯꽌???곗씠???묎렐??鍮꾩뼱 蹂댁씪 ???덈떎.
+- 援ы쁽 湲곗?? 愿由ъ옄 Google 怨꾩젙 沅뚰븳??援먯궗??怨꾩젙???섍린??寃껋씠 ?꾨땲?? 援먯궗??怨꾩젙???숈깮쨌?대옒?ㅒ룻븰??湲곕줉 議고쉶???ㅻ깄?룰낵 ?꾩껜 吏꾨룄 ?ㅻ깄?룹쓣 ?쎄쾶 ?섎뒗 寃껋씠??
+- 寃利?湲곗?? ?ㅻえ???뚯뒪?몄뿉???숈깮 ???湲곕줉 ?앹꽦 ???숈깮怨?愿由ъ옄瑜?紐⑤몢 濡쒓렇?꾩썐?섍퀬, 援먯궗???꾩씠?붾쭔 濡쒓렇?명븳 ?곹깭濡??숈깮蹂?吏꾨룄, 理쒓렐 ?숈뒿 ?곗씠?? ?좏깮 ?숈뒿 ?쒖옉???뺤씤?섎뒗 寃껋씠??
+- 援ы쁽 ?꾨즺: `canViewAllStudentLearningData` 沅뚰븳媛믪쓣 異붽???援먯궗???먮뒗 愿由ъ옄 濡쒓렇???곹깭?먯꽌 ?꾩껜 ?숈깮 吏꾨룄? ?숈뒿 湲곕줉 ?ㅻ깄?룹쓣 媛깆떊?섎룄濡??덈떎.
+- 援ы쁽 ?꾨즺: ?섎떒 ?숈뒿??紐⑤땲?곕쭅 ?⑤꼸??`理쒓렐 ?숈뒿 ?곗씠?? ?쒕? 異붽???援먯궗??濡쒓렇?몃쭔?쇰줈???숈깮紐? ?대옒?? ?⑥썝, ?뺤삤?? ?쇱떆瑜?諛붾줈 蹂????덇쾶 ?덈떎.
+- ?ㅻえ???뚯뒪??蹂닿컯: ?숈깮 ???湲곕줉 ?앹꽦 ???숈깮?? 愿由ъ옄, 援먯궗???몄뀡??紐⑤몢 濡쒓렇?꾩썐?섍퀬 援먯궗???꾩씠?붾줈 ?ㅼ떆 濡쒓렇?명빐 `援먯궗???꾩껜`, `理쒓렐 ?숈뒿 ?곗씠??, ?숈깮紐? ?대옒?ㅻ챸, ?좏깮 ?숈뒿 ?쒖옉??寃利앺븯?꾨줉 ?덈떎.
+- 寃利??꾨즺: `npm run lint`, `npm run verify`, `npm run smoke:learning-db`, `npm run onefile` ?듦낵. ?ㅻえ??寃곌낵??援먯궗 怨꾩젙 1媛? ?숈깮 怨꾩젙 1媛? ???湲곕줉 1媛? `learnerName` `?먭? ?숈깮 mpbocxyb`, `className` `?먭? 6?숇뀈諛?mpbocxyb`濡??뺤씤?먮떎.
+- ?곗텧臾?諛섏쁺: ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?덇퀬, ???뚯씪 SHA256? `4102940375CF59B87798AFE5CA10FFAABB0D1F78BAC6631CED8190DD9CE60A1F`濡??쇱튂?쒕떎.
+- 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾? `codex-math-mobile-v61`濡??щ졇??
+- Cloudflare Pages 諛고룷: `npm run pages:deploy` ?듦낵, ??諛고룷 URL? `https://c4c31db9.prunet-math-ebook.pages.dev`?대떎. ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`??HTTP 200, HTML 罹먯떆 `public, max-age=0, must-revalidate`, asset 罹먯떆 `public, max-age=31536000, immutable`濡??뺤씤?덈떎.
+- ?댁쁺 HTML? ??踰덈뱾 `index-B_W3Bx7I.js`? `index-TKy7bg9g.css`瑜?李몄“?섍퀬, ?댁쁺 JS 踰덈뱾?먯꽌 `teacher-recent-attempts` ?대옒?ㅺ? ?ы븿??寃껋쓣 ?뺤씤?덈떎.
+
+## 援먯궗???꾩껜 ?숈뒿 ?곗씠???묎렐 蹂닿컯 ?ㅼ튂 ?뚯씪 諛섏쁺 (2026-05-19)
+- ?붿껌 紐⑺몴??Cloudflare Pages??諛고룷??援먯궗???꾩껜 ?숈뒿 ?곗씠???묎렐 蹂닿컯 踰꾩쟾??Windows ?ㅼ튂 ?뚯씪?먮룄 ?ы븿?섎뒗 寃껋씠??
+- 諛섏쁺 ?꾨즺: `npm run installer:win` ?듦낵. ???ㅼ튂 ?뚯씪? `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe`?대ŉ ?ш린??`102752929` bytes, ?섏젙 ?쒓컖? `2026-05-19 05:52:18`?대떎.
+- ??blockmap? `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe.blockmap`?대ŉ ?ш린??`106603` bytes, ?섏젙 ?쒓컖? `2026-05-19 05:52:20`?대떎.
+- `app/release/win-unpacked/resources/app.asar`???ш린 `12884347` bytes, ?섏젙 ?쒓컖 `2026-05-19 05:51:50`濡?媛깆떊?먮떎.
+- `app/release.zip`? 理쒖떊 `app/release` ?대뜑 湲곗??쇰줈 ?ㅼ떆 ?뺤텞?덇퀬 ?ш린??`250432830` bytes, ?섏젙 ?쒓컖? `2026-05-19 05:53:57`?대떎. ZIP ?대???`?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe`? `win-unpacked\resources\app.asar`媛 ?ы븿??寃껋쓣 ?뺤씤?덈떎.
+- 湲곕뒫 ?ы븿 ?뺤씤: `app/dist/assets/index-B_W3Bx7I.js`? `app/release/win-unpacked/resources/app.asar`?먯꽌 `teacher-recent-attempts` 臾몄옄?댁쓣 ?뺤씤?덇퀬, `app.asar` ?덉뿉??`index-B_W3Bx7I.js` 李몄“???뺤씤?덈떎.
+- SHA256: ?ㅼ튂 EXE `E7891AEA9711945D997D3CE116BD3BDED629E1CD423C3B7A5A89F56A309C2323`, blockmap `F85864508AE616E11CAC4B52E41482F088B873CD3FEE774093CB67F7245AA082`, app.asar `43452470FAD45A36705C8BE39D715F7DACB69A512E2B65875BAC771FE199B881`, release.zip `B0708CA6DDED9224BA0F977B90A56794E76D164DF9CFD3574C30D5F2AFA8F4AC`.
+- 李멸퀬: Electron Builder 異쒕젰?먯꽌 蹂꾨룄 ???꾩씠肄섏씠 ?놁뼱 湲곕낯 Electron ?꾩씠肄섏씠 ?ъ슜?쒕떎??湲곗〈 寃쎄퀬? ??踰덈뱾 ?ш린 寃쎄퀬媛 ?덉뿀吏留? ?ㅼ튂 ?뚯씪 ?앹꽦怨??대? 踰덈뱾 寃利앹? ?뺤긽 ?꾨즺?먮떎.
+
+## 愿由ъ옄 怨꾩젙蹂??숈뒿 ?곗씠???묎렐 沅뚰븳怨?蹂댁븞 蹂닿컯 (2026-05-19)
+- ?붿껌 紐⑺몴??愿由ъ옄 紐⑤뱶?먯꽌 援먯궗? ?숈깮 怨꾩젙蹂꾨줈 濡쒓렇?? ?숈뒿 ?ㅽ뻾, ?숈깮 ?숈뒿 ?곗씠???묎렐 沅뚰븳???곕줈 ?쒗븳?섍퀬, 遺덈웾 ?ъ슜?먮? 李⑤떒?섎ŉ, 鍮꾨?踰덊샇 ?댄궧 ?꾪뿕??以꾩씠??寃껋씠??
+- ?꾩옱 怨꾩젙 ???援ъ“??鍮꾨?踰덊샇 ?됰Ц????ν븯吏 ?딄퀬 `passwordHash`瑜???ν븯吏留? 愿由ъ옄 怨꾩젙 ?곗씠???쒖? 諛깆뾽 JSON?먮뒗 ?댁떆媛 ?몄텧?????덉뼱 ??寃쎈줈瑜?李⑤떒?댁빞 ?쒕떎.
+- 釉뚮씪?곗? ?⑥씪 HTML/IndexedDB ?깆? ?쒕쾭 沅뚰븳 寃利앹쓣 ?泥댄븷 ???놁쑝誘濡? ?대쾲 蹂닿컯? 濡쒖뺄 ?깆쓽 ?ㅼ젣 UI쨌?ㅽ뻾 寃쎈줈 李⑤떒怨??댁떆 鍮꾨끂異? 諛깆뾽 誘쇨컧?뺣낫 ?쒖쇅瑜?湲곗??쇰줈 ?곸슜?쒕떎.
+- 寃利?湲곗?? 愿由ъ옄媛 援먯궗쨌?숈깮 沅뚰븳??諛붽씀硫?利됱떆 濡쒓렇?? ?숈뒿 ?쒖옉, ?꾩껜 ?숈뒿 ?곗씠??議고쉶媛 ?쒗븳?섎뒗吏 ?ㅻえ???뚯뒪?몃줈 ?뺤씤?섎뒗 寃껋씠??
+- 援ы쁽 ?꾨즺: 援먯궗쨌?숈깮 怨꾩젙??`access` 沅뚰븳 ?뺤콉??異붽??섍퀬 湲곗〈 怨꾩젙? ?뺤긽 沅뚰븳?쇰줈 ?먮룞 ?댁꽍?섎룄濡??덈떎. 沅뚰븳?먮뒗 濡쒓렇?? ?숈뒿 ?ㅽ뻾, ?숈깮 ?숈뒿 ?곗씠??議고쉶, ?대옒?ㅒ룻븰??愿由??덉슜媛믪씠 ?ㅼ뼱媛꾨떎.
+- 援ы쁽 ?꾨즺: 愿由ъ옄 紐⑤뱶 怨꾩젙 ?곗씠???곸뿭??`援먯궗쨌?숈깮 媛쒕퀎 ?쒗븳` 移대뱶瑜?異붽??덈떎. 愿由ъ옄??怨꾩젙蹂꾨줈 `?꾩껜 ?덉슜`, `?숈뒿 ?곗씠??李⑤떒`, `?숈뒿 李⑤떒`, `怨꾩젙 李⑤떒`??諛붾줈 ?곸슜?????덈떎.
+- 援ы쁽 ?꾨즺: 怨꾩젙 李⑤떒 ??濡쒓렇???④퀎?먯꽌 嫄곕??섍퀬, ?숈깮 怨꾩젙??濡쒓렇?몃맂 ?곹깭?먯꽌???숈깮 ?숈뒿 ?ㅽ뻾 沅뚰븳???곗꽑 ?곸슜??媛숈? 釉뚮씪?곗????⑥? 援먯궗???몄뀡?쇰줈 ?숈깮 李⑤떒???고쉶?섏? 紐삵븯寃??덈떎.
+- 援ы쁽 ?꾨즺: 援먯궗???숈뒿 ?곗씠??議고쉶 沅뚰븳??爰쇱쭊 寃쎌슦 ?꾩껜 ?숈뒿??吏꾨룄? 理쒓렐 ?숈뒿 ?곗씠???⑤꼸 ????쒗븳 ?덈궡瑜??쒖떆?쒕떎.
+- 蹂댁븞 蹂닿컯: 愿由ъ옄 怨꾩젙 ?쒖뿉??鍮꾨?踰덊샇 ?댁떆瑜??쒖떆?섏? ?딄퀬 `?댁떆 鍮꾨끂異? ?곹깭留??쒖떆?쒕떎. 愿由ъ옄 諛깆뾽 JSON?먯꽌??`passwordHash`瑜??쒓굅?섍퀬 `password-hash-redacted` ?쒖떆? ?묎렐 沅뚰븳留??④릿??
+- ?ㅻえ???뚯뒪??蹂닿컯: 愿由ъ옄 沅뚰븳 移대뱶媛 蹂댁씠?붿?, ?댁떆 鍮꾨끂異?臾멸뎄媛 蹂댁씠?붿?, ?숈깮 ?숈뒿 李⑤떒, 援먯궗 ?곗씠??李⑤떒, 援먯궗 怨꾩젙 李⑤떒, ?ы뿀????援먯궗 濡쒓렇?멸낵 ?숈뒿 ?쒖옉??紐⑤몢 ?숈옉?섎뒗吏 ?뺤씤?섎룄濡??덈떎.
+- 寃利??꾨즺: `npm run lint`, `npm run verify`, `npm run smoke:learning-db`, `npm run onefile` ?듦낵. ?ㅻえ??寃곌낵??援먯궗 怨꾩젙 1媛? ?숈깮 怨꾩젙 1媛? ???湲곕줉 1媛? `learnerName` `?먭? ?숈깮 mpbpbpy8`, `className` `?먭? 6?숇뀈諛?mpbpbpy8`濡??뺤씤?먮떎.
+- ?곗텧臾?諛섏쁺: ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?덇퀬, ???뚯씪 SHA256? `A3F3BAF6710560727102D5CCF930ED54913951510D65D88E8DF64717D79C154F`濡??쇱튂?쒕떎.
+- 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾? `codex-math-mobile-v62`濡??щ졇??
+- Cloudflare Pages 諛고룷 ?꾨즺: `npm run pages:deploy` ?듦낵, ??諛고룷 URL? `https://26381ad3.prunet-math-ebook.pages.dev`?대떎. ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`??HTTP 200?닿퀬 ?댁쁺 JS `assets/index-Cpbcef99.js`?먯꽌 `account-access-card`, `password-hash-redacted` 臾몄옄?댁씠 ?뺤씤?먮떎.
+- ?ㅼ튂 ?뚯씪 諛섏쁺 ?꾨즺: `npm run installer:win` ?듦낵. ???ㅼ튂 ?뚯씪? `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe`, ?ш린 `102755607` bytes, ?섏젙 ?쒓컖 `2026-05-19 06:17:55`, SHA256 `F5AF7F871ECDA229DC5C9D6BF8F12AAC740890D3CFDCF794D8EF5C3BABC77D69`?대떎.
+- ?ㅼ튂 ?곗텧臾?寃利? blockmap SHA256 `6FDBB111220C7545E7E1F70C342DD268A81410A428E6DD3BC88C28AA472D6322`, `app.asar` SHA256 `FCBB622C42888B3A496CD1F4709DD35C2848AB48A7E0E5B136DA74376699275E`, `release.zip` SHA256 `9E5D5D0801D8BFD7DD268CE2118C0C654C41246D237AE67FB24249570080A6F0`?대떎.
+- 李멸퀬: Electron Builder 異쒕젰?먯꽌 蹂꾨룄 ???꾩씠肄섏씠 ?놁뼱 湲곕낯 Electron ?꾩씠肄섏씠 ?ъ슜?쒕떎??湲곗〈 寃쎄퀬? Vite 踰덈뱾 ?ш린 寃쎄퀬媛 ?덉뿀吏留? ?ㅼ튂 ?뚯씪 ?앹꽦怨?諛고룷???뺤긽 ?꾨즺?먮떎.
+
+## 愿由ъ옄 Google ?뱀씤 ?ㅻ쪟 濡쒖뺄 蹂듦뎄 濡쒓렇??(2026-05-19)
+- 利앹긽? Google 怨꾩젙 濡쒓렇???앹뾽?먯꽌 `?≪꽭??李⑤떒?? ?뱀씤 ?ㅻ쪟`, `no registered origin`, `401 ?ㅻ쪟: invalid_client`媛 ?쒖떆?섎뒗 寃껋씠??
+- ?먯씤? ?깆쓽 ?대? 愿由ъ옄 沅뚰븳 肄붾뱶媛 ?꾨땲??Google Cloud OAuth Web Client???꾩옱 ?ㅽ뻾 二쇱냼媛 ?뱀씤??JavaScript Origin?쇰줈 ?깅줉?섏? ?딆븯嫄곕굹, ???대씪?댁뼵??ID媛 ?꾨땶 媛믪쓣 ?ｌ? 寃쎌슦??
+- Cloudflare ?댁쁺 二쇱냼??Google Cloud Console?먯꽌 `https://prunet-math-ebook.pages.dev`瑜??뱀씤??Origin???깅줉?댁빞 ?쒕떎. 媛쒕컻 二쇱냼??`http://127.0.0.1:4174`? ?꾩슂??寃쎌슦 `http://localhost:4174`瑜??깅줉?쒕떎.
+- Windows ?ㅼ튂 ?뚯씪?대굹 ?⑥씪 HTML泥섎읆 `file://`濡??ㅽ뻾?섎뒗 ?섍꼍? Google Identity Services媛 Origin ?뱀씤???덉젙?곸쑝濡??듦낵?섍린 ?대졄湲??뚮Ц?? ???덉뿉 濡쒖뺄 愿由ъ옄 PIN 蹂듦뎄 濡쒓렇?몄쓣 異붽??섎뒗 諛⑺뼢?쇰줈 蹂닿컯?쒕떎.
+- 濡쒖뺄 愿由ъ옄 PIN? ?됰Ц ????놁씠 湲곗〈 怨꾩젙 ?댁떆 ???寃쎈줈瑜??ъ슜?섍퀬, 愿由ъ옄 諛깆뾽?먯꽌???댁떆瑜?怨꾩냽 ?쒖쇅?쒕떎.
+- 援ы쁽 ?꾨즺: 愿由ъ옄 濡쒓렇???붾㈃???뱀씤??JavaScript Origin ?덈궡? 濡쒖뺄 愿由ъ옄 PIN 濡쒓렇?맞룹????쇱쓣 異붽??덈떎. 湲곗〈 愿由ъ옄 怨꾩젙???대? ?덈뒗 湲곌린?먯꽌??臾대떒 PIN ?ъ꽕?뺤쓣 留됯린 ?꾪빐 愿由ъ옄 濡쒓렇???곹깭?먯꽌留?湲곗〈 愿由ъ옄 PIN 蹂寃쎌쓣 ?덉슜?쒕떎.
+- 蹂댁븞 蹂닿컯: 愿由ъ옄 PIN? `sha256-v1` ?댁떆濡???ν븯怨?諛깆뾽 JSON?먯꽌??`passwordHash`瑜??쒓굅????`local-admin-pin-redacted` ?먮뒗 `google-oauth-local-pin-redacted` ?곹깭留??④릿??
+- ?ㅻえ???뚯뒪??蹂닿컯: Google ?뚯뒪??濡쒓렇????濡쒖뺄 愿由ъ옄 PIN ??? 愿由ъ옄 濡쒓렇?꾩썐, 濡쒖뺄 PIN ?щ줈洹몄씤源뚯? ?뺤씤?쒕떎. ?대쾲 ?ㅽ뻾 寃곌낵 `SMOKE PASSED`, 愿由ъ옄/援먯궗/?숈깮 怨꾩젙 媛?1媛쒖? ???湲곕줉 1媛쒓? ?앹꽦?먮떎.
+- 寃利??꾨즺: `app` ?대뜑 湲곗? `npm run lint`, `npm run verify`, `npm run smoke:learning-db`, `npm run onefile` ?듦낵. 猷⑦듃?먯꽌 ?ㅽ뻾??`npm run lint`??猷⑦듃??`package.json`???놁뼱 `ENOENT`濡??ㅽ뙣?덇퀬, ?ㅼ젣 ???⑦궎吏 ?꾩튂??`app`?먯꽌 媛숈? 寃利앹쓣 ?꾨즺?덈떎.
+- ?곗텧臾?諛섏쁺: ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?덇퀬, 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆??`codex-math-mobile-v63`?쇰줈 ?щ졇??
+- Cloudflare Pages 諛고룷 ?꾨즺: `npm run pages:deploy` ?듦낵, ??諛고룷 URL? `https://1e40a8a0.prunet-math-ebook.pages.dev`?대떎. ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`? ??諛고룷 URL 紐⑤몢 HTTP 200???뺤씤?덈떎.
+- 諛고룷/?ㅼ튂 踰덈뱾 ?뺤씤: ?댁쁺 鍮뚮뱶 JS??`assets/index-DTJgLsRB.js`?닿퀬 `local-admin-login-form`, `local-admin-pin-redacted` 臾몄옄?댁씠 ?뺤씤?먮떎. `app.asar` ?대? `\dist\assets\index-DTJgLsRB.js`?먯꽌??媛숈? 臾몄옄?댁씠 ?뺤씤?먮떎.
+- ?ㅼ튂 ?뚯씪 諛섏쁺 ?꾨즺: `npm run installer:win` ?듦낵. ???ㅼ튂 ?뚯씪? `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe`, ?ш린 `102755334` bytes, ?섏젙 ?쒓컖 `2026-05-19 06:42:53`, SHA256 `5F30B3990FD4E33BDCEE644B44E12E0D66D2114DDECC8042C5A54E600E71130B`?대떎.
+- ?ㅼ튂 ?곗텧臾?寃利? blockmap SHA256 `AD3F9B542AB1589094F7524F2F8CE20677D51F90DCA92A31DAF7043DBC9B9DEA`, `app.asar` SHA256 `10AB36523EC7837ABB061F371DB1EDDEB4178820F04883E7742B444CC816DCAA`, `release.zip` SHA256 `391DF13F4B0FCF00DCBE93E92FBCCEC3100688AA085D314AE83AE8981FF00B54`?대떎.
+- 李멸퀬: Electron Builder 異쒕젰?먯꽌 ???꾩씠肄?誘몄꽕??fallback 寃쎄퀬? Vite 踰덈뱾 ?ш린 寃쎄퀬媛 ?덉뿀吏留? ?ㅼ튂 ?뚯씪 ?앹꽦怨?諛고룷???뺤긽 ?꾨즺?먮떎.
+
+## 愿由ъ옄 ?由??ъ슜怨??댁긽?됰룞 ?먮룞 李⑤떒 ?뚮┝ (2026-05-19)
+- ?낅줈?쒕맂 ??利앹긽? Google 濡쒓렇??以?Windows 蹂댁븞 ?⑥뒪???뺤씤 ?④퀎?먯꽌 `?????녿뒗 ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎`媛 ?⑤뒗 寃껋씠?? ???④퀎??Google/Windows ?몄쬆 UI????肄붾뱶媛 吏곸젒 ?쒖뼱?????놁쑝誘濡? ???대??먯꽌??濡쒖뺄 愿由ъ옄 PIN怨?援먯궗쨌?숈깮 怨꾩젙 ?由??ъ슜 寃쎈줈瑜???媛뺥솕?쒕떎.
+- 紐⑺몴??愿由ъ옄 紐⑤뱶?먯꽌 援먯궗쨌?숈깮 怨꾩젙??紐낆떆?곸쑝濡??由??ъ슜???숈뒿 ?곗씠?곗? ?숈뒿 ?붾㈃???묎렐?????덇쾶 ?섍퀬, 諛섎났 ?ㅽ뙣 濡쒓렇?몄씠???숈깮??鍮꾩젙??鍮좊Ⅸ ?곗냽 ?ㅻ떟 媛숈? ?낆꽦 ?ъ슜 吏뺥썑瑜??먮룞 媛먯떆??沅뚰븳???쒗븳?섎뒗 寃껋씠??
+- ?뺤쟻 Cloudflare Pages? Windows ?⑥씪 ??援ъ“?먯꽌???쒕쾭 鍮꾨??ㅻ? 蹂닿????대찓?셋룹뭅移댁삤?≪쓣 ?먮룞 諛쒖넚?????놁쑝誘濡? ?대쾲 援ы쁽? 愿由ъ옄 ?붾㈃???ㅼ떆媛??뚮┝?? ?대찓??`mailto:` ?묒꽦, 移댁뭅?ㅽ넚 硫붿떆吏 蹂듭궗???뚮┝ 臾멸뎄瑜??쒓났?섎뒗 諛⑹떇?쇰줈 ?곸슜?쒕떎.
+- 寃利?湲곗?? 愿由ъ옄 ?由??ъ슜 踰꾪듉?쇰줈 援먯궗/?숈깮 怨꾩젙 ?몄뀡???대━怨? ?먮룞 媛먯떆 湲곗? 珥덇낵 ???대떦 怨꾩젙 沅뚰븳???쒗븳?섎ŉ, 愿由ъ옄 ?뚮┝?⑥뿉???대찓?셋룹뭅移댁삤???덈궡 臾멸뎄媛 ?뺤씤?섎뒗吏 ?ㅻえ???뚯뒪?몃줈 ?뺤씤?섎뒗 寃껋씠??
+- 援ы쁽 寃곌낵: 愿由ъ옄 怨꾩젙 愿由?移대뱶??`愿由ъ옄 ?由??ъ슜` 踰꾪듉??異붽??덇퀬, 援먯궗쨌?숈깮 怨꾩젙???숈뒿 ?곗씠???묎렐 沅뚰븳??愿由ъ옄 紐⑤뱶?먯꽌 媛쒕퀎?곸쑝濡?耳쒓퀬 ?????덇쾶 ?좎??덈떎. ?由??ъ슜? 鍮꾨?踰덊샇 ?낅젰 ?놁씠 愿由ъ옄 沅뚰븳?쇰줈 ?대떦 援먯궗/?숈깮 ?몄뀡???쒖꽦?뷀븳??
+- 蹂댁븞 媛먯떆 寃곌낵: 援먯궗/?숈깮 濡쒓렇???ㅽ뙣媛 10遺??덉뿉 5???댁긽 諛섎났?섎㈃ 濡쒓렇?맞룻븰?돠룸뜲?댄꽣 ?대엺 沅뚰븳???먮룞 ?쒗븳?쒕떎. ?숈깮??3遺??덉뿉 鍮좊Ⅸ ?곗냽 ?ㅻ떟 6???댁긽??湲곕줉?섎㈃ ?숈뒿怨??곗씠???대엺 沅뚰븳???먮룞 ?쒗븳?쒕떎.
+- ?뚮┝ 寃곌낵: 愿由ъ옄 ?붾㈃???먮룞 ?쒗븳 ?뚮┝?⑥쓣 異붽??덇퀬, 媛??뚮┝?먯꽌 ?대찓???묒꽦 李??닿린, 移댁뭅?ㅽ넚 ?꾨떖 臾멸뎄 蹂듭궗, ?뺤씤 泥섎━ 踰꾪듉???쒓났?쒕떎.
+- 寃利?寃곌낵: `npm run lint`, `npm run verify`, `npm run smoke:learning-db`, `npm run onefile` ?듦낵. ?ㅻえ???뚯뒪?몃뒗 愿由ъ옄 ?由??ъ슜, 諛섎났 ?ㅽ뙣 濡쒓렇???먮룞 ?쒗븳, 愿由ъ옄 ?뚮┝?? 移댁뭅?ㅽ넚 臾멸뎄 蹂듭궗瑜??ы븿?쒕떎.
+- 諛고룷 寃곌낵: Cloudflare Pages ??諛고룷 `https://98c9a8a2.prunet-math-ebook.pages.dev` ?꾨즺, `https://prunet-math-ebook.pages.dev` HTTP 200 ?뺤씤. Windows ?ㅼ튂 ?뚯씪怨?`release.zip`????鍮뚮뱶濡??ъ깮?깊뻽??
+- ?ㅼ튂 ?곗텧臾?寃利? `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe` SHA256 `F9AB73D5289CFB0AB3FC95D7F6895C2B502BA4D15FCE207E515B3886A171CC57`, `app/release.zip` SHA256 `21BE0A4B2EFB4DAF0D635D1C2A5383E3B3EDF1BFE335E11F506F574447580980`?대떎.
+## 愿由ъ옄 援먯궗쨌?숈깮 ?꾩씠???ъ슜 ?뱀씤 UI (2026-05-19)
+- ?붿껌 紐⑺몴??愿由ъ옄 怨꾩젙?쇰줈 濡쒓렇?명뻽?????깅줉??援먯궗???꾩씠?붿? ?숈깮???꾩씠?붿쓽 ?ъ슜 ?뱀씤???붾㈃ ?곷떒?먯꽌 諛붾줈 泥섎━?섍쾶 ?섎뒗 寃껋씠??
+- 湲곗〈 `canLogin` 沅뚰븳??濡쒓렇???덉슜怨?李⑤떒???대? ?대떦?섎?濡? 蹂꾨룄 ??μ냼瑜?留뚮뱾吏 ?딄퀬 `blockedReason`???뱀씤 ?湲??곹깭瑜??쒖떆???뱀씤 ??濡쒓렇?몄쓣 留됰뒗 諛⑺뼢??媛???묎퀬 ?덉쟾?섎떎.
+- ?좉퇋 ?뚯썝媛??怨꾩젙? 怨㏓컮濡?濡쒓렇?몄떆?ㅼ? ?딄퀬 ?뱀씤 ?湲??곹깭濡???ν븳 ?? 愿由ъ옄媛 `?뱀씤 ?몄쬆`???꾨Ⅴ硫?湲곕낯 沅뚰븳?쇰줈 ?꾪솚?쒕떎.
+- 寃利?湲곗?? 媛?????뱀씤 ?湲?臾멸뎄, ?뱀씤 ??濡쒓렇??李⑤떒, 愿由ъ옄 ?뱀씤 ??援먯궗쨌?숈깮 濡쒓렇?몄씠 ?뺤긽 吏꾪뻾?섎뒗 釉뚮씪?곗? ?ㅻえ???먮쫫怨?湲곕낯 lint/verify/onefile ?듦낵??
+- 援ы쁽 寃곌낵: 愿由ъ옄 濡쒓렇???붾㈃ ?곷떒??`?ъ슜 ?뱀씤` 諛붾줈媛湲곗? `?ъ슜 ?뱀씤 愿由? ?⑤꼸??諛곗튂?덇퀬, ?뱀씤 ?湲걔룹듅???꾨즺쨌?깅줉 怨꾩젙 ?섎? ?④퍡 ?쒖떆?쒕떎.
+- 援ы쁽 寃곌낵: 援먯궗?㈑룻븰?앹슜 怨꾩젙 移대뱶留덈떎 `?뱀씤 ?몄쬆`怨?`?뱀씤 蹂대쪟` 踰꾪듉???쒓났???좉퇋 怨꾩젙 ?뱀씤怨??뱀씤 痍⑥냼瑜?媛숈? 沅뚰븳 ????먮쫫?쇰줈 泥섎━?쒕떎.
+- 援ы쁽 寃곌낵: ?뱀씤 ?湲?怨꾩젙? `approval-pending` 李⑤떒 ?ъ쑀濡???λ릺硫? 濡쒓렇????`愿由ъ옄 ?뱀씤 ??濡쒓렇?명븷 ???덉뒿?덈떎` ?덈궡瑜??쒖떆?쒕떎.
+- 寃利?寃곌낵: `npm run lint`, `npm run verify`, `npm run smoke:learning-db`, `npm run onefile` ?듦낵. ?ㅻえ???뚯뒪?몃뒗 援먯궗? ?숈깮 媛?????뱀씤 ??濡쒓렇??李⑤떒, 愿由ъ옄 ?뱀씤, ?뱀씤 ??濡쒓렇?몄쓣 ?뺤씤?쒕떎.
+- ?곗텧臾?諛섏쁺: ?앹꽦???⑥씪 HTML??`?몃Ⅴ?룹닔???곗뒿.html`怨?`紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?덇퀬, ??HTML SHA256? `DC456EC89D5F1BA805E0DAE1DCF06471F884697D22CB69399B7D7AC636BA1009`濡??쇱튂?쒕떎.
+- 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾? `codex-math-mobile-v65`濡??щ졇??
+
+## ?뱀씤 UI Cloudflare Pages? Windows ?ㅼ튂 ?뚯씪 諛섏쁺 (2026-05-19)
+- ?붿껌 紐⑺몴??愿由ъ옄 援먯궗쨌?숈깮 ?꾩씠???ъ슜 ?뱀씤 UI媛 諛섏쁺??理쒖떊 ?깆쓣 Cloudflare Pages ?댁쁺 ?쒕쾭? Windows ?ㅼ튂 ?뚯씪??諛섏쁺?섎뒗 寃껋씠??
+- 寃利?湲곗?? `npm run pages:deploy` 諛고룷 ?깃났, ?댁쁺 URL HTTP 200 ?뺤씤, `npm run installer:win` ?ㅼ튂 ?뚯씪 ?앹꽦 ?깃났, `app/release.zip` 理쒖떊?붿? ?곗텧臾?SHA256 湲곕줉?대떎.
+- Cloudflare Pages 寃곌낵: `npm run pages:deploy`??`npm run build`? Vite 鍮뚮뱶源뚯? ?깃났?덉?留?Wrangler媛 鍮꾨??뷀삎 ?섍꼍?먯꽌 `CLOUDFLARE_API_TOKEN`???녿떎怨?嫄곕????낅줈?쒓? ?꾨즺?섏? ?딆븯??
+- ?댁쁺 URL ?뺤씤: `https://prunet-math-ebook.pages.dev/`??HTTP 200?쇰줈 ?묐떟?섏?留??꾩옱 ?댁쁺 JS `assets/index-B_ESa1It.js`?먮뒗 `approval-pending`怨?`approval-management-panel` 臾몄옄?댁씠 ?놁뼱 理쒖떊 ?뱀씤 UI媛 ?꾩쭅 諛섏쁺?섏? ?딆븯??
+- Windows ?ㅼ튂 ?뚯씪 諛섏쁺 ?꾨즺: `npm run installer:win` ?듦낵. ???ㅼ튂 ?뚯씪? `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe`, ?ш린 `102757410` bytes, ?섏젙 ?쒓컖 `2026-05-19 15:06:42`, SHA256 `832F367823F48009E6808ABEEE65E6689E53827EFF3F525D93DD210E68EFA6F3`?대떎.
+- ?ㅼ튂 ?곗텧臾?寃利? blockmap SHA256 `39D063DFB34106A0FDA7839C946F2C4AB683B8947EFEE9094137935A5F0F7C07`, `app.asar` SHA256 `B9FCD85AE56363218E9A3B75813CD1E310F1532EA5BD7EFC8C9A8EB32EC65241`, `release.zip` SHA256 `D21303DF13BC66A0121F0C13BE3FCF9A086DFE5C9DC5541D5D4C85BE4F922BEA`?대떎.
+- 湲곕뒫 ?ы븿 ?뺤씤: `app/dist`? `app/release/win-unpacked/resources/app.asar`?먯꽌 `approval-management-panel`, `approval-pending`, `?뱀씤 ?몄쬆`, `?ъ슜 ?뱀씤 愿由? 臾몄옄?댁쓣 ?뺤씤?덈떎.
+- 李멸퀬: Electron Builder 異쒕젰?먯꽌 ???꾩씠肄?誘몄꽕??fallback 寃쎄퀬? Vite 踰덈뱾 ?ш린 寃쎄퀬媛 ?덉뿀吏留? Windows ?ㅼ튂 ?뚯씪 ?앹꽦? ?뺤긽 ?꾨즺?먮떎.
+- Cloudflare Pages 理쒖쥌 諛섏쁺: `npx wrangler login`?쇰줈 CLI OAuth 濡쒓렇?몄쓣 ?꾨즺????`npm run pages:deploy` ?ъ떎?됱뿉 ?깃났?덈떎. ??諛고룷 URL? `https://6fd8ba36.prunet-math-ebook.pages.dev`?대떎.
+- ?댁쁺 ?쒕쾭 理쒖쥌 ?뺤씤: `https://prunet-math-ebook.pages.dev/`? ??諛고룷 URL 紐⑤몢 HTTP 200?대ŉ, ?댁쁺 JS `assets/index-Btney19w.js`?먯꽌 `approval-pending`, `approval-management-panel`, `?뱀씤 ?몄쬆`, `?ъ슜 ?뱀씤 愿由?, `愿由ъ옄 ?뱀씤 ??濡쒓렇?? 臾몄옄?댁쓣 ?뺤씤?덈떎.
+
+## Cloudflare Pages ?댁쁺 URL ?좉퇋 ?곗씠??媛깆떊 (2026-05-19)
+- ?붿껌 紐⑺몴??`https://prunet-math-ebook.pages.dev/` ?댁쁺 URL???꾩옱 濡쒖뺄 理쒖떊 鍮뚮뱶 ?곗씠?곕줈 ?ㅼ떆 諛고룷?섎뒗 寃껋씠??
+- 寃利?湲곗?? `npm run pages:deploy` ?깃났, ??諛고룷 URL ?뺤씤, ?댁쁺 URL HTTP 200 ?뺤씤, ?댁쁺 JS??理쒖떊 ?뱀씤 UI 愿??臾몄옄?댁씠 ?⑥븘 ?덈뒗吏 ?뺤씤?섎뒗 寃껋씠??
+- 諛고룷 寃곌낵: `npm run pages:deploy` ?듦낵. Wrangler媛 `dist`瑜?諛고룷?덇퀬 ??諛고룷 URL? `https://c75a8a08.prunet-math-ebook.pages.dev`?대떎.
+- ?낅줈??寃곌낵: ?쒕쾭???숈씪 ?뚯씪???대? ?덉뼱 `Uploaded 0 files (4 already uploaded)`濡??쒖떆?먯?留?`_headers`? ??諛고룷???뺤긽 ?꾨즺?먮떎.
+- ?댁쁺 URL ?뺤씤: `https://prunet-math-ebook.pages.dev/`??HTTP 200?대ŉ `assets/index-Btney19w.js`? `assets/index-DRRYYWyb.css`瑜?李몄“?쒕떎.
+- 理쒖떊 諛섏쁺 ?뺤씤: ?댁쁺 JS? ??諛고룷 JS 紐⑤몢 HTTP 200?대ŉ `approval-pending`, `approval-management-panel` 臾몄옄?댁씠 ?뺤씤?먮떎.
+
+## ?щ씪吏?援먯궗쨌?숈깮 怨꾩젙 ?곗씠???뺤씤怨??뱀씤 蹂듦뎄 (2026-05-19)
+- ?붿껌 利앹긽? 湲곗〈 Cloudflare ?쒕쾭????λ릱?ㅺ퀬 ?앷컖??援먯궗???꾩씠?붿? ?숈깮???꾩씠?붽? ?댁쁺 URL?먯꽌 蹂댁씠吏 ?딅뒗 寃껋씠??
+- ?꾩옱 ??援ъ“??援먯궗쨌?숈깮 怨꾩젙? Cloudflare Pages ?쒕쾭 DB媛 ?꾨땲??媛?釉뚮씪?곗???IndexedDB `kang-taehoon-math-learner-db`????λ맂?? 諛고룷 URL??諛붾뚭굅???ㅻⅨ 釉뚮씪?곗?/?꾨줈?꾩뿉???대㈃ 湲곗〈 怨꾩젙???녿뒗 寃껋쿂??蹂댁씪 ???덈떎.
+- ?곗꽑 ?뺤씤 湲곗?? ?댁쁺 URL怨?理쒓렐 preview URL蹂?釉뚮씪?곗? IndexedDB ?대뜑瑜?李얠븘 怨꾩젙 ??μ냼媛 ?⑥븘 ?덈뒗吏 ?뺤씤?섍퀬, 諛쒓껄?섎㈃ ?뱀씤 ?곹깭濡?諛붽씀??蹂듦뎄 寃쎈줈瑜??뺥븯??寃껋씠??
+- Cloudflare?먮뒗 ???묒뾽 ??怨꾩젙??D1/KV ?쒕쾭 DB媛 ?놁뿀?쇰?濡??쒕쾭?먯꽌 湲곗〈 援먯궗쨌?숈깮 ?꾩씠?붾? 蹂듦뎄???먮낯? ?놁뿀??
+- ?뺤씤??Chrome Default ?댁쁺 URL IndexedDB?먮뒗 愿由ъ옄 怨꾩젙 1媛쒕쭔 ?덉뿀怨?teacherAccounts, studentAccounts, teachers, classes, students, attempts??0媛쒖???
+- 愿묐쾾?꾪븳 AppData 異붽? 寃?됱? ?ъ슜?먭? 以묐떒?덉쑝誘濡??ㅻⅨ 釉뚮씪?곗? ?꾨줈?꾩씠???ㅻⅨ PC???⑥븘 ?덈뒗 ?곗씠?곕뒗 ?꾩쭅 誘명솗???곹깭??
+
+## Cloudflare D1 ?쒕쾭 怨꾩젙쨌?숈뒿 ?곗씠??DB ?꾪솚 (2026-05-19)
+- ?붿껌 紐⑺몴??IndexedDB/localStorage?먮쭔 ??λ릺??援먯궗???꾩씠?? ?숈깮???꾩씠?? ?ъ슜???뱀씤 ?곹깭, 援먯궗쨌?숈뒿?먃룻븰???곗씠?곕? Cloudflare ?쒕쾭???ㅼ젣 DB濡???꺼 以묒븰 愿由щ릺寃??섎뒗 寃껋씠??
+- Cloudflare Pages ?뺤쟻 ?깆뿉 遺숈씠湲?媛???묒? ?쒕쾭 援ъ꽦? Pages Functions + D1?대떎. D1? 怨꾩젙쨌援먯궗쨌諛샕룻븰??媛숈? 愿怨꾪삎 ?곗씠?곗? ???湲곕줉 議고쉶 ?몃뜳?ㅻ? 留뚮뱾 ???덇퀬, Pages Functions?먯꽌 ?щ윭 row瑜?batch upsert?????덉뼱 ?꾩옱 ??援ъ“??諛붾줈 遺숈씠湲??쎈떎.
+- 濡쒓렇???몄뀡源뚯? ?쒕쾭????ν븯硫???湲곌린??濡쒓렇???곹깭媛 ?ㅻⅨ 湲곌린??蹂댁씠??臾몄젣媛 ?앷린誘濡? ?쒕쾭?먮뒗 怨꾩젙쨌?뱀씤쨌?숈뒿 ?곗씠?곕쭔 ??ν븯怨??꾩옱 濡쒓렇???몄뀡? 媛?湲곌린??濡쒖뺄 ?ㅼ젙???④릿??
+- 援ы쁽 湲곗?? 湲곗〈 `learnerDb` 怨듦컻 ?⑥닔 ?대쫫???좎??섍퀬, Cloudflare API媛 媛?ν븯硫?D1???곗꽑 ?쎄퀬 ?곕ŉ ?ㅽ뙣 ??湲곗〈 IndexedDB/localStorage濡?fallback?섎뒗 寃껋씠??
+- Cloudflare D1 DB `prunet_math_learning_db`瑜?APAC 由ъ쟾???앹꽦?덇퀬 DB id??`08743c63-9a74-4215-93a8-c5b01a3cec73`?대떎.
+- `app/migrations/0001_learning_cloud.sql` 留덉씠洹몃젅?댁뀡???먭꺽 D1???곸슜??teachers, classes, students, 愿由ъ옄쨌援먯궗쨌?숈깮 怨꾩젙, ???湲곕줉, 吏꾨룄 蹂댁젙, 蹂댁븞 ?뚮┝, ???ㅼ젙 ?뚯씠釉붽낵 議고쉶 ?몃뜳?ㅻ? 留뚮뱾?덈떎.
+- Pages Function API??`/api/learning/snapshot`?대ŉ GET? D1 ?꾩껜 ?ㅻ깄?룹쓣 ?쎄퀬 PUT? 媛숈? origin ?붿껌?먯꽌 ?ㅻ깄?룹쓣 batch upsert?쒕떎.
+- ?댁쁺 諛고룷??`npm run pages:deploy`濡??꾨즺?덇퀬 ??preview URL? `https://5a5cfe86.prunet-math-ebook.pages.dev`, ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`??`assets/index-CcCJFWxg.js`瑜?李몄“?쒕떎.
+- ?댁쁺 API `https://prunet-math-ebook.pages.dev/api/learning/snapshot`? HTTP 200?쇰줈 ?묐떟?덇퀬, ?꾩옱 D1 count??teachers/classes/students/admin_accounts/teacher_accounts/student_accounts/learning_attempts/student_progress_overrides/learning_security_alerts媛 0, app_settings媛 1?대떎.
+- ?댁쟾?먮뒗 Cloudflare ?쒕쾭 DB媛 ?놁뿀湲??뚮Ц???щ씪吏?援먯궗쨌?숈깮 怨꾩젙???쒕쾭?먯꽌 蹂듦뎄???먮낯? ?놁뿀?? ??援ъ“?먯꽌???댁쁺 HTTPS ?묒냽 ??D1???곗꽑 ?ъ슜?섍퀬 IndexedDB/localStorage??罹먯떆? ?ㅽ봽?쇱씤 fallback?쇰줈留??ъ슜?쒕떎.
+- 濡쒖뺄 Vite smoke?먯꽌??Pages Function???놁쑝誘濡?`canUseCloudLearningDb()`瑜?HTTPS?먯꽌留?D1???곕룄濡??쒗븳?덈떎. ?댁쁺 HTTPS?먯꽌??D1 API瑜??ъ슜?섍퀬 ?꾩슂 ??`VITE_DISABLE_CLOUD_LEARNING_DB=1`濡??????덈떎.
+- 寃利?寃곌낵??`npm run lint`, `npm run verify`, `npm run smoke:learning-db`, `npm run onefile` 紐⑤몢 ?듦낵?덈떎.
+- ?⑥씪 HTML ?곗텧臾쇱? `CODEX ?섑븰 ?듯옒遺??꾩옄遺?26.05.17)/CODEX-?섑븰-?듯옒遺??꾩옄遺?html`, `?몃Ⅴ?룹닔???곗뒿.html`, `紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html`??諛섏쁺?덇퀬 ???뚯씪 SHA256? `61653BA59D0FAD893E1F553B9C2C0014A6523A620CF018F29AB9DE88A7325C13`?쇰줈 ?쇱튂?쒕떎.
+- 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆 踰꾩쟾? `codex-math-mobile-v66`?쇰줈 ?щ졇??
+- Windows ?ㅼ튂 ?깆? `app/electron/main.cjs`?먯꽌 `https://prunet-math-ebook.pages.dev/`瑜?癒쇱? ?닿퀬 ?ㅽ뙣?섎㈃ ?댁옣 `dist/index.html`???щ뒗 諛⑹떇?쇰줈 諛붽엥?? ?ㅼ튂 ?깆씠 ?⑤씪?몄씪 ?뚮뒗 ?댁쁺 Pages origin?먯꽌 ?ㅽ뻾?섎?濡?D1 API??媛숈? origin?쇰줈 ?ъ슜?쒕떎.
+- `npm run installer:win` ?듦낵. ?ㅼ튂 ?뚯씪 `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe` SHA256? `D9F649A1E995D8665251CE453DF081DE080BAD2A6895863B84301E417F90B01A`, blockmap SHA256? `A21EC57FB48772CA626C6F78286CD40EEA232B97A3DE87FB76C88A8C3E01DA4A`, `app.asar` SHA256? `7E9D6BBCC04B277000DB788BFBB2AA682362E954ACCF6DCA3196A04F9CDFF2A1`, `app/release.zip` SHA256? `23B3FEBF7ECD4AFE7C88CF2807A425147CC0B553CC731E68E9C9B50ABD369DAD`?대떎.
+- `app.asar` ?대? `electron/main.cjs`?먯꽌 ?댁쁺 URL 臾몄옄?닿낵 fallback ?⑥닔媛 ?ы븿??寃껋쓣 ?뺤씤?덈떎.
+
+## Cloudflare D1 ?곗씠??蹂댄샇쨌蹂닿퀬?쑣룰탳?ъ슜 愿由?蹂닿컯 (2026-05-19)
+- ?붿껌 紐⑺몴??以묒슂??援먯궗쨌?숈깮쨌?숈뒿 ?곗씠?곕? 二쇨린?곸쑝濡??좏슚??寃?ы븯怨? ?숈뒿 蹂닿퀬?쑣룻븰??吏꾨떒?쑣룻븰遺紐??곷떞???곗씠?곕? 援먯궗蹂꽷룻븰?앸퀎濡??쒕쾭 DB???꾩쟻 湲곕줉?섎ŉ, ?꾩슂 ??二쇨린 諛깆뾽源뚯? ?섑뻾?섎뒗 寃껋씠??
+- Cloudflare 臾몄꽌 湲곗??쇰줈 Cron Trigger??Worker??`scheduled()` handler瑜??듯빐 二쇨린 ?묒뾽???ㅽ뻾?섎?濡?Pages Function API? 蹂꾨룄???좎?蹂댁닔 Worker瑜?媛숈? D1??諛붿씤?⑺븯??諛⑺뼢??留욌떎.
+- Cloudflare D1? ?꾩옱 `wrangler d1 export`? Time Travel/諛깆뾽 湲곕뒫???쒓났?섎?濡? 諛고룷 ?꾩뿉???먭꺽 DB export瑜?留뚮뱾怨????대??먯꽌???ㅻ깄??諛깆뾽 row瑜??④린???댁쨷 蹂댄샇媛 ?곹빀?섎떎.
+- DB 蹂댄샇 湲곗?? 湲곗〈 ?뚯씠釉붿쓣 drop/delete?섏? ?딅뒗 additive migration, `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, upsert留??ъ슜, 諛고룷 ??export 諛깆뾽 ?ㅽ겕由쏀듃 ?좎???
+- Windows ?ㅼ튂 ?깆? ?대? ?댁쁺 URL ?곗꽑 濡쒕뱶濡?諛붽엥?쇰?濡??⑤씪???ㅼ튂 紐⑤뱶??Cloudflare Pages origin?먯꽌 ?ㅽ뻾?섏뼱 D1 ?쒕쾭 DB? 媛숈? 諛⑹떇?쇰줈 ?숆린?붾맂?? ?대쾲 蹂닿컯?먯꽌???쒕쾭 ?좎?蹂댁닔 API? 援먯궗??UI瑜?異붽? 諛섏쁺?쒕떎.
+- 援ы쁽 ?꾨즺: `0002_learning_maintenance.sql`濡?`learning_data_validations`, `learning_periodic_reports`, `learning_db_backups`, `student_progress_map_settings` ?뚯씠釉붽낵 ?몃뜳?ㅻ? 異붽??덈떎. 湲곗〈 ?뚯씠釉???젣 ?놁씠 `CREATE TABLE IF NOT EXISTS`? `CREATE INDEX IF NOT EXISTS`留??ъ슜?덈떎.
+- 援ы쁽 ?꾨즺: `functions/_learningMaintenance.ts`, `functions/api/learning/maintenance.ts`, `workers/maintenance.ts`, `wrangler.maintenance.toml`??異붽??덈떎. Pages Function? ?섎룞 ?ㅽ뻾怨??곹깭 議고쉶瑜??쒓났?섍퀬, Worker `prunet-math-maintenance`??`17 * * * *`, `0 18 * * *` UTC Cron?쇰줈 ?댁쁺 D1 ?좎?蹂댁닔瑜??ㅽ뻾?쒕떎.
+- 援ы쁽 ?꾨즺: `scripts/backup-d1.mjs`? `db:backup`, `db:migrate:remote`, `maintenance:deploy` ?ㅽ겕由쏀듃瑜?異붽??덈떎. ?먭꺽 留덉씠洹몃젅?댁뀡 ??`wrangler d1 export prunet_math_learning_db --remote`濡?SQL 諛깆뾽??癒쇱? 留뚮뱾?꾨줉 諛붽엥??
+- ?먭꺽 DB ?곸슜 ?꾨즺: `npm run db:migrate:remote`媛 諛깆뾽 ??`0001_learning_cloud.sql`, `0002_learning_maintenance.sql`???댁쁺 D1 `prunet_math_learning_db`???곸슜?덈떎. DB id??`08743c63-9a74-4215-93a8-c5b01a3cec73`??
+- ?좎?蹂댁닔 Worker 諛고룷 ?꾨즺: `npm run maintenance:deploy` ?깃났. Worker URL? `https://prunet-math-maintenance.scalpertv.workers.dev`, 諛고룷 version id??`198003a2-d340-449a-92a3-69ee1ffb482c`??
+- ?댁쁺 Pages 諛고룷 ?꾨즺: `npm run pages:deploy` ?깃났. ??preview URL? `https://5e302ed5.prunet-math-ebook.pages.dev`, ?댁쁺 URL? `https://prunet-math-ebook.pages.dev`??
+- ?댁쁺 API 寃利??꾨즺: `POST https://prunet-math-ebook.pages.dev/api/learning/maintenance`??same-origin header濡?`manual-verify`瑜??ㅽ뻾?덇퀬 `ok: true`, `issueCount: 0`, `validationId: validation-1779177144374-4aohbq`, `backupId: backup-1779177144374-nf0392`媛 諛섑솚?먮떎.
+- ?댁쁺 D1 ?뺤씤 ?꾨즺: `learning_data_validations` 1嫄? `learning_db_backups` 1嫄? `learning_periodic_reports` 0嫄댁씠?? ?꾩옱 ?댁쁺 DB??援먯궗쨌?숈깮 ?곗씠?곌? ?놁뼱 蹂닿퀬?쒕뒗 ?꾩쭅 ?앹꽦?섏? ?딆븯怨? ?숈깮 ?곗씠?곌? ?ㅼ뼱?ㅻ㈃ ?숈깮蹂?3醫?蹂닿퀬?쒓? ?앹꽦?쒕떎.
+- 援먯궗??UI 援ы쁽 ?꾨즺: ?숈깮 鍮꾨?踰덊샇 ?꾩떆 珥덇린?? ?숈깮蹂?吏꾨룄留?紐⑺몴/以묒젏/硫붾え ?ㅼ젙, 蹂닿퀬???뚯씪 ??? PDF ???PC 異쒕젰???몄뇙 李? 移댁뭅?ㅽ넚 ?꾩넚???쒖뒪??怨듭쑀/?대┰蹂대뱶 fallback, ?대찓???묒꽦 留곹겕瑜?異붽??덈떎.
+- Windows ?ㅼ튂 ??媛깆떊 ?꾨즺: `npm run installer:win` ?깃났. ?ㅼ튂 ?깆쓽 `app.asar`?먯꽌 ?댁쁺 URL ?곗꽑 濡쒕뱶, ?댁옣 fallback, `/api/learning/maintenance` 肄붾뱶 ?ы븿???뺤씤?덈떎.
+- 理쒖떊 ?곗텧臾?SHA256: ?ㅼ튂 EXE `261D7669EBE9667AE0ABA5D38CA890C987A0AF027AA2B1DC11AEE09CEEDF1CA6`, blockmap `F54CDCAD97B64F4C1A2FC67EE211CB03E69BC0889812718116A93CE22AA5389B`, app.asar `C1BEC80491613610B10BC1A04855505965AD8A3F073C7CE978058675866D28A5`, release.zip `D0E72745D1E30975097C33C2A7A37083CE8F0D3FBECD9213895489AF11A4A72B`??
+- ?⑥씪 HTML ?곗텧臾?媛깆떊 ?꾨즺: `CODEX ?섑븰 ?듯옒遺??꾩옄遺?26.05.17)/CODEX-?섑븰-?듯옒遺??꾩옄遺?html`, `?몃Ⅴ?룹닔???곗뒿.html`, `紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html` SHA256? 紐⑤몢 `063BD1840A30D1258E0209EBB9C8B6BC882EBF0F0B26557D832C46DB4E531314`?? 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆??`codex-math-mobile-v67`濡??щ졇??
+- 寃利??꾨즺: `npm run lint`, `npm run build`, `npm run smoke:learning-db`, `npm run verify`, `npm run onefile`, `npm run pages:deploy`, `npm run installer:win` 紐⑤몢 ?듦낵?덈떎. Electron Builder??湲곕낯 ?꾩씠肄?fallback 寃쎄퀬? Vite 踰덈뱾 ?ш린 寃쎄퀬??湲곗〈怨?媛숈? 鍮꾩감??寃쎄퀬??
+
+## 愿由ъ옄 root 沅뚰븳쨌援먯궗???댁쁺쨌?숈뒿 肄섑뀗痢?DB 遺꾨━ 蹂닿컯 (2026-05-19)
+- ?붿껌 紐⑺몴??愿由ъ옄 怨꾩젙???꾩껜 ?꾨줈洹몃옩 root 沅뚰븳??紐낆떆?곸쑝濡?遺?ы븯怨? 愿由ъ옄 ?곷떒 硫붾돱?먯꽌 援먯궗쨌?숈깮 ?뱀씤怨?怨꾩젙/鍮꾨?踰덊샇/?숈뒿 ?곗씠???묎렐 沅뚰븳 愿由щ? 諛붾줈 泥섎━?섍쾶 ?섎뒗 寃껋씠??
+- 援먯궗??紐⑺몴???깅줉 ?숈깮???꾩씠?붋룸퉬諛踰덊샇 ?섏젙, ?대옒???깅줉쨌?섏젙, ?ㅼ떆媛?吏꾨룄 紐⑤땲?곕쭅, 蹂댁땐?섏뾽怨?諛섎났?숈뒿 ?숈젣 遺?? ?숈깮蹂??쇨컙쨌二쇨컙쨌?붽컙 吏꾨룄? 吏꾨떒?쑣룹긽?댁꽌 異쒕젰/怨듭쑀瑜????먮쫫?쇰줈 泥섎━?섎뒗 寃껋씠??
+- ?곗씠?곕쿋?댁뒪 紐⑺몴???ъ슜?먃룰탳??룻븰?듭옄 ?댁쁺 DB? ?숈뒿 肄섑뀗痢?DB瑜?遺꾨━?섍퀬, 珥덈벑 ?섑븰怨?以묐벑 ?섑븰, 珥덈벑 ?곸뼱, 以묐벑 ?곸뼱, ?댁떊 ?鍮?異쒗뙋?щ퀎 肄섑뀗痢좊? 異뷀썑 異붽??대룄 湲곗〈 ?곗씠?곕? ?쇱넀?섏? ?딅뒗 additive 援ъ“瑜?留덈젴?섎뒗 寃껋씠??
+- 援ы쁽 湲곗?? 湲곗〈 D1 ?곗씠?곕? drop/delete?섏? ?딄퀬 `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, upsert 以묒떖?쇰줈 ?뺤옣?섎뒗 寃껋씠??
+- ?대쾲 蹂寃쎌? ?대? ?ㅼ뼱媛?蹂닿퀬??異쒕젰/怨듭쑀 湲곕뒫? ?ъ궗?⑺븯怨? 遺議깊븳 root 沅뚰븳 ?쒖떆, ?곷떒 ?뱀씤 諛붾줈媛湲? 援먯궗???대옒?ㅒ룹닕???댁쁺, 肄섑뀗痢?DB 遺꾨━ ?ㅽ궎留덈? 蹂닿컯?섎뒗 諛⑺뼢??媛???덉쟾?섎떎.
+- 援ы쁽 ?꾨즺: 愿由ъ옄 濡쒓렇???곹깭?먯꽌 `ROOT 沅뚰븳` ?⑤꼸???쒖떆?섍퀬 援먯궗 ?꾩씠?붋룸퉬諛踰덊샇 愿由? ?숈깮 ?꾩씠?붋룸퉬諛踰덊샇 愿由? ?숈뒿 ?곗씠??愿由? ?좎?蹂??묎렐 ?숈뒿 ?묎렐 愿由? ?ъ슜???뱀씤, ?쒕쾭 DB 寃利씲룸갚??愿由щ? 紐낆떆?덈떎.
+- 援ы쁽 ?꾨즺: ?붾㈃ ?곷떒 硫붾돱諛붿뿉 `援먯궗 ?뱀씤`, `?숈깮 ?뱀씤` 諛붾줈媛湲?踰꾪듉怨??뱀씤 ?湲?嫄댁닔瑜??쒖떆?덈떎. 踰꾪듉? 愿由ъ옄 ?⑤꼸??利됱떆 ?닿퀬 理쒖떊 愿由ъ옄 ?곗씠?곕? ?덈줈怨좎묠?쒕떎.
+- 援ы쁽 ?꾨즺: 愿由ъ옄 ?묎렐 沅뚰븳 移대뱶??援먯궗 鍮꾨?踰덊샇 ?꾩떆 珥덇린??踰꾪듉??異붽??덈떎. ?숈깮? 湲곗〈 ?숈깮 怨꾩젙쨌鍮꾨?踰덊샇 ?섏젙怨??꾩떆 鍮꾨?踰덊샇 珥덇린???먮쫫???좎??쒕떎.
+- 援ы쁽 ?꾨즺: 援먯궗???ㅼ떆媛?吏꾨룄留??숈깮 移대뱶??`蹂댁땐?섏뾽 異붽?`, `諛섎났?숈젣 遺?? 踰꾪듉??異붽??덈떎. 遺??湲곕줉? `StudentLearningAssignmentRecord`濡???ν븯怨??숈깮蹂?吏꾨룄 移대뱶??理쒓렐 怨쇱젣 chip?쇰줈 ?쒖떆?쒕떎.
+- 援ы쁽 ?꾨즺: ?숈깮蹂??곷떞 臾몄꽌 ?곸뿭???쇨컙쨌二쇨컙쨌?붽컙 吏꾨룄 ?꾪몴瑜?異붽??덈떎. 湲곗〈 ?숈뒿 吏꾨떒?쒖? ?숇?紐??곷떞?쒖쓽 PDF ??Β텾C 異쒕젰쨌?뚯씪 ??Β룹뭅移댁삤??怨듭쑀쨌?대찓???꾩넚 湲곕뒫? 洹몃?濡??곌껐?쒕떎.
+- DB 援ы쁽 ?꾨즺: `0003_learning_root_content_partition.sql`濡?`learning_assignments`, `learning_content_databases`, `learning_content_units`, `learning_content_topics`, `learning_content_items`瑜?異붽??덈떎. 湲곗〈 ?뚯씠釉???젣 ?놁씠 additive SQL留??ъ슜?덈떎.
+- Cloudflare API 援ы쁽 ?꾨즺: `/api/learning/snapshot`??`assignments` ?숆린?붾? 異붽??덇퀬, `/api/learning/content` Pages Function???덈줈 留뚮뱾???숈뒿 肄섑뀗痢?移댄깉濡쒓렇? ?⑥썝쨌?좏삎 硫뷀??곗씠?곕? D1??遺꾨━ ??ν븯寃??덈떎.
+- 肄섑뀗痢?DB 遺꾨━ ?꾨즺: ?댁쁺 ?섏씠吏 濡쒕뱶 ???먭꺽 D1??`learning_content_databases` 5嫄? `learning_content_units` 74嫄? `learning_content_topics` 811嫄댁씠 ??λ맂 寃껋쓣 ?뺤씤?덈떎. 5媛?DB??珥덈벑 ?섑븰, 以묐벑 ?섑븰, 珥덈벑 ?곸뼱, 以묐벑 ?곸뼱, ?댁떊 ?鍮?異쒗뙋?щ퀎 DB??
+- ?먭꺽 DB ?곸슜 ?꾨즺: `npm run db:migrate:remote`??諛깆뾽???깃났????Wrangler fetch ?ㅻ쪟濡???踰??딄꼈怨? `npx wrangler d1 migrations apply prunet_math_learning_db --remote` ?ъ떎?됱쑝濡?`0003_learning_root_content_partition.sql` ?곸슜???꾨즺?덈떎.
+- ?댁쁺 諛고룷 ?꾨즺: `npm run pages:deploy` ?깃났. ??preview URL? `https://ebe0cb4a.prunet-math-ebook.pages.dev`, ?댁쁺 URL? `https://prunet-math-ebook.pages.dev`?? `/api/learning/snapshot`? HTTP 200, `/api/learning/content`??HTTP 200?쇰줈 ?뺤씤?덈떎.
+- ?⑥씪 HTML ?곗텧臾?媛깆떊 ?꾨즺: `CODEX ?섑븰 ?듯옒遺??꾩옄遺?26.05.17)/CODEX-?섑븰-?듯옒遺??꾩옄遺?html`, `?몃Ⅴ?룹닔???곗뒿.html`, `紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html` SHA256? 紐⑤몢 `6078478B23F1A8CAFFD9B9559A634EC14CE58D9A342A1FE85982102D90412B13`?? 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆??`codex-math-mobile-v68`濡??щ졇??
+- Windows ?ㅼ튂 ??媛깆떊 ?꾨즺: `npm run installer:win` ?깃났. `app.asar`?먯꽌 ?댁쁺 URL ?곗꽑 濡쒕뱶, ?댁옣 fallback, `/api/learning/content`, `studentLearningAssignments` ?ы븿???뺤씤?덈떎.
+- 理쒖떊 ?ㅼ튂 ?곗텧臾?SHA256: ?ㅼ튂 EXE `71736266D0004502C3D5541D6836AEB141181738EABDD03EDDD4A92FE53B76CE`, blockmap `88B42576A0B0C5B1A5398FA83707A9EFC88F6F50186215CDB6ED10A3985E5B8B`, app.asar `7A51EC335C442BB39547DD55D05D57DFC8E50B7A691E30CA2ED11A0EE2F14768`, release.zip `8FD3D724EBB0B5A7C51CC958CD929C4937875DAA6EF4E36825644008853A8992`??
+- 寃利??꾨즺: `npm run lint`, `npm run build`, `npm run smoke:learning-db`, `npm run verify`, `npm run onefile`, `npm run pages:deploy`, `npm run installer:win` 紐⑤몢 ?듦낵?덈떎. Electron Builder??湲곕낯 ?꾩씠肄?fallback 寃쎄퀬, Vite 踰덈뱾 ?ш린 寃쎄퀬, Electron Builder DEP0190 寃쎄퀬??湲곗〈怨?媛숈? 鍮꾩감??寃쎄퀬??
+
+## ?숈깮 怨꾩젙 ?숇뀈蹂??꾩껜 ?묎렐怨??ㅻⅨ ?숇뀈 ?좏깮 ?숈뒿 (2026-05-19)
+- ?붿껌 紐⑺몴???깅줉???숈깮 ?꾩씠?붾줈 濡쒓렇?명븯硫?蹂몄씤 ?깅줉 ?숇뀈??紐⑤뱺 ?숈뒿 ?곗씠?곕? 湲곕낯?쇰줈 ?닿퀬, ?숈깮???먰븯硫??ㅻⅨ ?숇뀈 ?곗씠?곕룄 ?좏깮?댁꽌 ?숈뒿?????덇쾶 ?섎뒗 寃껋씠??
+- ?꾩옱 ?깆? ?숈깮 濡쒓렇????`activeStudent.grade`瑜?`learner.grade`濡??ｊ퀬 `unitsForLearner`媛 洹??숇뀈 肄섑뀗痢좊쭔 ?꾪꽣留곹븳?? ?숈떆???숈깮 濡쒓렇???곹깭?먯꽌???숇뀈 ?낅젰怨?鍮좊Ⅸ ?숇뀈 踰꾪듉??鍮꾪솢?깊솕?섏뼱 ?ㅻⅨ ?숇뀈 ?좏깮??留됲? ?덈떎.
+- ?덉쟾??援ы쁽 湲곗?? ?숈깮 怨꾩젙???대쫫, ?숈깮 id, teacher/class ?곌껐? 洹몃?濡??좎??섍퀬, ?붾㈃?먯꽌 ?좏깮?섎뒗 `learner.grade`留?諛붽퓭 肄섑뀗痢??꾪꽣瑜??꾪솚?섎뒗 寃껋씠?? ?대젃寃??댁빞 ?ㅻⅨ ?숇뀈 ?좏깮 ?숈뒿 以묒뿉??湲곕줉??媛숈? ?숈깮 怨꾩젙??怨꾩냽 ?곌껐?쒕떎.
+- ?대옒???깅줉 ?뺤옣? 湲곗〈 ?대옒???쇱쓣 ?좎??섎㈃???숇뀈쨌怨쇱젙 ?좏깮 踰꾪듉 ?곸뿭???볧엳怨? ?쇰컲 ?숇뀈怨??곗궛 怨쇱젙??紐⑤몢 鍮좊Ⅴ寃??좏깮?????덇쾶 ?섎뒗 諛⑺뼢??媛???묎퀬 ?덉쟾?섎떎.
+- 寃利?湲곗?? ?숈깮 濡쒓렇???곹깭?먯꽌 ?숇뀈 踰꾪듉???쒖꽦?붾릺怨? ?ㅻⅨ ?숇뀈 ?좏깮 ???숈뒿 ?⑥썝???꾪솚?섎ŉ, 蹂몄씤 ?숇뀈?쇰줈 ?뚯븘媛??踰꾪듉??蹂댁씠怨? ?대옒???깅줉?먯꽌 ?뺤옣???숇뀈 ?좏깮 UI媛 蹂댁씠??寃껋씠?? ?댄썑 lint, verify, onefile, smoke, ?댁쁺 諛고룷, Windows ?ㅼ튂 ?뚯씪 媛깆떊源뚯? ?꾨즺?쒕떎.
+- 援ы쁽 ?꾨즺: ?숈깮 濡쒓렇???곹깭?먯꽌???숇뀈 ?낅젰怨??숇뀈쨌?곗궛 鍮좊Ⅸ ?좏깮 踰꾪듉???ъ슜?????덇쾶 ?덈떎. ?대쫫? 怨꾩냽 ?쎄린 ?꾩슜?쇰줈 ?먭퀬, ?숇뀈留?諛붽씀?꾨줉 ?덈떎.
+- 援ы쁽 ?꾨즺: ?숈깮???ㅻⅨ ?숇뀈???좏깮?대룄 `learnerProfileFromStudent(activeAccountStudent)` 湲곕컲 ?숈깮 id, 援먯궗, ?대옒???곌껐???좎??섍퀬 `grade`留?諛붽퓭 ??ν븳?? ?숈뒿 湲곕줉? 湲곗〈 ?숈깮 怨꾩젙??怨꾩냽 臾띠씤??
+- 援ы쁽 ?꾨즺: ?숈깮 ?붾㈃?먮뒗 `???숇뀈 ?꾩껜` 踰꾪듉怨?`?좏깮 ?숈뒿` ?곹깭 臾멸뎄瑜?異붽??덈떎. ?깅줉 ?숇뀈??`6?숇뀈 ?곗궛`?댁뼱??`???숇뀈 ?꾩껜`瑜??꾨Ⅴ硫?`6?숇뀈` ?꾩껜 ?먮즺濡??꾪솚?????덈떎.
+- 援ы쁽 ?꾨즺: ?대옒???깅줉 ?쇱뿉 `?대옒???숇뀈쨌怨쇱젙 鍮좊Ⅸ ?좏깮` ?곸뿭??異붽???1~6?숇뀈 ?쇰컲 ?숇뀈怨?1~6?숇뀈 ?곗궛 怨쇱젙??紐⑤몢 踰꾪듉?쇰줈 ?좏깮?????덇쾶 ?덈떎.
+- 寃利??꾨즺: `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` ?듦낵. 異붽? DOM ?먭??먯꽌 ?대옒??鍮좊Ⅸ ?좏깮 踰꾪듉 12媛쒖? ?숈뒿???숇뀈 踰꾪듉 12媛쒓? ?뚮뜑留곷릺??寃껋쓣 ?뺤씤?덈떎.
+- ?댁쁺 諛고룷 ?꾨즺: `npm run pages:deploy` ?깃났. ??preview URL? `https://170da45e.prunet-math-ebook.pages.dev`, ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`??`assets/index-BT0QvDEs.js`, `assets/index-CmjGsVBN.css`瑜?李몄“?섎ŉ `???숇뀈 ?꾩껜`, `?좏깮 ?숈뒿`, `class-grade-menu` 諛섏쁺???뺤씤?덈떎.
+- ?⑥씪 HTML ?곗텧臾?媛깆떊 ?꾨즺: `CODEX ?섑븰 ?듯옒遺??꾩옄遺?26.05.17)/CODEX-?섑븰-?듯옒遺??꾩옄遺?html`, `?몃Ⅴ?룹닔???곗뒿.html`, `紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html` SHA256? 紐⑤몢 `B61DC92952BD6DAAB6FAD1BBC2EA379FD790AA27B9B12ECC08B0B4280F47CDBB`?? 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆??`codex-math-mobile-v69`濡??щ졇??
+- Windows ?ㅼ튂 ??媛깆떊 ?꾨즺: `npm run installer:win` ?깃났 ??`app/release.zip`??理쒖떊 `release` 湲곗??쇰줈 ?ㅼ떆 ?뺤텞?덈떎. ?ㅼ튂 EXE SHA256? `C0FAB1002876E1A59784AD49E371B74D5F36613BAA1C7B8C64418728E1338D40`, blockmap? `DDC44F884310E8EA0E82306A53587E546F0290FC5CAD1309CD1FD66F7D3674EA`, app.asar??`78AB636CEAF8960818A3712AE42F6AA5879138CD893B64C8A539FEC1E48316BD`, release.zip? `B9F1E3D068F32F889282C6314AAAEFF56E3F2E00730DFB652109CAA04805D3A8`?대떎.
+
+## ?대옒??怨쇱젙 ?ㅼ쨷 ?좏깮 ??κ낵 紐⑦뿕吏???꾩튂 議곗젙 (2026-05-19)
+- ?붿껌 紐⑺몴???대옒???깅줉??`?대옒???숇뀈쨌怨쇱젙 鍮좊Ⅸ ?좏깮`?먯꽌 ?щ윭 怨쇱젙???숈떆???좏깮?섍퀬, ??????좏깮??怨쇱젙?ㅼ씠 ?ㅼ젣 ?대옒??紐⑸줉????λ릺寃??섎뒗 寃껋씠??
+- ?꾩옱 `ClassRecord`??`grade` ??媛쒕쭔 ??ν븳?? 湲곗〈 DB ?ㅽ궎留덈? 諛붽씀吏 ?딅뒗 ?덉쟾??諛⑹떇? ?ㅼ쨷 ?좏깮??UI ?곹깭濡쒕쭔 愿由ы븯怨? ??ν븷 ???좏깮??怨쇱젙留덈떎 媛숈? ?대옒?ㅻ챸怨??대떦 ?좎깮?섏쑝濡?`registerClassRecord`瑜??쒖감 ?몄텧??怨쇱젙蹂??대옒???덉퐫?쒕? 留뚮뱶??寃껋씠??
+- 湲곗〈 ?대옒?ㅻ? ?섏젙 以묒씪 ???щ윭 怨쇱젙???좏깮?섎㈃ 泥?踰덉㎏ 怨쇱젙? 湲곗〈 ?대옒??id濡???ν븯怨? ?섎㉧吏 怨쇱젙? ?좉퇋 ?대옒???덉퐫?쒕줈 異붽??섎뒗 諛⑺뼢???곗씠???먯떎 ?꾪뿕??媛????떎.
+- ??踰덉㎏ ?붿껌 紐⑺몴???쇱そ ?숈뒿 硫붾돱??`紐⑦뿕 吏??/ ?ㅽ넗由??⑥썝 蹂닿린` ?뱀뀡??`?숈뒿 蹂닿퀬??蹂대떎 ?꾩뿉 諛곗튂?섎뒗 寃껋씠?? 湲곗〈 而댄룷?뚰듃瑜??덈줈 留뚮뱾吏 ?딄퀬 JSX ?꾩튂留???린??諛⑹떇?쇰줈 泥섎━?쒕떎.
+- 寃利?湲곗?? 鍮좊Ⅸ ?좏깮 踰꾪듉???щ윭 媛?active濡??좎??섍퀬, ???濡쒖쭅???좏깮 怨쇱젙 媛쒖닔留뚰겮 ?몄텧?섎ŉ, ?붾㈃ DOM?먯꽌 紐⑦뿕吏???뱀뀡???숈뒿 蹂닿퀬?쒕낫??癒쇱? ?섏삤??寃껋씠?? ?댄썑 湲곕낯 lint, verify, onefile, smoke 寃利앷낵 ?댁쁺 諛고룷, ?ㅼ튂 ?뚯씪 媛깆떊???섑뻾?쒕떎.
+- 援ы쁽 ?꾨즺: `classForm.grades`瑜?異붽???鍮좊Ⅸ ?좏깮 踰꾪듉???ㅼ쨷 active ?곹깭瑜??좎??섍쾶 ?덈떎. 吏곸젒 ?낅젰? ?⑥씪 怨쇱젙 ?낅젰?쇰줈 ?숈옉?섍퀬, 鍮좊Ⅸ ?좏깮 踰꾪듉? ?좉? 諛⑹떇?쇰줈 ?꾩쟻 ?좏깮?쒕떎.
+- 援ы쁽 ?꾨즺: ?대옒???????`selectedClassGrades`瑜??쒗쉶?섎ŉ `registerClassRecord`瑜??쒖감 ?몄텧?쒕떎. 泥?踰덉㎏ ?좏깮 怨쇱젙? 湲곗〈 `classForm.id`瑜??좎??섍퀬, ?섎㉧吏 怨쇱젙? ?좉퇋 ?대옒???덉퐫?쒕줈 ??λ맂??
+- 援ы쁽 ?꾨즺: ?대옒???깅줉 UI??`N媛?怨쇱젙 ????덉젙` 臾멸뎄? ???踰꾪듉??`N媛?怨쇱젙 ??? ?쒖떆瑜?異붽??덈떎.
+- 援ы쁽 ?꾨즺: ?쇱そ ?ъ씠?쒕컮??`紐⑦뿕 吏??/ ?ㅽ넗由??⑥썝 蹂닿린` 釉붾줉???쒓굅?섍퀬, 硫붿씤 ?숈뒿 ?곸뿭??`?숈뒿 蹂닿퀬?? 諛붾줈 ?꾨줈 ?대룞?덈떎.
+- 寃利??꾨즺: `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db` ?듦낵. 異붽? 釉뚮씪?곗? DOM ?먭??먯꽌 鍮좊Ⅸ ?좏깮 active 踰꾪듉 3媛쒖? `3媛?怨쇱젙 ??? 踰꾪듉 臾멸뎄, 紐⑦뿕吏???뱀뀡???숈뒿 蹂닿퀬?쒕낫??癒쇱? ?섏삤??寃껋쓣 ?뺤씤?덈떎.
+- ?댁쁺 諛고룷 ?꾨즺: `npm run pages:deploy` ?깃났. ??preview URL? `https://504134d2.prunet-math-ebook.pages.dev`, ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`??`assets/index-27INhryS.js`, `assets/index-CmjGsVBN.css`瑜?李몄“?섎ŉ ?ㅼ쨷 怨쇱젙 ???臾멸뎄? 紐⑦뿕吏???대룞 臾몄옄?댁쓣 ?뺤씤?덈떎.
+- ?⑥씪 HTML ?곗텧臾?媛깆떊 ?꾨즺: `CODEX ?섑븰 ?듯옒遺??꾩옄遺?26.05.17)/CODEX-?섑븰-?듯옒遺??꾩옄遺?html`, `?몃Ⅴ?룹닔???곗뒿.html`, `紐⑤컮???덊럹?댁????꾩옄遺?26.05.17)/study.html` SHA256? 紐⑤몢 `F522D78E9E70862EE42AA19F1094AFA43DC6E6BA8891661FD96906DB3CC29AFC`?? 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆??`codex-math-mobile-v70`?쇰줈 ?щ졇??
+- Windows ?ㅼ튂 ??媛깆떊 ?꾨즺: `npm run installer:win` ?깃났 ??`app/release.zip`??理쒖떊 `release` 湲곗??쇰줈 ?ㅼ떆 ?뺤텞?덈떎. ?ㅼ튂 EXE SHA256? `EAA7986DD5E37276E77861CA250B103F49034B76E758ECB7800F9C9A421B7C96`, blockmap? `072BEE2CF6B4A38A334CAC0443CB7C79DBA48D4FA9F1AD9E7C0608409456F6E9`, app.asar??`867E28B1243BEF8AF6B573E1133FE32D6813CD12D4B675C0DA62A3EEB2E9A35F`, release.zip? `D11534C8885A734A632406E8B5BEA52C7C0F832DA910F29C055C42497E38A571`?대떎.
+
+## 媛?낆꽦 蹂닿컯怨?援먯궗??紐⑤땲?곕쭅 踰꾪듉 濡쒖쭅 ?섏젙 (2026-05-19)
+- ?붿껌 紐⑺몴??紐⑦뿕 吏???ㅽ넗由??⑥썝 蹂닿린, 蹂닿퀬???먯꽭??蹂닿린, ?숈뒿 吏꾨떒?? ?숇?紐??곷떞?쒖쓽 湲?⑤? ?ㅼ슦怨? 醫뚯슦 ?щ갚??以꾩뿬 ?ㅼ젣 ?숈뒿 肄섑뀗痢???쓣 ?볧엳??寃껋씠??
+- 湲???ш린??媛쒕컻 吏移⑥긽 `vw` 湲곕컲 ?곗냽 ?ㅼ??????CSS 蹂?섏? 誘몃뵒?댁옘由?釉뚮젅?댄겕?ъ씤?몃? ?ъ슜?쒕떎. ?대젃寃??섎㈃ ?붾㈃ ?ш린??留욎떠 ?곸쓳?섏?留?湲?먭? ?붾뱾由ш굅??怨쇳븯寃?而ㅼ?吏 ?딅뒗??
+- ?숈뒿??紐⑤땲?곕쭅? ?숈깮 怨꾩젙?먯꽌??蹂댁씠吏 ?딆븘???섎?濡?`canViewAllStudentLearningData` ?먮뒗 愿由ъ옄/援먯궗 沅뚰븳??湲곗??쇰줈 ?뱀뀡 ?먯껜瑜??뚮뜑留곹븯吏 ?딄쾶 ?쒕떎.
+- 紐⑤땲?곕쭅 踰꾪듉? 湲곗〈 ?⑥닔媛 ?쇰쭔 梨꾩슦嫄곕굹 異쒕젰/怨듭쑀瑜???踰꾪듉???욎뼱 泥섎━???ъ슜?먭? ?숈옉??紐??먮굜 ???덈떎. 踰꾪듉蹂꾨줈 愿由??⑤꼸 ?대룞, 硫붿떆吏 ?쒖떆, PDF ??? ?꾨┛??異쒕젰 ?숈옉??遺꾨━??紐낇솗?섍쾶 留뚮뱺??
+- 援ы쁽 ?꾨즺: ??醫뚯슦 湲곕낯 ?щ갚??以꾩씠怨??숈뒿 ??理쒕? ??쓣 1760px濡??볧삍?? ?ㅽ넗由??⑥썝 移대뱶? 蹂닿퀬?? ?곷떞 臾몄꽌 textarea??`--readable-*`, `--report-*` CSS 蹂?섏? 1280px, 1600px, 560px 釉뚮젅?댄겕?ъ씤?몃줈 媛?낆꽦???믪???
+- 援ы쁽 ?꾨즺: ?숈뒿??紐⑤땲?곕쭅 ?뱀뀡? 愿由ъ옄 ?먮뒗 援먯궗??怨꾩젙 濡쒓렇???곹깭?먯꽌留??뚮뜑留곹븳?? 湲곕낯 ?묒냽怨??숈깮 怨꾩젙 議곌굔?먯꽌??`.class-monitor-panel`???붾㈃???섏삤吏 ?딅뒗??
+- 援ы쁽 ?꾨즺: 怨꾩젙쨌吏꾨룄 ?섏젙怨?吏꾨룄留??ㅼ젙 踰꾪듉? ?숈깮???좏깮?섍퀬 ?숈깮 愿由??쇱쓣 ?????꾩옱 吏꾨룄, 紐⑺몴 臾몄젣 ?? 以묒젏 ?⑥썝, 援먯궗 硫붾え瑜?梨꾩슫?? 鍮꾨쾲 珥덇린?붾뒗 援먯궗/愿由ъ옄 沅뚰븳??癒쇱? 寃?ы븯怨? 蹂댁땐?섏뾽 異붽?? 諛섎났?숈젣 遺?щ뒗 湲곗〈 ?쒕쾭 吏꾨룄 媛깆떊 寃쎈줈? ?곌껐???곹깭瑜??좎??쒕떎.
+- 援ы쁽 ?꾨즺: ?곷떞 臾몄꽌 踰꾪듉? `PDF ???怨?`?꾨┛??異쒕젰`?쇰줈 遺꾨━?덈떎. ??踰꾪듉 紐⑤몢 釉뚮씪?곗? ?몄뇙 李쎌쓣 ?댁?留? PDF ???踰꾪듉? PDF ????좏깮 ?덈궡瑜?蹂꾨룄濡??쒖떆?섍퀬 異쒕젰 臾몄꽌 湲???ш린??17px濡??ㅼ썱??
+- 寃利??꾨즺: `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db`瑜?紐⑤몢 ?듦낵?덈떎. 異붽? 釉뚮씪?곗? DOM ?먭??먯꽌 湲곕낯 ?묒냽 湲곗? `monitorVisible=false`, `--readable-text=17px`, `--report-text=18px`, ??醫뚯슦 padding 12px ?곸슜???뺤씤?덈떎.
+- ?곗텧臾?媛깆떊 ?꾨즺: ?⑥씪 HTML 3媛??뚯씪 SHA256? 紐⑤몢 `E8A6E65B9897B0E8BDE510344603C3F5AE58E04339A43E8813DC6DC069D9630D`?? 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆??`codex-math-mobile-v71`濡??щ졇??
+- ?댁쁺 諛고룷 ?꾨즺: `npm run pages:deploy` ?깃났. ??preview URL? `https://ae8f95a3.prunet-math-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`?먯꽌 `assets/index-CS3Clv_S.js`, `assets/index-DXDAyHSq.css` 諛섏쁺???뺤씤?덈떎.
+- Windows ?ㅼ튂 ?뚯씪 媛깆떊 ?꾨즺: `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe` SHA256? `A2F43B12C8BB54963F8CA84B46F75303925AF2D17A94D4EF40739D7A3D2691AC`, blockmap? `EDEE72D9F168C31F76C5655A81C7C049CCD8B2098F4010C767CEF2E10094F547`, app.asar??`05D6DAAB64A2FC10FE85D7222A0524EDBC6E4CDA2D08714871118371BAADDDFF`, `app/release.zip`? `A6C525847EF095E0160BE5D90A602DD94EA8862606BC0B5D99BEF9CD8DDB5E77`??
+
+## ?대옒???깅줉 ????덉젙?붿? 愿由?UI 怨좊룄??(2026-05-19)
+- ?붿껌 紐⑺몴???대옒??蹂듭닔 怨쇱젙 ??????숈깮 ?대쫫, ?숇뀈, ?숈깮 濡쒓렇???꾩씠?? ?숈깮 鍮꾨?踰덊샇媛 ?ㅼ젣 ?대옒?ㅼ뿉 ?뺤긽 ?곌껐?섍퀬, ????꾩뿉???쒕벑濡??숈깮 ?놁쓬?앹쿂??蹂댁씠???곹깭 遺덉씪移섎? ?놁븷??寃껋씠??
+- ?꾩옱 ?꾪뿕 吏?먯? ?대옒???깅줉??蹂듭닔 怨쇱젙 ??μ쓣 ?섎㈃??留덉?留?????대옒?ㅻ쭔 activeClass濡??④굅???숈깮 ?쇱쓽 classId媛 ?ъ슜?먭? ?섎룄???대옒?ㅼ? ?닿툔?섎뒗 寃쎌슦?? ?숈깮 ???吏곸쟾 classId? ?ㅼ젣 ?대옒??紐⑸줉???뺤씤??遺덉씪移섎? 以꾩씤??
+- ?대옒??愿由щ뒗 ?꾩옱 ?좏깮, ?섏젙, ?숈깮 異붽? 以묒떖?대?濡??쒓굅 踰꾪듉怨?蹂듭닔 怨쇱젙 ?좏깮/?섏젙 濡쒖쭅??異붽??댁빞 ?쒕떎. DB ??젣??湲곗〈 ?곗씠??蹂댄샇 ?먯튃 ?뚮Ц???숈깮???덈뒗 ?대옒???쒓굅??李⑤떒?섍굅??紐낇솗??泥섎━?섎뒗 諛⑺뼢???덉쟾?섎떎.
+- ?붿옄??蹂寃쎌? 湲곕뒫 援ъ“瑜?諛붽씀吏 ?딄퀬 CSS 以묒떖?쇰줈 吏꾪뻾?쒕떎. ?쇱そ ?쒖뼱?⑤꼸? ?덈Т ?볤굅???듬떟?섏? ?딄쾶 以꾩씠怨? ?ㅻⅨ履??숈뒿 ?붾㈃? ???볤쾶 ?곕ŉ, 湲?⑤뒗 `vw`媛 ?꾨땶 CSS 蹂?섏? 釉뚮젅?댄겕?ъ씤?몃줈 ?ㅼ슫??
+- 寃利?湲곗?? ?깅줉/愿由??먮쫫 ?ㅻえ?? lint, verify, onefile, smoke DB, ?⑥씪 HTML怨?紐⑤컮??諛섏쁺, Cloudflare ?댁쁺 諛고룷, Windows ?ㅼ튂 ?뚯씪 媛깆떊源뚯???
+- 援ы쁽 ?꾨즺: 蹂듭닔 怨쇱젙 ?대옒???????泥?踰덉㎏ ?좏깮 怨쇱젙 ?대옒?ㅻ? ?ㅼ떆 activeClass濡??뺤젙?섍퀬 ?숈깮 ?깅줉 ?쇱쓽 classId, ?숇뀈, 怨꾩젙 ?낅젰媛믪쓣 諛붾줈 ???숈깮 ?깅줉 ?곹깭濡?珥덇린?뷀븳?? ?숈깮 ??μ? ?좏깮 ?대옒??議댁옱 ?щ?瑜?寃?ы븯怨? ?????`selectLearningRosterStudent`濡?activeClass? activeStudent瑜??ㅼ떆 留욎텣??
+- 援ы쁽 ?꾨즺: ?숈깮 ?대쫫, ?숇뀈, ?숈깮 濡쒓렇???꾩씠?? 鍮꾨?踰덊샇瑜???踰덉뿉 ??ν븷 ???ㅽ뙣 硫붿떆吏媛 議곗슜???щ씪吏吏 ?딅룄濡??대옒????κ낵 ?숈깮 ???紐⑤몢 try/catch濡??ъ슜??硫붿떆吏瑜??쒖떆?쒕떎. ?숈깮 怨꾩젙 ????깃났 硫붿떆吏??愿由ъ옄 ?뱀씤 ?꾩슂 ?곹깭源뚯? ?덈궡?쒕떎.
+- 援ы쁽 ?꾨즺: ?대옒??愿由щ뒗 媛숈? ?좎깮?섍낵 媛숈? ?대옒???대쫫???щ윭 怨쇱젙 ?대옒?ㅻ? ??移대뱶濡?臾띠뼱 ?쒖떆?쒕떎. ?섏젙 踰꾪듉? 臾띠씤 怨쇱젙 ?꾩껜瑜??대옒???깅줉 ?쇱쓽 蹂듭닔 ?좏깮 ?곹깭濡?遺덈윭?ㅺ퀬, ?숈깮 異붽????대떦 臾띠쓬???꾩옱 ????대옒?ㅻ줈 ?곌껐?쒕떎.
+- 援ы쁽 ?꾨즺: ?대옒???쒓굅 踰꾪듉??異붽??덈떎. ?깅줉 ?숈깮???덈뒗 ?대옒?ㅻ뒗 ?쒓굅瑜?李⑤떒?섍퀬, ?숈깮???녿뒗 ?대옒?ㅻ뒗 `deletedAt` 蹂듦뎄 ?쒖떆瑜??④꺼 ?쒕쾭 DB?먮뒗 蹂댁〈?섎㈃???붾㈃ 紐⑸줉?먯꽌???④릿??
+- ?붿옄??援ы쁽 ?꾨즺: ?쇱そ ?쒖뼱?⑤꼸? 272px 湲곗??쇰줈 以꾩씠怨??ㅻⅨ履??숈뒿 ?곸뿭???볧삍?? 湲???ш린??CSS 蹂?섏? 釉뚮젅?댄겕?ъ씤?몃줈 ?ㅼ썱怨? `clamp()` 湲곕컲 viewport 湲???ㅼ??쇱? ?쒓굅?덈떎. ?쒖뼱?⑤꼸 ?ㅽ겕濡ㅻ컮??thin/?щ챸 怨꾩뿴濡?以꾩???
+- ?붿옄??援ы쁽 ?꾨즺: ?숈뒿 ?덉뼱濡? ??쒕낫?? ?쒖뼱 移대뱶, ?대옒??愿由?移대뱶??諛섑닾紐??쒕㈃怨?媛踰쇱슫 釉붾윭, ?뉗? ?뚮몢由? ??踰꾪듉/?낅젰 湲?⑤? ?곸슜?????꾨??곸씤 援먯쑁 ?ъ씠???먮굦?쇰줈 ?뺣━?덈떎.
+- 寃利??꾨즺: `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db`瑜?紐⑤몢 ?듦낵?덈떎. 異붽? 釉뚮씪?곗? DOM ?먭??먯꽌 `--readable-text=18px`, `--hero-title=50px`, ?숈뒿 ?덉씠?꾩썐 `272px 1134px`, ?쒖뼱?⑤꼸 ?ㅽ겕濡ㅻ컮 `thin`, CSS ??`clamp()` ?놁쓬 ?곹깭瑜??뺤씤?덈떎.
+- ?곗텧臾?媛깆떊 ?꾨즺: ?⑥씪 HTML 3媛??뚯씪 SHA256? 紐⑤몢 `5BF951B2E96B35397A400B3B156836628F8586CE33FA94AE24AC237F3FE6B457`?? 紐⑤컮???쒕퉬?ㅼ썙而?罹먯떆??`codex-math-mobile-v72`濡??щ졇??
+- ?댁쁺 諛고룷 ?꾨즺: `npm run pages:deploy` ?깃났. ??preview URL? `https://e3669d93.prunet-math-ebook.pages.dev`?닿퀬 ?댁쁺 URL `https://prunet-math-ebook.pages.dev/`?먯꽌 `assets/index-B5KqaBEq.js`, `assets/index-BvvKLRBL.css` 諛섏쁺???뺤씤?덈떎.
+- Windows ?ㅼ튂 ?뚯씪 媛깆떊 ?꾨즺: `app/release/?몃Ⅴ?룹닔???꾩옄遺??ㅼ튂-1.0.0.exe` SHA256? `E4DA55D787AB243BABB7ECC3C1697D3874CAAA80D7157E50AD3D3CAF4AA648A2`, blockmap? `853D9680E5975E121C35062027702CC46EC4E409437CBB21ECB1D662B465752D`, app.asar??`9B600031C94DAB99A545FA73F9198897F9BF8059A8E85C7EBFECF3F9C8D40E53`, `app/release.zip`? `62C2D9B09FD205DD79387FA4EBF0C22E33F2A8C51DC0A5AD2239DD2A4C00B635`??
+# ?숈깮 ?좏깮 ?숈뒿 ?쇰꺼怨??숈깮 愿由?怨좊룄??(2026-05-19)
+- ?붿껌 紐⑺몴???쇱そ ?쒖뼱?⑤꼸???숈깮 ?좏깮 ?숈뒿?먯꽌 媛숈? `5?숇뀈 3?? 踰꾪듉??以묐났 ?쒖떆?섎뒗 臾몄젣瑜??쇰컲 怨쇱젙怨??곗궛 怨쇱젙?쇰줈 援щ텇?섍퀬, ?대옒??愿由ъ? ?숈깮 愿由??먮쫫???ㅼ젣 ?섏젙 以묒떖?쇰줈 ?뺣━?섎뒗 寃껋씠??
+- 援ы쁽 湲곗?? 湲곗〈 ?숈뒿 ?곗씠?곗? ?쒕쾭 DB瑜???젣?섏? ?딄퀬, ?⑥썝 ?좏깮 UI ?쇰꺼留?蹂댁셿?섎ŉ, ?숈뒿 肄붿묶 怨쇱젣????젣 ???`deletedAt` ?쒖떆濡??④린??諛⑺뼢???덉쟾?섎떎.
+- ?대옒??愿由ъ뿉?쒕뒗 ?대쫫 ?곸뿭???뚮윭???섏젙 ?쇱씠 ?대━寃??섍퀬, ?숈깮 鍮꾨?踰덊샇 珥덇린?붾뒗 紐⑤땲?곕쭅 移대뱶?먯꽌 鍮쇱꽌 `?숈깮 ?깅줉` ??`?숈깮 愿由? 硫붾돱濡??대룞?쒗궎??寃껋씠 ?ъ슜???먮쫫??留욌떎.
+- 寃利?湲곗?? 以묐났 ?⑥썝 踰꾪듉 ?쇰꺼 援щ텇, ?대옒?ㅻ챸 ?대┃ ?섏젙, 怨쇱젣 臾멸뎄 ?섏젙쨌??젣, ?숈깮 愿由?硫붾돱???꾩씠?붋룸퉬諛踰덊샇 ?섏젙怨?珥덇린???숈옉 ?뺤씤, ?댄썑 lint/verify/onefile/smoke 諛?諛고룷 ?곗텧臾?媛깆떊?대떎.
+- 援ы쁽 ?꾨즺: ?⑥썝 ?좏깮??`unitSelectionLabel`??異붽????섑븰?곗궛 怨쇱젙? `5?숇뀈 3???곗궛`泥섎읆 ???쇰꺼???곗궛 ?쒖떆媛 遺숇룄濡??덈떎. ?쇰컲 怨쇱젙 ?쇰꺼怨?蹂닿퀬?쒖슜 湲곗〈 ?쇰꺼? 洹몃?濡??좎??쒕떎.
+- 援ы쁽 ?꾨즺: ?대옒??愿由?移대뱶???대옒???대쫫 ?곸뿭???섏젙 踰꾪듉?쇰줈 諛붽씀怨? ?대? ?묎렐???쇰꺼 異⑸룎? `怨쇱젙 紐⑸줉`?쇰줈 ?뺣━??湲곗〈 `?좏깮` 踰꾪듉怨??④퍡 ?덉젙?곸쑝濡??숈옉?섍쾶 ?덈떎.
+- 援ы쁽 ?꾨즺: ?숈뒿 肄붿묶 怨쇱젣 chip??`?섏젙`, `??젣` 踰꾪듉??異붽??덈떎. ?섏젙? ?쒕ぉ??媛깆떊?섍퀬 ??젣??`deletedAt` ?쒖떆濡??④꺼 Cloudflare D1 payload?먮뒗 蹂듦뎄 媛?ν븳 湲곕줉???④릿??
+- 援ы쁽 ?꾨즺: ?곷떒 愿由?硫붾돱?먯꽌 `?숈깮 ?깅줉` ?ㅻⅨ履쎌뿉 `?숈깮 愿由?瑜?異붽??덈떎. ?숈깮 愿由?移대뱶?먯꽌 ?숈깮 ?꾩씠?붋룸퉬諛踰덊샇 ?섏젙 ?쇱쓣 ?닿퀬, 鍮꾨?踰덊샇 珥덇린?붾뒗 ???붾㈃?먯꽌 ?꾩떆 鍮꾨?踰덊샇瑜?諛쒓툒?섎룄濡???꼈??
+- 寃利??꾨즺: `npm run lint`, `npm run verify`, `npm run onefile`, `npm run smoke:learning-db`媛 ?듦낵?덈떎. ?댁쁺 URL? `https://prunet-math-ebook.pages.dev/`?먯꽌 `index-CUm__Evl.js`, `index-DjbVtTxu.css`瑜?李몄“?섍퀬 `/api/learning/snapshot`? HTTP 200?쇰줈 ?뺤씤?덈떎.
+- ?곗텧臾?媛깆떊 ?꾨즺: ?⑥씪 HTML 3媛?SHA256? 紐⑤몢 `93BB57CAABDD1AE18DCF8967CB425BE7379023B21A9AC70964D5959E6BF08076`?닿퀬 紐⑤컮??罹먯떆??`codex-math-mobile-v73`?쇰줈 ?щ졇?? Windows ?ㅼ튂 EXE SHA256? `09E631717D24086127A67F5BAF51CCE55360CC1995735E6B10A972615A376789`, `release.zip`? `6F5DA3D4AA0D8287C79358CC93F3A79F65932286FC8F29B540A507F1FD605737`?대떎.
+
+## 珥덉쨷???곸뼱 ?꾩옄遺?援ъ“쨌?ㅺ퀎 猷⑦떞 臾몄꽌??(2026-05-19)
+- ?붿껌 紐⑺몴???몃Ⅴ???섑븰 ?꾩옄遺곸뿉???뺣┰???묒뾽 猷⑦떞怨??명븯?곕? 諛뷀깢?쇰줈 珥덈벑 援먯쑁泥??꾩닔 ?곷떒?? 珥덈벑 ?곷Ц踰? 以묐벑 援먯쑁泥??꾩닔 ?곷떒?? 以묐벑 ?곷Ц踰??꾩옄遺곸쓣 留뚮뱾湲??꾪븳 援ъ“? ?ㅺ퀎 猷⑦떞 臾몄꽌瑜?癒쇱? 留뚮뱶??寃껋씠??
+- ?대쾲 ?묒뾽? ??肄붾뱶 ?섏젙???꾨땲??臾몄꽌???묒뾽?대?濡?`npm run lint`, `npm run verify`, `npm run onefile`? ?ㅽ뻾 ??곸뿉???쒖쇅?덈떎. 寃利?湲곗?? ??Markdown ?뚯씪 議댁옱, ??媛??곸뼱 肄섑뀗痢?DB 援ъ“ ?ы븿, 湲곗〈 ?섑븰 ?꾩옄遺??댁쁺 猷⑦떞 諛섏쁺, `checklist.md`? `context-notes.md` 媛깆떊 ?щ?濡??≪븯??
+- ??臾몄꽌??`媛뺥깭?덉깦_?몃Ⅴ?룹쁺?댁콉(26.05.19)/珥덉쨷???곸뼱_?꾩옄遺?援ъ“_?ㅺ퀎_猷⑦떞.md`??留뚮뱾?덈떎. ?댁슜?먮뒗 肄섑뀗痢?DB? ?ъ슜?먃룻븰??DB 遺꾨━, additive migration ?먯튃, ?곷떒?는룹쁺臾몃쾿 ?ㅽ궎留? ?붾㈃ 援ъ“, ?숈뒿 ?먮쫫, 蹂닿퀬??吏?? 寃利씲룸같??猷⑦떞, ?ㅼ쓬 ?묒뾽 泥댄겕由ъ뒪?몃? ?ы븿?덈떎.
+- 援먯쑁泥??꾩닔 ?곷떒???먮즺??吏??낵 ?곕룄???곕씪 ?щ씪吏????덉쑝誘濡??ㅼ젣 肄섑뀗痢??낅젰 ?꾩뿉??理쒖떊 異쒖쿂, 諛쒗뻾 ?곕룄, ?ъ슜 媛??踰붿쐞, ?먮낯 ??ぉ ?섎? 癒쇱? 寃利앺븯怨?蹂꾨룄 異쒖쿂 寃利?蹂닿퀬?쒖뿉 ?④린??湲곗??쇰줈 ?뺣━?덈떎.
+- ?꾩냽 ?붿껌?쇰줈 ?곸뼱 ?뚮땳??援먯떎??異붽??덈떎. ?뚮땳?ㅻ뒗 ?곷떒?????④퀎??蹂꾨룄 ?숈뒿 ?먮쫫?대?濡?`english_phonics_classroom` 肄섑뀗痢?DB, ?뚭?쨌??紐⑥뼇쨌釉붾젋?㈑룸뵒肄붾뵫 ?ㅽ궎留? ?뚮땳??湲곕낯 ?숈뒿 ?먮쫫, ?뚮땳??由ы룷??吏?? 援ы쁽 ?쒖꽌? ?ㅼ쓬 ?묒뾽 泥댄겕由ъ뒪?몄뿉 ?낅┰ ??ぉ?쇰줈 諛섏쁺?덈떎.
+- ?꾩냽 ?붿껌?쇰줈 ?곸뼱 ?댁떊 ?鍮꾨컲怨??곸뼱 由щ뵫諛섏쓣 異붽??덈떎. ?댁떊 ?鍮꾨컲? `english_school_exam_textbook` 肄섑뀗痢?DB濡??먭퀬 8醫??곸뼱 援먭낵?쒕퀎 異쒗뙋?? ?먮낯, Lesson, 蹂몃Ц 遺꾩꽍, 臾몃쾿 遺꾩꽍, ?⑥뼱 遺꾩꽍, 臾몄옣 遺꾩꽍, ?숆탳 ?쒗뿕??臾몄젣瑜?遺꾨━??愿由ы븯?꾨줉 ?뺣━?덈떎.
+- 由щ뵫諛섏? `english_reading_class` 肄섑뀗痢?DB濡??먭퀬 吏臾? ?λⅤ, ?쒖씠?? ?낇빐 ?ㅽ궗, ?뺣떟 洹쇨굅, ?붿빟쨌?뺤옣 ?곌린 怨쇱젣瑜?愿由ы븯?꾨줉 ?뺣━?덈떎. 援먭낵??蹂몃Ц? ??묎텒 ?먮즺?대?濡??ㅼ젣 ?섎줉 ??異쒗뙋?? ?먮낯, ?숆탳 梨꾪깮蹂? ?ъ슜 媛??踰붿쐞瑜??뺤씤?섍퀬 ?먮Ц ?꾨Ц蹂대떎 遺꾩꽍 硫뷀??곗씠?곕? ?곗꽑 ??ν븯??湲곗????④꼈??
+- ?꾩냽 ?붿껌?쇰줈 ?좎튂???곸뼱諛섍낵 ?곸뼱 ?꾩꽌愿??異붽??덈떎. ?좎튂???곸뼱諛섏? `english_kindergarten_class` 肄섑뀗痢?DB濡??먭퀬 洹몃┝移대뱶, ?먯뼱誘??뚯꽦, 梨덊듃, 紐몃룞??諛섏쓳, ?앺솢?곸뼱 ?쒗쁽, 媛??誘몄뀡????ν븯?꾨줉 ?뺣━?덈떎.
+- ?곸뼱 ?꾩꽌愿? `english_library` 肄섑뀗痢?DB濡??먭퀬 ?덈꺼蹂??쒓?, ?꾩꽌 硫뷀??곗씠?? ?ㅻ뵒???? ?듭떖 ?댄쐶, ?댄빐 吏덈Ц, ?쎄린 湲곕줉?? ?낇썑?쒕룞 ?쒗뵆由우쓣 愿由ы븯?꾨줉 ?뺣━?덈떎. ?꾩꽌 ?먮Ц, ?쒖?, ?ㅻ뵒?ㅻ룄 ??묎텒 ?먮즺?대?濡??뺤떇 ?쇱씠?좎뒪媛 ?덈뒗 ?먮즺留???ν븯怨? 湲곕낯? 硫뷀??곗씠?곗? ?먯껜 ?붿빟쨌?낇썑?쒕룞 以묒떖?쇰줈 ?댁쁺?섎뒗 湲곗????④꼈??
+- ?꾩냽 ?붿껌?쇰줈 珥덈벑 ?곸뼱 援먭낵?쒕? 異붽??덈떎. 珥덈벑 ?곸뼱 援먭낵?쒕뒗 `english_elementary_textbook` 肄섑뀗痢?DB濡??먭퀬 ?숇뀈, 異쒗뙋?? ?숆린, Lesson, ?섏궗?뚰넻 ?쒗쁽, ?ｊ린쨌留먰븯湲???? ?⑥썝 ?댄쐶, ?쎄린 ?붿빟, ?곌린 ?쒕룞, 援먯떎 ?쒕룞, 蹂듭뒿 臾몄젣瑜?愿由ы븯?꾨줉 ?뺣━?덈떎.
+- 珥덈벑 ?곸뼱 援먭낵?쒕뒗 ?댁떊 ?鍮꾨컲怨?紐⑹쟻???ㅻⅤ誘濡??숆탳 ?섏뾽 ?덉뒿쨌蹂듭뒿 ?먮쫫?쇰줈 遺꾨━?덈떎. 援먭낵???먮Ц, ?쏀솕, ?뚯꽦? ??묎텒 ?먮즺?대?濡??ㅼ젣 ?섎줉 ??異쒗뙋?? ?먮낯, ?숆탳 梨꾪깮蹂? ?ъ슜 媛??踰붿쐞瑜??뺤씤?섍퀬 湲곕낯? ?⑥썝 硫뷀??곗씠?곗? ?먯껜 ?쒖옉 ?쒕룞臾몄쑝濡?援ъ꽦?섎뒗 湲곗????④꼈??
+- ?꾩냽 ?붿껌?쇰줈 ?곸뼱 ?몃옒諛⑷낵 ?곸뼱 ?숉솕梨낆쓣 異붽??덈떎. ?곸뼱 ?몃옒諛⑹? `english_karaoke_class` 肄섑뀗痢?DB濡??먭퀬 ?몃옒 ?쒕ぉ, ?덈꺼, 二쇱젣, ?듭떖 ?쒗쁽, 媛???숈뒿 ?⑥쐞, 媛???섏씠?쇱씠????대컢, 諛섏＜쨌媛?대뱶 ?뚯꽦, 諛쒖쓬쨌由щ벉 ?ъ씤?? ?뱀쓬 怨쇱젣瑜?愿由ы븯?꾨줉 ?뺣━?덈떎.
+- ?곸뼱 ?숉솕梨낆? `english_storybook_class` 肄섑뀗痢?DB濡??먭퀬 ?λ㈃蹂??붿빟, ?쎌뼱二쇨린 ?뚯꽦, ?깆옣?몃Ъ ??븷洹? ?듭떖 ?댄쐶, 諛섎났 臾몄옣, ?댄빐 吏덈Ц, ?댁빞湲??쒖꽌, ?ㅼ떆 留먰븯湲? ?낇썑?쒕룞 ?쒗뵆由우쓣 愿由ы븯?꾨줉 ?뺣━?덈떎. ?몃옒 媛??룹쓬?먭낵 ?숉솕 ?먮Ц쨌?쏀솕쨌?ㅻ뵒?ㅻ뒗 ??묎텒 ?먮즺?대?濡??뺤떇 ?쇱씠?좎뒪 ?먮뒗 ?먯껜 ?쒖옉 肄섑뀗痢좊? ?곗꽑?섎뒗 湲곗????④꼈??
+- ?꾩냽 ?붿껌?쇰줈 ?곸뼱 ?ｊ린, ?곸뼱 留먰븯湲? ?곸뼱 ?쎄린, ?곸뼱 ?곌린瑜?異붽??덈떎. ?곸뼱 ?ｊ린??`english_listening_class` 肄섑뀗痢?DB濡??먭퀬 ??붋룹??쒕Ц쨌?쒗뿕???ｊ린, ?蹂? 諛쏆븘?곌린, ??꾩엵, ?뺣떟 洹쇨굅瑜?愿由ы븯?꾨줉 ?뺣━?덈떎.
+- ?곸뼱 留먰븯湲곕뒗 `english_speaking_class` 肄섑뀗痢?DB濡??먭퀬 ?곕씪 留먰븯湲? ??븷洹? 吏덈Ц쨌?묐떟, 諛쒗몴, ?뱀쓬 怨쇱젣, 援먯궗???쇰뱶諛?湲곗???愿由ы븯?꾨줉 ?뺣━?덈떎. ?곸뼱 ?쎄린??湲곗〈 `english_reading_class` 由щ뵫諛섍낵 遺꾨━??`english_reading_fluency` DB濡??먭퀬 ?뚮━?댁뼱 ?쎄린, ?딆뼱 ?쎄린, ?쒓컙 ?쎄린, ?뱀쓬, ?좎갹???쇰뱶諛깆쓣 愿由ы븯?꾨줉 ?뺣━?덈떎.
+- ?곸뼱 ?곌린??`english_writing_class` 肄섑뀗痢?DB濡??먭퀬 ?⑥뼱 ?곌린, 臾몄옣 ?꾩꽦, 臾몃떒 ?곌린, 二쇱젣 湲?곌린, 泥⑥궘, ?ㅼ떆 ?곌린, ?ы듃?대━????μ쓣 愿由ы븯?꾨줉 ?뺣━?덈떎. 由щ뵫諛섏? 怨꾩냽 ?낇빐 ?ㅽ궗 以묒떖?쇰줈 ?좎??섍퀬, ?쎄린諛섏? ?좎갹??以묒떖?쇰줈 遺꾨━?섎뒗 湲곗????④꼈??
+- ?꾩냽 ?붿껌?쇰줈 ?꾩옱 ?곸뼱 ?꾨줈?앺듃 援ъ꽦??誘멸뎅 ?곸뼱援먯쑁 ?꾨Ц媛? ?곴뎅 ?곸뼱援먯쑁 ?꾨Ц媛 愿?먯뿉??理쒕?移섎줈 援ъ껜?뷀뻽?? 怨듭떇 湲곗? ?뺤씤 ??Common Core, ACTFL, WIDA, ?곴뎅 National Curriculum, DfE Reading Framework, CEFR??`can-do` ?깆랬臾몄쓣 ?곸쐞 ?ㅺ퀎 ?꾨젅?꾩쑝濡?臾띔퀬, 16媛??몃옓???낅Ц쨌?λ?, ?뚮━쨌臾몄옄, 援먭낵쨌?댁떊, 臾명빐?Β룹궛異?異뺤쑝濡?議곗쭅?덈떎.
+- 誘멸뎅???쒖? 湲곕컲 臾명빐?μ? 紐⑺몴 ?깆랬臾? ?섑뻾 怨쇱젣, ?됯? 利앷굅, 蹂댁땐 猷⑦떞 以묒떖?쇰줈 諛섏쁺?덈떎. ?곴뎅??珥덇린 臾명빐?μ? systematic synthetic phonics, decodable text, 諛섎났 ?쎄린, reading for pleasure 以묒떖?쇰줈 諛섏쁺?덈떎.
+- 紐⑤뱺 肄섑뀗痢?item??`learningObjective`, `skillStrand`, `cefrCanDo`, `englishVariant`, `sourceLicenseStatus`, `evidenceType`, `teacherAction`??遺숈씠??湲곗???異붽??덈떎. 援먯궗???댁쁺 ??쒕낫?쒕뒗 ?ㅻ뒛 ?섏뾽 ?? 湲곕뒫蹂??꾨줈?? ?뚮땳?ㅒ룹씫湲?寃곗넀, 援먭낵쨌?댁떊 愿由? ?곗텧臾??ы듃?대━?? 誘멸뎅쨌?곴뎅 蹂??寃?? 由ы룷??諛쒗뻾 ?곸뿭?쇰줈 援ъ꽦?덈떎.
+- ?꾩냽 ?붿껌?쇰줈 TESOL ?꾨Ц ?곸뼱援먯쑁 怨쇱젙??留욎떠 ?꾩옱 ?곸뼱 ?숈뒿踰뺤쓣 ?ㅼ떆 怨좊룄?뷀뻽?? TESOL 6 Principles, TESOL standards, Cambridge CELTA course topics, British Council CPD Framework瑜??뺤씤?섍퀬 ?숈뒿??遺꾩꽍, ?몄뼱 遺꾩꽍, ??湲곕뒫 ?섏뾽 ?ㅺ퀎, ?섏뾽 怨꾪쉷, 援먯닔 湲곗닠, 吏???됯?, 援먯궗 怨듬룞泥?愿?먯쑝濡??꾨줈?앺듃 ?ㅺ퀎瑜??뺤옣?덈떎.
+- 紐⑤뱺 Lesson??`diagnose ??prepare ??notice ??practice ??communicate ??feedback ??reflect` 猷⑦떞?쇰줈 ?ъ젙?섑뻽?? ?몄뼱 遺꾩꽍? form, meaning, use, pronunciation, appropriacy, common errors, CCQ, model sentence 湲곗??쇰줈 蹂닿컯?덈떎.
+- 肄섑뀗痢?怨듯넻 硫뷀??곗씠?곗뿉 `tesolStage`, `languageAnalysis`, `interactionPattern`, `scaffolding`, `ccqIcq`, `reflectionPrompt`瑜?異붽??덈떎. 援먯궗??TESOL ?섏뾽???쒗뵆由우뿉??main aim, subsidiary aim, learner profile, anticipated problems, solutions, materials, procedure, CCQ쨌ICQ, assessment evidence, feedback plan, reflection???ы븿?덈떎.
+- ?꾩냽 ?붿껌?쇰줈 `媛뺥깭???몃Ⅴ?룹쁺???먭린二쇰룄?숈뒿_?숈썝??26.05.19).md` ?붿껌 湲곕줉怨??곸뼱 ?ㅺ퀎 臾몄꽌瑜?湲곕컲?쇰줈 HTML5쨌JavaScript MVC ?곸뼱 ?숈뒿 ?꾨줈洹몃옩??留뚮뱾湲곕줈 ?덈떎. 湲곗〈 ?섑븰 Vite ?깆쓣 吏곸젒 ?욎? ?딄퀬 `媛뺥깭?덉깦_?몃Ⅴ?룹쁺?댁콉(26.05.19)/mvc-english-learning`???낅┰ ?ㅽ뻾???깆쓣 留뚮뱺??
+- 援ы쁽 湲곗?? 釉뚮씪?곗??먯꽌 諛붾줈 ?대━??HTML5 ?? Model쨌View쨌Controller 遺꾨━, 16媛??몃옓 移댄깉濡쒓렇, TESOL ?④퀎 ?숈뒿 ?뚮줈?? ?ｊ린쨌留먰븯湲걔룹씫湲걔룹벐湲??곹샇?묒슜, 援먯궗????쒕낫?? localStorage 湲곕컲 ?숈뒿 湲곕줉 ??μ씠?? 寃利?湲곗?? HTML쨌JS 臾몃쾿 ?먭?, ?듭떖 ?뚯씪 議댁옱 ?뺤씤, 釉뚮씪?곗? ?ㅽ뻾 媛?μ꽦 ?뺤씤?대떎.
+- 援ы쁽 ?꾨즺: `mvc-english-learning/index.html`, `assets/styles.css`, `js/data.js`, `js/models.js`, `js/views.js`, `js/controllers.js`, `js/app.js`, `README.md`瑜?留뚮뱾?덈떎. 16媛??몃옓 ?꾪꽣, TESOL 7?④퀎 ?? ?몄뼱 遺꾩꽍 移대뱶, ?댁쫰, 諛쏆븘?곌린, TTS ?ｊ린, 留먰븯湲??몄떇 fallback, ?쎄린 ??대㉧, ?곌린쨌?깆같 ?ы듃?대━?? 援먯궗??TESOL ??쒕낫?쒕? ?ы븿?덈떎.
+- 寃利??꾨즺: `node --check`濡?5媛?JavaScript ?뚯씪 臾몃쾿???뺤씤?덈떎. ?쒖뒪??Chrome executablePath瑜?吏?뺥븳 Playwright smoke?먯꽌 `file:///.../index.html`???닿퀬 ?몃옓 16媛??뚮뜑留? 留먰븯湲??몃옓 ?좏깮, practice ?④퀎 ?댁쫰 ?뺣떟 泥섎━, localStorage 湲곕줉 ?앹꽦???뺤씤?덈떎.
+- ?꾩냽 ?붿껌?쇰줈 ?곷떒?댁? ?곷Ц踰뺤쓣 ?먭린二쇰룄 ?숈뒿 猷⑦떞?쇰줈 ?ㅼ떆 ?꾨줈洹몃옒諛랁븳?? 理쒖떊 ?곸뼱援먯쑁 ?먮쫫? 洹쇨굅 湲곕컲 援ъ뼱 ?곹샇?묒슜, 臾몃㎘ 湲곕컲 ?댄쐶, ?몄텧 ?곗뒿, 硫뷀??몄?, human-centred AI, ?뚯꽦쨌?띿뒪???명꽣?숈뀡??諛섏쁺?섍퀬, ?깆뿉???⑥뼱? 臾몃쾿 ?꾩슜 猷⑦떞 ?붿쭊??異붽??쒕떎.
+- 援ы쁽 湲곗?? ?곷떒?댁쓽 `臾몃㎘ ?몄텧 ??諛쒖쓬쨌?섎? ???몄텧 ??臾몄옣 ?ъ슜 ??媛꾧꺽 蹂듭뒿` 猷⑦떞怨??곷Ц踰뺤쓽 `?덈Ц 諛쒓껄 ??form쨌meaning쨌use 遺꾩꽍 ???ㅻ쪟 ?섏젙 ??臾몄옣 蹂?????먯쑀 ?곗텧` 猷⑦떞?대떎. 寃利앹? JavaScript 臾몃쾿 寃?ъ? 釉뚮씪?곗? ?ㅻえ?ъ뿉???⑥뼱쨌臾몃쾿 ?명꽣?숈뀡???ㅼ젣 ??λ릺?붿? ?뺤씤?섎뒗 寃껋쑝濡??〓뒗??
+- 援ы쁽 ?꾨즺: `js/data.js`??`vocabularyBank`? `grammarPatterns`瑜?異붽??섍퀬, `js/models.js`???⑥뼱 ?숇떖?꾩? 臾몃쾿 ?숇떖????? ?⑥뼱 ?몄텧, ?⑥뼱 臾몄옣 ?곗텧, 臾몃쾿 ?ㅻ쪟 ?섏젙, 臾몄옣 蹂?? ?먯쑀 ?곗텧 ???濡쒖쭅??異붽??덈떎.
+- 援ы쁽 ?꾨즺: `js/views.js`??`Vocabulary Self-Study Lab`怨?`Grammar Discovery Lab`??異붽??섍퀬, `js/controllers.js`???⑥뼱쨌臾몃쾿 ?꾩슜 ?대깽?몃? ?곌껐?덈떎. `assets/styles.css`?먮뒗 ?꾨Ц ?숈뒿 ?⑷낵 猷⑦떞 ?④퀎 UI瑜?異붽??덇퀬, `README.md`?먮룄 ??猷⑦떞??湲곕줉?덈떎.
+- 寃利??꾨즺: `node --check`濡?5媛?JavaScript ?뚯씪 臾몃쾿???듦낵?덈떎. Chrome 湲곕컲 Playwright smoke?먯꽌 珥덈벑 ?곷떒???몃옓???⑥뼱 ?몄텧쨌臾몄옣 ?곗텧, 以묐벑 ?곷Ц踰??몃옓???ㅻ쪟 ?섏젙쨌臾몄옣 蹂?샕룹옄???곗텧???ㅽ뻾?덇퀬 `localStorage`??`wordMastery=1`, `grammarMastery=1`, `portfolio=2`, `evidence=5`媛 ??λ릺??寃껋쓣 ?뺤씤?덈떎.
+
+## ?좎튂???숈뒿 ??댄꽣 湲고쉷 臾몄꽌??(2026-05-20)
+- ?붿껌 紐⑺몴??`?몃Ⅴ???좎튂??26.05.20)` ?대뜑??6?몃컲怨?7?몃컲 ?꾩씠?ㅼ쓣 ?꾪븳 珥덈벑?숆탳 ?낇븰 以鍮꾩슜 ?좎튂???숈뒿 ??댄꽣 湲고쉷?? ?ㅼ쿇 怨꾪쉷, ?꾨줈洹몃옩 ?붿냼, 泥댄겕由ъ뒪?몃? 留뚮뱶??寃껋씠??
+- ?대쾲 ?묒뾽? ??肄붾뱶 ?섏젙???꾨땲??臾몄꽌???묒뾽?대?濡?`npm run lint`, `npm run verify`, `npm run onefile`? ?ㅽ뻾 ??곸뿉???쒖쇅?덈떎. 寃利?湲곗?? ??Markdown 臾몄꽌 議댁옱, 6?맞???怨꾪쉷???ы븿, 援?뼱쨌?섑븰쨌?곸뼱 援먯떎 ?ы븿, 移대뱶遺겶룰뎅?대룞?붋룹쁺?대룞?붋룹닔?숇룞???ы븿, 媛쒕컻 泥댄겕由ъ뒪???ы븿 ?щ?濡??≪븯??
+- ??臾몄꽌??`?몃Ⅴ???좎튂??26.05.20)/?몃Ⅴ???좎튂???숈뒿 ??댄꽣(26.05.20).md`???묒꽦?덈떎. ?댁슜?먮뒗 ?꾩껜 紐⑺몴, 湲곕낯 諛⑺뼢, ?붾㈃ 援ъ“, 6?몃컲쨌7?몃컲 12二??숈뒿 怨꾪쉷?? 援?뼱援먯떎쨌?섑븰援먯떎쨌?곸뼱援먯떎 援ъ꽦, 移대뱶遺곴낵 ?숉솕梨?怨꾪쉷, 寃뚯엫???숈뒿 ?붿냼, ?꾨줈洹몃옩 ?꾩닔 ?붿냼, ?곗씠??援ъ“ 珥덉븞, ?ㅼ쿇 怨꾪쉷, 二쇨컙 ?댁쁺 ?덉떆, 援먯궗??由ы룷?? 援ы쁽 硫붾え, 寃利?湲곗?, 媛쒕컻 泥댄겕由ъ뒪?몃? ?ы븿?덈떎.
+- ?좎튂?먯깮??肄섑뀗痢좊뒗 ?ㅼ젣 ?꾩씠媛 ?꾨Ⅴ怨??ｊ퀬 留먰븯???먮쫫??以묒슂?섎?濡??뺣떟瑜?以묒떖蹂대떎 李몄뿬 ?잛닔, 諛섎났, 諛쒗솕, ?쎄린, ?ㅽ떚而?蹂댁긽, 援먯궗 愿李?由ы룷?멸? ?④퍡 ??λ릺??諛⑺뼢?쇰줈 ?뺣━?덈떎.
+- ?숉솕 ?먮Ц, ?쏀솕, ?뚯썝? ??묎텒 ?꾪뿕???덉쑝誘濡??먯껜 ?쒖옉 肄섑뀗痢??먮뒗 ?뺤떇 ?쇱씠?좎뒪瑜??뺤씤???먮즺留??섎줉?섍퀬, 臾몄꽌?먮뒗 ?대? 蹂꾨룄 湲곗??쇰줈 ?④꼈??
+
+## ?좎튂???숈뒿 ??댄꽣 HTML5쨌JavaScript MVC 援ы쁽 (2026-05-20)
+- ?붿껌 紐⑺몴??湲덈갑 留뚮뱺 ?좎튂???숈뒿 ??댄꽣 湲고쉷 臾몄꽌瑜??ㅼ젣濡??ㅽ뻾 媛?ν븳 ?꾨줈洹몃옩?쇰줈 援ы쁽?섎뒗 寃껋씠??
+- 援ы쁽 諛⑺뼢? 湲곗〈 ?곸뼱 MVC ?깃낵 鍮꾩듂?섍쾶 硫붿씤 Vite ?섑븰 ?깆뿉 諛붾줈 ?욎? ?딄퀬 `?몃Ⅴ???좎튂??26.05.20)/kindergarten-learning-playground`???낅┰ ?ㅽ뻾??HTML5쨌JavaScript MVC ?깆쓣 留뚮뱶??寃껋쑝濡??≪븯?? ?대젃寃??섎㈃ `index.html`??諛붾줈 ?????덇퀬, ?댄썑 ?⑥씪 HTML, 紐⑤컮??PWA, ?ㅼ튂 ?깆쑝濡??≪닔?섍린 ?쎈떎.
+- 援ы쁽 ?뚯씪? `index.html`, `assets/styles.css`, `assets/playground-scene.svg`, `js/data.js`, `js/models.js`, `js/views.js`, `js/controllers.js`, `js/app.js`, `scripts/smoke.mjs`, `README.md`?대떎.
+- 6?몃컲怨?7?몃컲 媛곴컖 援?뼱쨌?섑븰쨌?곸뼱 怨쇰ぉ蹂?移대뱶遺? ?숉솕梨? 寃뚯엫??1媛쒖뵫 ?ｌ뼱 珥?18媛??섑뵆 ?쒕룞??援ъ꽦?덈떎. 移대뱶 ?섍린湲? ?숉솕 ?λ㈃ ?섍린湲? ?ｊ린 踰꾪듉, 寃뚯엫 ?뺣떟 ?뺤씤, ?쒕룞 ?꾨즺, 蹂댁긽 ?ㅽ떚而? `localStorage` 湲곕줉 ??? 援먯궗???낇븰 以鍮?由ы룷?몃? ?ы븿?덈떎.
+- 寃利?湲곗?? `node --check` 湲곕컲 JavaScript 臾몃쾿 寃?ъ? Playwright ?ㅻえ?ъ뿉???뚯씪 URL濡??깆쓣 ?닿퀬 7?몃컲 ?섑븰 移대뱶遺겶룰쾶???꾨즺, 援먯궗??由ы룷???뚮뜑留? `localStorage` 湲곕줉 ??μ쓣 ?뺤씤?섎뒗 寃껋씠??
+- 寃利??꾨즺: `npm run check` ?듦낵. `npm run smoke`?먯꽌 ?뚯씪 URL濡??깆쓣 ?닿퀬 珥덇린 援?뼱 ?쒕룞 3媛??뚮뜑留? 7?몃컲 ?섑븰援먯떎 ?좏깮, `math-7-number-cardbook` 移대뱶 ?섍린湲곗? ?꾨즺, `math-7-add-game` ?뺣떟 泥섎━? ?꾨즺, 援먯궗??由ы룷???뚮뜑留? `localStorage`??7?몃컲쨌?섑븰援먯떎쨌?꾨즺쨌?뺣떟쨌蹂댁긽 湲곕줉 ??μ쓣 ?뺤씤?덈떎.
+
+## ?좎튂???숈뒿 ??댄꽣 ?대?吏쨌3D쨌?숈쟻 ?곹샇?묒슜 怨좊룄??(2026-05-20)
+- ?붿껌 紐⑺몴???숈뒿 ?댁슜??鍮덉빟?섍퀬 ?대?吏媛 ?녿떎??臾몄젣瑜??닿껐?섍퀬, ?숈뒿???대?吏, 寃뚯엫???대?吏, 3李⑥썝 濡쒖쭅, ?숈쟻 ?곹샇 諛섏쓳??異붽????낆껜?곸씤 ?숈뒿 ??댄꽣濡?留뚮뱶??寃껋씠??
+- 援ы쁽 湲곗?? ?좎튂?먯깮???ㅼ젣濡?蹂닿퀬 ?꾨? ???덈뒗 ?대?吏? 議곗옉 ?붿냼瑜??곗꽑?섍퀬, 湲곗〈 ?낅┰ ?ㅽ뻾??`index.html` ?붾툝?대┃ ?ㅽ뻾??源⑥? ?딅뒗 寃껋씠??
+- ?대?吏 蹂닿컯 ?꾨즺: `assets/images/`??援?뼱쨌?섑븰쨌?곸뼱 移대뱶遺? ?숉솕, 寃뚯엫???먯껜 ?쒖옉 SVG 9醫낆쓣 異붽??덈떎. 湲곗〈 ?쒕룞 紐⑸줉怨??곸꽭 ?붾㈃, 移대뱶遺? ?숉솕 ?λ㈃???대?吏瑜??곌껐?덈떎.
+- ?숈뒿 ?댁슜 蹂닿컯 ?꾨즺: `js/data.js`?먯꽌 媛??쒕룞??以鍮꾨??? ??議곗옉 誘몄뀡, 援먯궗 吏덈Ц, 媛먭컖 ?쒓렇瑜??먮룞 遺?ы뻽?? ?붾㈃?먮뒗 `以鍮꾨???, `??議곗옉 誘몄뀡`, `援먯궗 吏덈Ц` 3媛??뺤옣 ?숈뒿 移대뱶濡??쒖떆?쒕떎.
+- 3D 援ы쁽 ?꾨즺: Three.js瑜??섏〈?깆쑝濡?異붽??섍퀬 `js/three-playground.mjs`??3D ?쒕룞 釉붾줉, ?꾩옱 ?쒕룞 ?대?吏 ?⑤꼸, ?뺣떟 ?먮툕, 蹂댁긽 蹂? 怨쇰ぉ 罹먮┃?? hover ?뺣?, ?뚯쟾 ?좊땲硫붿씠?? ?쒕옒洹??뚯쟾, ?대┃ ?대깽?몃? 援ы쁽?덈떎.
+- file URL ?댁뒋 泥섎━: Chrome? `file://`?먯꽌 ES module 濡쒕뵫??CORS濡?李⑤떒?섎?濡?`esbuild`瑜?devDependency濡?異붽??섍퀬 `js/three-playground.bundle.js` ?쇰컲 ?ㅽ겕由쏀듃 踰덈뱾???앹꽦??`index.html`?먯꽌 遺덈윭?ㅺ쾶 ?덈떎.
+- ?ㅻえ??蹂닿컯 ?꾨즺: `scripts/smoke.mjs`?먯꽌 ?쒕룞 ?대?吏 濡쒕뵫, ?곗뒪?ы넲 3D 罹붾쾭???ш린? WebGL ?쎌?, ?좊땲硫붿씠???쎌? 蹂?? 3D ?뺣떟 ?먮툕 ?대┃, 紐⑤컮??3D 罹붾쾭???쎌?, 媛濡?overflow ?놁쓬, ?곗뒪?ы넲쨌紐⑤컮???ㅽ겕由곗꺑 ?앹꽦??寃利앺븳??
+- 寃利??꾨즺: `npm run check` ?듦낵. `npm run smoke` ?듦낵. ?ㅽ겕由곗꺑? `scripts/.smoke-output/desktop-3d.png`, `scripts/.smoke-output/mobile-3d.png`???앹꽦?먮떎.
+
+## ?좎튂???숈뒿 ??댄꽣 援먯쑁??寃뚯엫 ???꾨㈃ 媛쒗렪 (2026-05-20)
+- ?붿껌 紐⑺몴??湲곗〈 ?꾨줈洹몃옩???щ?? 諛섏쓳?깆씠 遺議깊븯?ㅻ뒗 臾몄젣瑜??닿껐?섍퀬, 理쒓렐 ?멸린 ?숈뒿 ?꾨줈洹몃옩怨??깆쓽 ?⑦꽩??李멸퀬??援먯쑁??寃뚯엫 ???뺤떇?쇰줈 ?붿옄?멸낵 ?숈뒿 ?곗씠?곕? ?꾨? 怨좎튂??寃껋씠??
+- 李멸퀬 湲곗?? Khan Academy Kids??罹먮┃?걔룹콉쨌寃뚯엫쨌李쎌옉 ?쒕룞怨?援먯궗??吏꾪뻾 ?뺤씤, Lingokids??structured lesson怨??먭린 ?띾룄 ?숈뒿, ABCmouse???곗폆쨌蹂댁긽 ?쒖뒪?? Duolingo ABC??hands-on reading lesson怨?tracing쨌drag-and-drop 瑜섏쓽 ?ㅺ컧媛??쒕룞, Teach Your Monster to Read???붾뱶쨌誘몃땲寃뚯엫쨌?뚮땳??吏꾪뻾 援ъ“?? ?뱀젙 ?깆쓽 UI??罹먮┃?곕? 蹂듭젣?섏? ?딄퀬 怨듯넻 ?⑦꽩留??먯껜 ?붿옄?몄쑝濡?諛섏쁺?덈떎.
+- ?곗씠???꾨㈃ 媛쒗렪 ?꾨즺: `js/data.js`瑜?72媛??섏뒪???앹꽦???곗씠?곕줈 援먯껜?덈떎. 6?맞??? 援?뼱쨌?섑븰쨌?곸뼱, 怨쇰ぉ蹂?4媛??붾뱶, 移대뱶遺겶룸룞?붋룰쾶???쒕룞???앹꽦?쒕떎.
+- 寃뚯엫???곗씠??異붽? ?꾨즺: 媛??쒕룞???덈꺼, ?쒖씠?? XP, 肄붿씤, 諛곗?, 誘몃땲寃뚯엫 ??? ?ㅽ궗 肄붾뱶, ?섏뒪???ㅻ챸, 以鍮꾨??? ??議곗옉 誘몄뀡, 援먯궗 吏덈Ц, 媛먭컖 ?쒓렇瑜??ｌ뿀??
+- 紐⑤뜽 媛쒗렪 ?꾨즺: `js/models.js`??XP, 肄붿씤, ?곗냽 ?꾨즺, ?깃툒, 罹먮┃??諛섏쓳, 理쒓렐 ?섏뒪??濡쒓렇 ??μ쓣 異붽??덈떎.
+- ?붾㈃ 媛쒗렪 ?꾨즺: `js/views.js`??寃뚯엫 HUD, ?덈꺼쨌XP쨌肄붿씤쨌?곗냽 ?꾨즺 ?쒖떆, 罹먮┃??諛섏쓳, ?섏뒪??紐⑺몴?? 蹂댁긽 誘명꽣, 理쒓렐 ?섏뒪??濡쒓렇瑜?異붽??덈떎.
+- ?곹샇?묒슜 媛쒗렪 ?꾨즺: `js/controllers.js`???뺣떟쨌?꾨즺 ?④낵?뚭낵 XP ??＝ ?좊땲硫붿씠?섏쓣 異붽??덈떎.
+- 3D ?섏젙 ?꾨즺: `js/three-playground.mjs`??移대찓?쇨? 3D ?붾뱶瑜?以묒븰?쇰줈 諛붾씪蹂닿쾶 議곗젙?덈떎. `file://` CORS瑜??쇳븯湲??꾪빐 3D ?쒕룞 ?⑤꼸? ?몃? SVG ?띿뒪泥????罹붾쾭???띿뒪泥섎줈 吏곸젒 洹몃┛??
+- 踰꾧렇 ?섏젙 ?꾨즺: 寃뚯엫 臾몄젣 ?곸뿭?먯꽌 `undefined`媛 蹂댁씠???먯씤? 寃뚯엫 round媛 `prompt` ???`clue`瑜??곕뒗???뚮뜑?ш? `prompt`留??쎌뼱???앷릿 臾몄젣??? `prompt || clue` fallback?쇰줈 ?섏젙?덈떎.
+- 寃利??꾨즺: `npm run check` ?듦낵. `npm run smoke` ?듦낵. 異붽? ?뺤씤?먯꽌 紐⑤컮??`undefined? false`瑜??뺤씤?덈떎. ???ㅽ겕由곗꺑? `scripts/.smoke-output/desktop-3d.png`, `scripts/.smoke-output/mobile-3d.png`???앹꽦?먮떎.
+
+## ?좎튂??ROOT 愿由ъ옄 紐⑤땲?곕쭅 ?붾㈃ (2026-05-20)
+- ?붿껌 紐⑺몴??`?몃Ⅴ???좎튂??26.05.20)/kindergarten-learning-playground`?먯꽌 援먯궗??踰꾪듉 ?놁뿉 愿由ъ옄 踰꾪듉??異붽??섍퀬, 援먯궗?㈑룻븰?앹슜 ?꾩씠?붿? 鍮꾨?踰덊샇 諛??숈뒿 肄섑뀗痢??꾩껜瑜?ROOT 愿由ъ옄 ?붾㈃?먯꽌 愿由ы븯??寃껋씠??
+- 援ы쁽 湲곗?? ?꾩옱 ?낅┰ ?ㅽ뻾???⑥씪 HTML ??援ъ“瑜??좎??섎뒗 寃껋씠?? ?쒕쾭 ?몄쬆???덈줈 留뚮뱾吏 ?딄퀬 localStorage roster??援먯궗쨌?숈깮 `username`, `password` ?꾨뱶瑜?異붽??섍퀬, 湲곗〈 ?곗씠?곗뿉??湲곕낯 ?꾩씠?붿? 鍮꾨?踰덊샇瑜??먮룞 蹂닿컯?섎룄濡??덈떎.
+- ?곷떒 ?ㅻ뜑??`?뚯썝媛??, `?숈깮??, `援먯궗??, `愿由ъ옄` ?쒖꽌濡??뺣━?덈떎. `愿由ъ옄` 踰꾪듉? `admin-dashboard`濡?吏꾩엯?섎ŉ, 愿由ъ옄 紐⑤뱶?먯꽌???덈줈怨좎묠?쇰줈 ??μ냼 理쒖떊 roster? 肄섑뀗痢?愿由??곹깭瑜??ㅼ떆 ?쎈뒗??
+- ROOT 愿由ъ옄 ?붾㈃? 援먯궗 怨꾩젙 ?? ?깅줉 ?대옒???? ?숈깮 怨꾩젙 ?? 肄섑뀗痢?肄붿뒪 ?? ?됯퇏 吏꾨룄瑜??붿빟?섍퀬, ?꾩껜 ?숈깮 吏꾪뻾瑜좎쓣 湲곗〈 Three.js 紐⑤땲?곕쭅 ?λ㈃?쇰줈 蹂댁뿬以??
+- 怨꾩젙 愿由щ뒗 援먯궗?⑷낵 ?숈깮?⑹쓣 ?섎닠 ?꾩씠?붿? 鍮꾨?踰덊샇瑜?諛붾줈 ?섏젙?섎뒗 ?쇱쑝濡?援ъ꽦?덈떎. 肄섑뀗痢?愿由щ뒗 6?맞???횞 援?뼱쨌?섑븰쨌?곸뼱 6媛?肄붿뒪蹂??댁쁺 ?곹깭? ?댁쁺 硫붾え瑜?`contentAdmin`????ν븳??
+- 寃利??꾨즺: `npm run check`, `npm run smoke` ?듦낵. Edge ?뚯씪 ?ㅽ뻾 ?먭??먯꽌 愿由ъ옄 踰꾪듉, ROOT ??쒕낫?? 怨꾩젙 ?섏젙 ??? 肄섑뀗痢??댁쁺 ?곹깭 ??? 3D 罹붾쾭??異쒕젰, 紐⑤컮??媛濡?overflow ?놁쓬???뺤씤?먮떎.
+
+## ?좎튂???숈뒿 ??댄꽣 Cloudflare Pages 諛고룷 (2026-05-20)
+- ?붿껌 紐⑺몴??吏湲덇퉴吏 ?묒뾽???좎튂???깆쓣 `https://purunet-kindergarten.pages.dev` 二쇱냼?먯꽌 ?덊럹?댁?濡??묐룞?섍쾶 ?낅뜲?댄듃?섎뒗 寃껋씠??
+- 湲곗〈 猷⑦듃 `wrangler.toml`? ?섑븰 ?꾩옄遺곸슜 `purunet-math-ebook` ?ㅼ젙?댁뼱???좎튂????諛고룷?먮뒗 ?ъ슜?섏? ?딆븯?? Wrangler濡?`purunet-kindergarten` Pages ?꾨줈?앺듃瑜??덈줈 ?앹꽦?덈떎.
+- 諛고룷 ??`?몃Ⅴ???좎튂??26.05.20)/kindergarten-learning-playground`?먯꽌 `npm run check`? `npm run smoke`瑜??ㅽ뻾?덇퀬 紐⑤몢 ?듦낵?덈떎.
+- ?댁쁺 諛고룷?먮뒗 ???ㅽ뻾???꾩슂??`index.html`, `assets`, `js`, `vendor`留??ы븿?덈떎. 臾몄꽌, ?ㅽ겕由쏀듃, ?⑦궎吏 ?뚯씪? ?댁쁺 ?ъ씠?몄뿉 ?몄텧?섏? ?딅룄濡??꾩떆 諛고룷 ?대뜑?먯꽌 ?쒖쇅?덈떎.
+- 諛고룷 紐낅졊? `npx wrangler pages deploy "$env:TEMP\purunet-kindergarten-pages" --project-name purunet-kindergarten --branch main`?쇰줈 ?ㅽ뻾?덈떎. Wrangler??9媛??뚯씪 ?낅줈?쒖? 諛고룷 ?꾨즺瑜?諛섑솚?덈떎.
+- ?댁쁺 寃利??꾨즺: `https://purunet-kindergarten.pages.dev/`??HTTP 200?닿퀬 ?쒕ぉ? `?몃Ⅴ???좎튂???대떎. `assets/styles.css`, `js/models.js`, `js/views.js`, `vendor/three.min.js`??紐⑤몢 HTTP 200?쇰줈 ?뺤씤?덈떎.
+- Edge ?댁쁺 URL ?먭??먯꽌 ???붾㈃, 愿由ъ옄 踰꾪듉, ROOT 愿由ъ옄 ??쒕낫?? 3D 罹붾쾭???뚮뜑留곸씠 ?듦낵?덈떎.
+
+## ?좎튂???숈뒿 ??댄꽣 Cloudflare D1 蹂묓뻾 ?숆린??(2026-05-20)
+- ?붿껌 紐⑺몴???ъ씠?몄쓽 ?숈뒿???곗씠?? ?숈뒿???곗씠?? 援먯궗 ?곗씠?곕? Cloudflare ?꾩슜 DB? ?꾩옱 ?꾨줈?앺듃 DB??蹂묓뻾 ??ν븯怨??숆린?뷀븯??寃껋씠??
+- ?꾩옱 ?꾨줈?앺듃 DB??湲곗〈 釉뚮씪?곗? `localStorage`?대ŉ, ?대? ?쒓굅?섏? ?딄퀬 Cloudflare D1??異붽? ??μ냼濡?遺숈??? D1 ?대쫫? `purunet_kindergarten_learning_db`, 諛붿씤???대쫫? `KINDERGARTEN_DB`??
+- D1 ?ㅽ궎留덈뒗 ?꾩껜 snapshot 諛깆뾽??`sync_snapshots`? 議고쉶??`teachers`, `classes`, `students`, `student_progress`, `learning_content`, `content_admin` ?뚯씠釉붾줈 援ъ꽦?덈떎.
+- Cloudflare Pages Advanced Worker `_worker.js`瑜?異붽???`/api/kindergarten/sync`瑜?泥섎━?쒕떎. 媛숈? origin PUT留???ν븯怨? GET? snapshot怨?議고쉶 ?뚯씠釉??곗씠?곕? 諛섑솚?쒕떎.
+- 釉뚮씪?곗? 履쎌뿉??`js/cloud-sync.js`瑜?異붽??덈떎. `models.js`??localStorage ??????댁쁺 HTTPS ?섍꼍?먯꽌 Cloudflare D1 ??μ쓣 debounce濡?蹂묓뻾 ?ㅽ뻾?섍퀬, ???쒖옉 諛??덈줈怨좎묠 ??D1 snapshot??諛쏆븘 localStorage? 蹂묓빀?쒕떎.
+- 諛고룷 ??`npm run check`, `npm run smoke`媛 ?듦낵?덈떎. ?댁쁺 URL?먯꽌 Edge濡?援먯궗쨌?숈깮 ?깅줉???섑뻾????`/api/kindergarten/sync`? ?먭꺽 D1 SQL 議고쉶?먯꽌 teachers 1, classes 1, students 1, progress 1, content 6 ??μ쓣 ?뺤씤?덈떎.
+- 寃利????댁쁺 DB???붾? 援먯궗쨌?숈깮쨌吏꾪뻾 ?곗씠?곗? ?쒖꽦 snapshot? ??젣?덈떎. ?꾩옱 D1?먮뒗 ?숈뒿 肄섑뀗痢?6媛쒕쭔 ?⑥븘 ?덈떎.
+## ?좎튂??Google 愿由ъ옄 ?몄쬆怨??곸뼱쨌?섑븰 ?듯빀 ?ы꽭 (2026-05-21)
+- ?붿껌 紐⑺몴???좎튂??ROOT 愿由ъ옄 ?붾㈃??Google ?몄쬆 ?댄썑?먮쭔 ?닿퀬, 湲곗〈 `https://purunet-math-ebook.pages.dev/`? `https://purunet-english-ebook.pages.dev/`瑜?`?몃Ⅴ???곸뼱 ?섑븰 ?숈썝` ?좉퇋 ?ы꽭?먯꽌 ?좏깮?????덇쾶 留뚮뱶??寃껋씠??
+- ?좎튂???깆? ?쒖닔 HTML/JS 援ъ“??Google Identity Services ?꾨윴?몄뿏??寃뚯씠?몃? ?곸슜?덈떎. 愿由ъ옄??Google OAuth ??Client ID? ?덉슜 ?대찓?쇱쓣 ??ν븳 ?? ID ?좏겙??audience, ?대찓?? ?대찓???뺤씤 ?щ?, 留뚮즺 ?쒓컙???듦낵?댁빞 `admin-dashboard`濡??대룞?쒕떎.
+- ?좉퇋 ?ы꽭? `?몃Ⅴ???곸뼱 ?섑븰 ?숈썝(26.05.21)/academy-portal`??留뚮뱾?덈떎. 泥??붾㈃?먮뒗 ?곷떒 `?뚯썝媛??, `?숈깮??, `援먯궗??, `愿由ъ옄` 踰꾪듉怨?`?몃Ⅴ???섑븰`, `?몃Ⅴ???곸뼱` ?좏깮 移대뱶媛 ?덇퀬, 諛곌꼍? Three.js 湲곕컲 3D ?낆껜 ?ы꽭 ?λ㈃?대떎.
+- ?붿껌 二쇱냼 `purunet_academy.pages.dev`??諛묒쨪 ?뚮Ц??DNS ?몄뒪?몃챸?쇰줈 ?ъ슜?????놁뼱 Cloudflare Pages ?꾨줈?앺듃??`purunet-academy`濡??앹꽦?덈떎. ?댁쁺 二쇱냼??`https://purunet-academy.pages.dev/`?대떎.
+- 寃利??꾨즺: ?좎튂??`npm run check`, `npm run smoke` ?듦낵. 濡쒖뺄쨌?댁쁺 Playwright?먯꽌 ?좉퇋 ?ы꽭 3D 罹붾쾭??鍮꾧났諛? ?섑븰쨌?곸뼱 留곹겕, 沅뚰븳 踰꾪듉, 紐⑤컮??390px overflow 0???뺤씤?덇퀬, ?댁쁺 ?좎튂???ъ씠?몄뿉??Google 愿由ъ옄 寃뚯씠??紐??몄쬆 ??ROOT ??쒕낫??吏꾩엯???뺤씤?덈떎.
+
+## ?몃Ⅴ???곸뼱 ?섑븰 ?숈썝 ?듯빀 ?숈뒿 ???ш뎄異?(2026-05-21)
+- ?ъ슜???뺤젙???곕씪 湲곗〈 `purunet-academy` ?몃? 留곹겕 寃뚯씠?몃? ?먭린?섍퀬, ?섑븰쨌?곸뼱 ?곗씠?곕? ???대??먯꽌 吏곸젒 ?숈뒿?섎뒗 ?듯빀 ?ъ씠?몃줈 ?ㅼ떆 留뚮뱾?덈떎.
+- `?몃Ⅴ???곸뼱 ?섑븰 ?숈썝(26.05.21)/academy-portal/js/learning-data.js`???섑븰 1~6?숇뀈 媛쒕뀗 72媛? ?섑븰 1~6?숇뀈 ?곗궛 72媛? ?곸뼱 16?몃옓怨??곸뼱 吏묒쨷 肄붿뒪瑜??⑹퀜 珥?173媛??숈뒿 紐⑤뱢???앹꽦?쒕떎.
+- `js/app.js`??怨쇰ぉ ?? 肄붿뒪 紐⑸줉, 移대뱶遺? ???臾몄젣 寃뚯엫, ?뚯꽦 ?ｊ린, ?숈뒿 吏?? localStorage 吏꾨룄 ??? ?뚯썝媛?? ?숈깮???꾩옱 ?숈뒿, 援먯궗??紐⑤땲?곕쭅, 愿由ъ옄 肄섑뀗痢??몃깽?좊━瑜??뚮뜑留곹븳??
+- 3D ?섍꼍? ?⑥닚 寃뚯씠?멸? ?꾨땲???섑븰 ?묎낵 ?곸뼱 ?? ?숈뒿???ㅻ툕?앺듃媛 ?덈뒗 ?숈뒿 罹좏띁?ㅻ줈 諛붽엥怨? 怨쇰ぉ怨?吏꾪뻾瑜좎뿉 ?곕씪 ?숈뒿???ㅻ툕?앺듃媛 諛섏쓳?쒕떎.
+- 寃利??꾨즺: `node --check js/learning-data.js`, `node --check js/app.js`, 濡쒖뺄 Playwright, ?댁쁺 Playwright瑜??듦낵?덈떎. ?댁쁺 URL? `https://purunet-academy.pages.dev/`?닿퀬, ?댁쁺 HTML?먮뒗 湲곗〈 ?몃? ?섑븰쨌?곸뼱 留곹겕 臾몄옄?댁씠 ?⑥븘 ?덉? ?딅떎.
+
+## 以묐벑 ?댁떊 ?곸뼱 8醫?援먭낵??遺꾩꽍 ?ъ씠??(2026-05-21)
+- ?대쾲 ?붿껌? 湲곗〈 `purunet-academy`瑜?以묐벑 ?댁떊 ?곸뼱 ?鍮꾨컲源뚯? ?뺤옣?섎뒗 ?묒뾽?대떎.
+- 援ы쁽? 8媛?異쒗뙋??洹몃９, 以?쨌以?쨌以?, ?⑥썝蹂?蹂몃Ц 遺꾩꽍쨌?⑥뼱쨌臾몄옣 ?붽린쨌?먯뒿???뺣━쨌?됯?臾몄젣吏??鍮꾨? ???대? ?숈뒿 怨쇰ぉ?쇰줈 異붽??섎뒗 諛⑺뼢?쇰줈 ?≪븯??
+- 援먭낵??蹂몃Ц, ?먯뒿?? ?됯?臾몄젣吏??먮Ц? ??묎텒 ?먮즺?대?濡??먮룞 ?섏쭛?섍굅???꾨Ц??肄붾뱶???ｌ? ?딅뒗?? 援먯궗媛 媛吏??뺤떇 ?먮즺瑜??낅젰?섎㈃ localStorage?먯꽌 遺꾩꽍怨?臾몄젣瑜??앹꽦?섎뒗 諛⑹떇?쇰줈 泥섎━?쒕떎.
+- 寃利?湲곗?? 以묐벑 ?곸뼱 ?곗씠??移댁슫?? 臾몃쾿 寃?? 鍮뚮뱶, 釉뚮씪?곗? ?ㅻえ?щ떎.
+- 援ы쁽 ?꾨즺: `academy-portal/js/middle-english-textbooks.js`??8媛?異쒗뙋??洹몃９, 以?쨌以?쨌以?, 珥?192媛?Lesson 遺꾩꽍 ?명듃瑜?異붽??덈떎.
+- 援ы쁽 ?꾨즺: `middle-english` 怨쇰ぉ??湲곗〈 ?섑븰쨌?곸뼱 ?듯빀 移댄깉濡쒓렇, 臾몄젣 ?앹꽦, ?숈뒿 ?붾㈃, 愿由ъ옄 肄섑뀗痢??몃깽?좊━???곌껐?덈떎.
+- 寃利??꾨즺: ???곗씠??移댁슫??8媛?異쒗뙋?? 3媛??숇뀈, 24媛?肄붿뒪, 192媛?以묐벑 ?곸뼱 紐⑤뱢???뺤씤?덇퀬, ?꾩껜 紐⑤뱢? 282媛쒕떎.
+- 寃利??꾨즺: `node --check`, `npm run build`, 濡쒖뺄 Playwright ?ㅻえ?ш? ?듦낵?덈떎. `lint/verify/onefile`? ???섏쐞 ?깆뿉 ?ㅽ겕由쏀듃媛 ?놁뼱 ?ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/` ?댁쁺 URL??諛섏쁺?덇퀬, 理쒖쥌 ?꾨━酉곕뒗 `https://07646f6b.purunet-academy.pages.dev`??
+
+## 珥덈벑쨌以묐벑 ?꾩닔 ?곷떒?댁? ?곷Ц踰??숈뒿 ?ъ씠??(2026-05-21)
+- ?대쾲 ?붿껌? `academy-portal` ?덉뿉 珥덈벑 ?꾩닔 ?곷떒?? 以묐벑 ?꾩닔 ?곷떒?? 珥덈벑 ?곷Ц踰? 以묐벑 ?곷Ц踰?怨쇰ぉ??異붽??섎뒗 ?묒뾽?대떎.
+- 2022 媛쒖젙 ?곸뼱怨?援먯쑁怨쇱젙怨?湲곕낯 ?댄쐶 紐⑸줉 ?곌뎄瑜?湲곗??쇰줈 ?쇰릺, ?꾩껜 ?⑥뼱 紐⑸줉? 援먯궗??遺숈뿬?ｊ린 ?뺤옣 諛⑹떇?쇰줈 泥섎━?쒕떎.
+- 寃利?湲곗?? ???곗씠??移댁슫?? JS 臾몃쾿 寃?? 鍮뚮뱶, 濡쒖뺄쨌?댁쁺 釉뚮씪?곗? ?ㅻえ?щ떎.
+- 援ы쁽 ?꾨즺: `academy-portal/js/english-core-sites.js`瑜?異붽??섍퀬 ??怨쇰ぉ 珥?48媛?紐⑤뱢??留뚮뱾?덈떎.
+- 援ы쁽 ?꾨즺: ?⑥뼱??湲곕낯 ????명듃? 援먯궗??遺숈뿬?ｊ린 ??μ쓣 ?쒓났?섍퀬, 臾몃쾿? 珥덈벑 12媛쑣룹쨷??14媛?臾몃쾿 猷⑦떞???쒓났?쒕떎.
+- 寃利??꾨즺: `node --check`, ?곗씠??移댁슫?? `npm run build`, 濡쒖뺄 Playwright ?ㅻえ?ш? ?듦낵?덈떎. `lint/verify/onefile`? ?섏쐞 ?깆뿉 ?ㅽ겕由쏀듃媛 ?놁뼱 ?ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/` ?댁쁺 URL??諛섏쁺?덇퀬, 理쒖쥌 ?꾨━酉곕뒗 `https://36e4f4dc.purunet-academy.pages.dev`??
+
+## 珥덈벑 ?댁떊 ?곸뼱 8醫?援먭낵???숈뒿 ?명듃 (2026-05-21)
+- ?대쾲 ?붿껌? `academy-portal`??珥덈벑 ?댁떊 ?곸뼱 8醫?援먭낵???숈뒿 ?명듃瑜?異붽??섎뒗 ?묒뾽?대떎.
+- 援먭낵???먮Ц? ??묎텒 ?먮즺?대?濡?湲곕낯 ?묒옱?섏? ?딄퀬, 援먯궗???낅젰??遺꾩꽍怨??숈뒿 猷⑦떞???쒓났?쒕떎.
+- 寃利?湲곗?? ???곗씠??移댁슫?? JS 臾몃쾿 寃?? 鍮뚮뱶, 濡쒖뺄쨌?댁쁺 釉뚮씪?곗? ?ㅻえ?щ떎.
+- 援ы쁽 ?꾨즺: 8媛?梨꾪깮??洹몃９, 珥?~珥?, 珥?352媛?Lesson ?숈뒿 ?명듃瑜?異붽??덈떎.
+- 援ы쁽 ?꾨즺: ??붾Ц, ?⑥썝 ?⑥뼱, ?뚮땳?? ?듭떖 臾몄옣, ?섑뻾?됯?, ?⑥썝?됯? ?鍮꾩? 援먯궗???낅젰 ??μ쓣 湲곗〈 ???먮쫫???곌껐?덈떎.
+- 寃利??꾨즺: `node --check`, ?곗씠??移댁슫?? `npm run build`, 濡쒖뺄 Playwright ?ㅻえ?ш? ?듦낵?덈떎. `lint/verify/onefile`? ?섏쐞 ?깆뿉 ?ㅽ겕由쏀듃媛 ?놁뼱 ?ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/` ?댁쁺 URL??諛섏쁺?덇퀬, 理쒖쥌 ?꾨━酉곕뒗 `https://980c206a.purunet-academy.pages.dev`??
+- ?댁쁺 寃利??꾨즺: ?꾩껜 682媛?紐⑤뱢, 8媛?怨쇰ぉ 移대뱶, 珥덈벑 ?댁떊 ?곸뼱 352媛??숈뒿 ?명듃, 援먯궗????붾Ц localStorage ??? ?곗뒪?ы넲 overflow 0, 紐⑤컮??390px overflow 0, 肄섏넄 ?ㅻ쪟 0, 400 ?댁긽 ?묐떟 0???뺤씤?덈떎.
+
+## 怨좊벑 ?댁떊 ?곸뼱 援먭낵?쑣룰퀬???곷Ц踰빧룰퀬???꾩닔 ?곷떒??(2026-05-21)
+- ?대쾲 ?붿껌? `academy-portal`??怨좊벑 ?댁떊 ?곸뼱 援먭낵??遺꾩꽍, 怨좊벑 ?꾩닔 ?곷떒?? 怨좊벑 ?곷Ц踰?怨쇰ぉ??異붽??섎뒗 ?묒뾽?대떎.
+- 怨듦컻 ?먮즺 ?뺤씤 湲곗??쇰줈 2022 媛쒖젙 怨좊벑?숆탳 1?숇뀈 ?곸뼱 援먭낵?쒕뒗 怨듯넻?곸뼱1쨌怨듯넻?곸뼱2 ?쎄린 ?먮즺 ?꾧퀎媛 以묒슂?섎?濡? ?깆? 怨듯넻?곸뼱1쨌怨듯넻?곸뼱2쨌?곸뼱?졖룹쁺?닳뀫 ?⑥썝 ?먮쫫???쒓났?쒕떎.
+- ?ъ슜???붿껌? 8醫??명듃?대?濡?8媛????梨꾪깮??洹몃９??湲곕낯?쇰줈 ?먭퀬, 蹂듭닔 ??먰뙋쨌?숆탳蹂?梨꾪깮?먮챸? 援먯궗???낅젰 硫붾え濡?蹂댁젙?????덇쾶 ?쒕떎.
+- 援먭낵???먮Ц? ??묎텒 ?먮즺?대?濡?湲곕낯 ?묒옱?섏? ?딄퀬, 援먯궗???낅젰??遺꾩꽍怨?怨좊벑 ?댁떊 臾몄젣 猷⑦떞???쒓났?쒕떎.
+- 寃利?湲곗?? ???곗씠??移댁슫?? JS 臾몃쾿 寃?? 鍮뚮뱶, 濡쒖뺄쨌?댁쁺 釉뚮씪?곗? ?ㅻえ?щ떎.
+- 援ы쁽 ?꾨즺: `academy-portal/js/high-english-textbooks.js`瑜?異붽??섍퀬 8媛????梨꾪깮??洹몃９, 怨듯넻?곸뼱1쨌怨듯넻?곸뼱2쨌?곸뼱?졖룹쁺?닳뀫, 珥?256媛?怨좊벑 ?댁떊 ?곸뼱 遺꾩꽍 ?명듃瑜?留뚮뱾?덈떎.
+- 援ы쁽 ?꾨즺: `academy-portal/js/english-core-sites.js`??怨좊벑 ?꾩닔 ?곷떒??12媛?肄붿뒪? 怨좊벑 ?곷Ц踰?16媛?肄붿뒪瑜?異붽??덈떎.
+- 援ы쁽 ?꾨즺: 怨좊벑 蹂몃Ц 援ъ“, ?듭떖 ?댄쐶, 援щЦ 遺꾩꽍, ?대쾿 ?ъ씤?? 臾몄옣 ?붽린, ?쒖닠?? ?됯?臾몄젣吏??鍮?猷⑦떞??湲곗〈 臾몄젣 ?앹꽦쨌?ｊ린쨌吏꾨룄쨌愿由ъ옄 ?먮쫫???곌껐?덈떎.
+- 寃利??꾨즺: `node --check`, ?곗씠??移댁슫?? `npm run build`, 濡쒖뺄 Playwright ?ㅻえ?ш? ?듦낵?덈떎. `lint/verify/onefile`? ?섏쐞 ?깆뿉 ?ㅽ겕由쏀듃媛 ?놁뼱 ?ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/` ?댁쁺 URL??諛섏쁺?덇퀬, 理쒖쥌 ?꾨━酉곕뒗 `https://5e32906e.purunet-academy.pages.dev`??
+- ?댁쁺 寃利??꾨즺: ?꾩껜 966媛?紐⑤뱢, 11媛?怨쇰ぉ 移대뱶, 怨좊벑 ?댁떊 ?곸뼱 256媛? 怨좊벑 ?꾩닔 ?곷떒??12媛? 怨좊벑 ?곷Ц踰?16媛? 援먯궗??蹂몃Ц localStorage ??? ?곗뒪?ы넲 overflow 0, 紐⑤컮??390px overflow 0, 肄섏넄 ?ㅻ쪟 0, 400 ?댁긽 ?묐떟 0???뺤씤?덈떎.
+
+## 以묐벑 ?댁떊 ?섑븰 (2026-05-21)
+- ?대쾲 ?붿껌? `academy-portal`??以묐벑 ?댁떊 ?섑븰 怨쇰ぉ??異붽??섎뒗 ?묒뾽?대떎.
+- 2022 媛쒖젙 以묓븰援??섑븰??4媛??곸뿭???섏? ?곗궛, 蹂?붿? 愿怨? ?꾪삎怨?痢≪젙, ?먮즺? 媛?μ꽦??湲곗??쇰줈 ?⑥썝 移댄깉濡쒓렇瑜?援ъ꽦?쒕떎.
+- 踰붿쐞??以?쨌以?쨌以? ?⑥썝蹂??댁떊 ?鍮꾩씠硫? 援먭낵???먮Ц???꾨땲??媛쒕뀗, 湲곕낯, ?좏삎, ?쒖닠?? 怨좊궃?? ?ㅻ떟 猷⑦떞怨?援먯궗???쒗뿕踰붿쐞 硫붾え瑜??쒓났?쒕떎.
+- 寃利?湲곗?? ???곗씠??移댁슫?? JS 臾몃쾿 寃?? 鍮뚮뱶, 濡쒖뺄쨌?댁쁺 釉뚮씪?곗? ?ㅻえ?щ떎.
+- 援ы쁽 ?꾨즺: `academy-portal/js/middle-math-exams.js`瑜?異붽??섍퀬 以?쨌以?쨌以? 珥?30媛?以묐벑 ?댁떊 ?섑븰 ?명듃瑜?留뚮뱾?덈떎.
+- 援ы쁽 ?꾨즺: 媛??명듃??媛쒕뀗 ?뺤텞, 湲곕낯 怨꾩궛, ????좏삎, ?쒖닠?? 怨좊궃?? ?ㅻ떟 ?대━??6媛?猷⑦떞怨??앹꽦??臾몄젣瑜??쒓났?쒕떎.
+- 援ы쁽 ?꾨즺: 援먯궗???쒗뿕踰붿쐞쨌援먯옱쨌?ㅻ떟 硫붾え ?낅젰??localStorage????ν븯怨? 湲곗〈 臾몄젣 ?앹꽦쨌?ｊ린쨌吏꾨룄쨌愿由ъ옄 沅뚰븳 ?먮쫫???곌껐?덈떎.
+- 寃利??꾨즺: `node --check`, ?곗씠??移댁슫?? `npm run build`, 濡쒖뺄 Playwright ?ㅻえ?ш? ?듦낵?덈떎. `lint/verify/onefile`? ?섏쐞 ?깆뿉 ?ㅽ겕由쏀듃媛 ?놁뼱 ?ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/` ?댁쁺 URL??諛섏쁺?덇퀬, 理쒖쥌 ?꾨━酉곕뒗 `https://679e2a6f.purunet-academy.pages.dev`??
+- ?댁쁺 寃利??꾨즺: ?꾩껜 996媛?紐⑤뱢, 12媛?怨쇰ぉ 移대뱶, 以묐벑 ?댁떊 ?섑븰 30媛? 援먯궗???쒗뿕踰붿쐞 localStorage ??? 臾몄젣 ?앹꽦, ?곗뒪?ы넲 overflow 0, 紐⑤컮??390px overflow 0, 肄섏넄 ?ㅻ쪟 0, 400 ?댁긽 ?묐떟 0???뺤씤?덈떎.
+
+## ???붾㈃ ?숇뀈援???硫붾돱 (2026-05-21)
+- ?대쾲 ?붿껌? 硫붿씤 3D 諛곌꼍 ?꾨옒???섏뿴??怨쇰ぉ 硫붾돱瑜?珥덈벑?숈깮, 以묓븰?? 怨좊벑?숈깮 ???꾨옒???몃? 硫붾돱濡??ш뎄?깊븯???묒뾽?대떎.
+- 湲곗〈 怨쇰ぉ ?곗씠?? 臾몄젣 ?앹꽦, 吏꾨룄 ??? 愿由ъ옄 ?먮쫫? ?좎??섍퀬 ???붾㈃ 怨쇰ぉ ?좏깮 UI留?諛붽씔??
+- 寃利?湲곗?? JS 臾몃쾿 寃?? 鍮뚮뱶, 濡쒖뺄쨌?댁쁺 釉뚮씪?곗??먯꽌 ???꾪솚쨌怨쇰ぉ ?좏깮쨌紐⑤컮??overflow瑜??뺤씤?섎뒗 寃껋씠??
+- 援ы쁽 ?꾨즺: ???붾㈃??珥덈벑?숈깮, 以묓븰?? 怨좊벑?숈깮 ??낵 ?몃? 怨쇰ぉ ?⑤꼸 援ъ“濡?諛붽엥??
+- 寃利??꾨즺: `node --check`, `npm run build`, 濡쒖뺄쨌?댁쁺 Playwright ?ㅻえ?ш? ?듦낵?덈떎. `lint/verify/onefile`? ?섏쐞 ?깆뿉 ?ㅽ겕由쏀듃媛 ?놁뼱 ?ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/` ?댁쁺 URL??諛섏쁺?덇퀬, 理쒖쥌 ?꾨━酉곕뒗 `https://5640f984.purunet-academy.pages.dev`??
+- ?댁쁺 寃利??꾨즺: 珥덈벑 ??5媛?硫붾돱, 以묐벑 ??4媛?硫붾돱, 怨좊벑 ??3媛?硫붾돱, 以묐벑 ?섑븰 ?좏깮 ??30媛?紐⑤뱢 ?쒖떆, ?곗뒪?ы넲 overflow 0, 紐⑤컮??390px overflow 0, 肄섏넄 ?ㅻ쪟 0, 400 ?댁긽 ?묐떟 0???뺤씤?덈떎.
+
+## 以묐벑 ?댁떊 援?뼱쨌?ы쉶쨌怨쇳븰쨌??궗 (2026-05-21)
+- ?대쾲 ?붿껌? `academy-portal` 以묓븰?????꾨옒??以묐벑 ?댁떊 援?뼱, 以묐벑 ?댁떊 ?ы쉶, 以묐벑 ?댁떊 怨쇳븰, 以묐벑 ?댁떊 ??궗瑜?異붽??섎뒗 ?묒뾽?대떎.
+- NCIC 2022 媛쒖젙 援먯쑁怨쇱젙 怨듦컻 ?먮즺瑜?李멸퀬??怨쇰ぉ蹂??⑥썝 援ъ“瑜??〓릺, 援먭낵???먮Ц? ?섎줉?섏? ?딄퀬 ?댁떊 ?鍮꾩슜 媛쒕뀗쨌?먮즺 遺꾩꽍쨌臾몄젣 猷⑦떞?쇰줈 援ъ꽦?덈떎.
+- 援ы쁽 ?꾨즺: `js/middle-core-exams.js`瑜?異붽???援?뼱 12媛? ?ы쉶 12媛? 怨쇳븰 12媛? ??궗 12媛? 珥?48媛?以묐벑 ?댁떊 ?명듃瑜?留뚮뱾?덈떎.
+- 援ы쁽 ?꾨즺: 媛??명듃??媛쒕뀗 ?듭떖, ?먮즺쨌吏臾?遺꾩꽍, ????좏삎, ?쒖닠?? 怨좊궃?? ?ㅻ떟 ?대━???좏뵿怨??앹꽦??臾몄젣瑜??쒓났?쒕떎.
+- 援ы쁽 ?꾨즺: `js/learning-data.js`, `js/worksheet.js`, `js/models.js`, `js/controllers.js`, `js/views.js`, `assets/styles.css`, `index.html`, `README.md`瑜??곌껐??硫붾돱, ?숈뒿 ?붾㈃, 臾몄젣 ?앹꽦, ??? 沅뚰븳, 愿由ъ옄 ?몃깽?좊━瑜?諛섏쁺?덈떎.
+- 寃利??꾨즺: `node --check`, ?곗씠??移댁슫?? `npm run build`, 濡쒖뺄 Playwright ?ㅻえ?? ?댁쁺 Playwright ?ㅻえ?ш? ?듦낵?덈떎. `npm run lint`, `npm run verify`, `npm run onefile`? `academy-portal/package.json`???ㅽ겕由쏀듃媛 ?놁뼱 ?ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `npx --yes wrangler pages deploy . --project-name purunet-academy --branch main` ?깃났, 理쒖쥌 ?꾨━酉곕뒗 `https://31461d1b.purunet-academy.pages.dev`??
+- ?댁쁺 寃利??꾨즺: `https://purunet-academy.pages.dev/`? ?꾨━酉?URL?먯꽌 ?꾩껜 1044媛?紐⑤뱢, 以묓븰????8媛?移대뱶, 援?뼱쨌?ы쉶쨌怨쇳븰쨌??궗 媛?12媛??명듃, 援먯궗??硫붾え localStorage ??? 臾몄젣 ?앹꽦, ?곗뒪?ы넲 overflow 0, 紐⑤컮??390px overflow 0, 肄섏넄 ?ㅻ쪟 0, 400 ?댁긽 ?묐떟 0???뺤씤?덈떎.
+
+## 珥덈벑 ?댁떊 援?뼱쨌?섑븰쨌?ы쉶쨌怨쇳븰쨌??궗쨌?쒖옄쨌?낆꽌?쇱닠쨌臾명빐??(2026-05-22)
+- ?대쾲 ?붿껌? `academy-portal` 珥덈벑?숈깮 ???꾨옒??珥덈벑 ?댁떊 援?뼱, 珥덈벑 ?댁떊 ?섑븰, 珥덈벑 ?댁떊 ?ы쉶, 珥덈벑 ?댁떊 怨쇳븰, 珥덈벑 ?댁떊 ??궗, 珥덈벑 ?쒖옄, 珥덈벑 ?낆꽌?쇱닠, 珥덈벑 臾명빐?μ쓣 異붽??섎뒗 ?묒뾽?대떎.
+- NCIC 2022 媛쒖젙 援먯쑁怨쇱젙 怨듦컻 ?먮즺? 援먯쑁遺 ?덈궡 ?먮즺瑜?李멸퀬??怨쇰ぉ蹂??숈뒿 ?명듃 援ъ“瑜??〓뒗??
+- 珥덈벑 ??궗???낅┰ ?뺢퇋 援먭낵媛 ?꾨땲誘濡?珥덈벑 ?ы쉶 ????궗 湲곗큹? ?쒓뎅??以鍮?猷⑦떞?쇰줈 ?댁꽍?쒕떎.
+- 珥덈벑 ?쒖옄, ?낆꽌?쇱닠, 臾명빐?μ? 援먭낵???먮Ц ?섎줉???꾨땲??蹂댁땐 ?숈뒿怨??댁떊 ?쒖닠???鍮??명듃濡?援ъ꽦?쒕떎.
+- 寃利?湲곗?? ?곗씠??移댁슫?? JS 臾몃쾿 寃?? `npm run build`, 濡쒖뺄쨌?댁쁺 釉뚮씪?곗? ?ㅻえ?щ떎.
+- 援ы쁽 ?꾨즺: `academy-portal/js/elementary-core-exams.js`瑜?異붽????좉퇋 珥덈벑 8媛?怨쇰ぉ怨?珥?96媛??숈뒿 ?명듃瑜?留뚮뱾?덈떎.
+- 援ы쁽 ?꾨즺: 珥덈벑?숈깮 ??뿉 ?좉퇋 8媛?怨쇰ぉ???ｊ퀬, 媛??숈뒿 ?붾㈃??踰붿쐞 ?낅젰, 遺꾩꽍 移대뱶, 臾몄젣 ?앹꽦, 吏꾨룄 ????먮쫫???곌껐?덈떎.
+- 寃利??꾨즺: `node --check`, ?곗씠??移댁슫?? `npm run build`, 濡쒖뺄쨌?댁쁺 Playwright ?ㅻえ?ш? ?듦낵?덈떎. `lint/verify/onefile`? ?섏쐞 ?깆뿉 ?ㅽ겕由쏀듃媛 ?놁뼱 ?ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/` ?댁쁺 URL??諛섏쁺?덇퀬, 理쒖쥌 ?꾨━酉곕뒗 `https://817c272c.purunet-academy.pages.dev`??
+- ?댁쁺 寃利??꾨즺: ?꾩껜 1140媛?紐⑤뱢, 珥덈벑?숈깮 ??13媛?移대뱶, ?좉퇋 珥덈벑 8媛?怨쇰ぉ 媛?12媛??명듃, 援먯궗??硫붾え ??? 臾몄젣 ?앹꽦, ?곗뒪?ы넲 overflow 0, 紐⑤컮??390px overflow 0, 肄섏넄 ?ㅻ쪟 0, 400 ?댁긽 ?묐떟 0???뺤씤?덈떎.
+
+## 怨좊벑 ?댁떊 援?뼱쨌?섑븰쨌?ы쉶쨌怨쇳븰 (2026-05-22)
+- ?대쾲 ?붿껌? `academy-portal` 怨좊벑?숈깮 ???꾨옒??怨좊벑 ?댁떊 援?뼱, 怨좊벑 ?댁떊 ?섑븰, 怨좊벑 ?댁떊 ?ы쉶, 怨좊벑 ?댁떊 怨쇳븰??異붽??섎뒗 ?묒뾽?대떎.
+- NCIC 2022 媛쒖젙 援먯쑁怨쇱젙 怨듦컻 ?먮즺? 怨좊벑?숆탳 怨쇰ぉ 援ъ“ ?덈궡 ?먮즺瑜?李멸퀬??怨쇰ぉ蹂??숈뒿 ?명듃 援ъ“瑜??〓뒗??
+- 怨좊벑 怨쇰ぉ? 怨듯넻 怨쇰ぉ怨?二쇱슂 ?좏깮 怨쇰ぉ ??씠 ?볦쑝誘濡?怨쇰ぉ蹂?16媛??명듃, 珥?64媛??명듃濡?援ъ꽦?쒕떎.
+- 援먭낵???먮Ц? ?섎줉?섏? ?딄퀬 援먯쑁怨쇱젙 ?⑥썝 援ъ“ 湲곕컲???댁떊 ?鍮?猷⑦떞怨?援먯궗???쒗뿕踰붿쐞 ?낅젰 援ъ“濡?泥섎━?쒕떎.
+- 寃利?湲곗?? ?곗씠??移댁슫?? JS 臾몃쾿 寃?? `npm run build`, 濡쒖뺄쨌?댁쁺 釉뚮씪?곗? ?ㅻえ?щ떎.
+- 援ы쁽 ?꾨즺: `academy-portal/js/high-core-exams.js`瑜?異붽????좉퇋 怨좊벑 4媛?怨쇰ぉ怨?珥?64媛??댁떊 ?명듃瑜?留뚮뱾?덈떎.
+- 援ы쁽 ?꾨즺: 怨좊벑?숈깮 ??뿉 ?좉퇋 4媛?怨쇰ぉ???ｊ퀬, 媛??숈뒿 ?붾㈃??踰붿쐞 ?낅젰, 遺꾩꽍 移대뱶, 臾몄젣 ?앹꽦, 吏꾨룄 ????먮쫫???곌껐?덈떎.
+- 寃利??꾨즺: `node --check`, ?곗씠??移댁슫?? `npm run build`, 濡쒖뺄쨌?댁쁺 Playwright ?ㅻえ?ш? ?듦낵?덈떎. `lint/verify/onefile`? ?섏쐞 ?깆뿉 ?ㅽ겕由쏀듃媛 ?놁뼱 ?ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/` ?댁쁺 URL??諛섏쁺?덇퀬, 理쒖쥌 ?꾨━酉곕뒗 `https://756b0d6d.purunet-academy.pages.dev`??
+- ?댁쁺 寃利??꾨즺: ?꾩껜 1204媛?紐⑤뱢, 怨좊벑?숈깮 ??7媛?移대뱶, ?좉퇋 怨좊벑 4媛?怨쇰ぉ 媛?16媛??명듃, 援먯궗??硫붾え ??? 臾몄젣 ?앹꽦, ?곗뒪?ы넲 overflow 0, 紐⑤컮??390px overflow 0, 肄섏넄 ?ㅻ쪟 0, 400 ?댁긽 ?묐떟 0???뺤씤?덈떎.
+
+## ?몃Ⅴ???꾩뭅?곕? Windows ?ㅼ튂 ?뚯씪 (2026-05-22)
+- ?대쾲 ?붿껌? 理쒖떊 `academy-portal` ?댁쁺蹂몄쓣 PC ?ㅼ튂 ?뚯씪濡쒕룄 ?ъ슜?????덇쾶 媛깆떊?섎뒗 ?묒뾽?대떎.
+- 湲곗〈 `app/release` ?ㅼ튂 ?뚯씪? ?섑븰 ?꾩옄遺??꾩슜?대?濡? `academy-portal` ?덉뿉 蹂꾨룄 Electron ?섑띁? ?ㅼ튂 ?곗텧臾쇱쓣 留뚮뱺??
+- ?ㅼ튂 ?깆? `https://purunet-academy.pages.dev/`瑜??곗꽑 濡쒕뱶?섍퀬, ?ㅽ뙣?섎㈃ ?ㅼ튂 ?뚯씪???ы븿???뺤쟻 ?뚯씪???곕떎.
+- 寃利?湲곗?? 鍮뚮뱶, ?ㅼ튂 ?뚯씪 ?앹꽦, release ?뺤텞, ?곗텧臾??댁떆 湲곕줉?대떎.
+- 援ы쁽 ?꾨즺: `academy-portal/electron/main.cjs`? `academy-portal/package.json`??`installer:win` NSIS ?ㅼ젙??異붽??덈떎.
+- 寃利??꾨즺: `node --check`, `package.json` ?뚯떛, `npm run build`, `npm run installer:win`???듦낵?덈떎.
+- ?ㅼ튂 ?곗텧臾??앹꽦 ?꾨즺: `academy-portal/release/?몃Ⅴ???꾩뭅?곕?-?ㅼ튂-1.0.0.exe`? `academy-portal/release.zip`???앹꽦?덈떎.
+- ?⑦궎吏 寃利??꾨즺: `app.asar` ?대??먯꽌 ?댁쁺 URL, `js/high-core-exams.js`, `PurunetHighCore`, `high-korean` ?ы븿???뺤씤?덈떎.
+- 理쒖떊 ?곗텧臾?SHA256: ?ㅼ튂 EXE `6BD6CD2D6336FC741F224B8EDFC41542B3B9353C667AE904281EB5406378825D`, blockmap `0914753793E0E27C49B3B067D689192658767BE79AC38A0853AEDD304782847F`, app.asar `1186BA87D02C4B1B1DA46DA2BD123684A3E1F45A14AE542320BBD7ED31C04431`, release.zip `14AB99D8EA2FC08BAC4CD9C608E8FF104CD505105B6B383E34F1F05FB0CFEC0D`?대떎.
+
+## ?숈깮??怨좊벑?숈깮 ???쒗븳 (2026-05-22)
+- ?대쾲 ?붿껌? ?숈깮????硫붾돱?먯꽌 怨좊벑?숈깮 ??쓣 ?④린怨? 援먯궗?⑹뿉?쒕쭔 怨좊벑?숈깮 ??쓣 蹂댁씠寃??섎뒗 ?묒뾽?대떎.
+- 援먯궗????븷? 湲곗〈??紐⑤땲?곕쭅 ?붾㈃留??뚮뜑留곹뻽?쇰?濡? 紐⑤땲?곕쭅 ?꾨옒 ?숈뒿 硫붾돱???④퍡 遺숈씠??諛⑺뼢?쇰줈 泥섎━?쒕떎.
+- ?숈깮?⑹쑝濡??뚯븘????怨좊벑 怨쇰ぉ???좏깮???곹깭媛 ?⑥븘 ?덉쑝硫?珥덈벑 湲곕낯 怨쇰ぉ?쇰줈 ?뚮젮 ?숈깮 ?붾㈃??怨좊벑 肄붿뒪媛 ?몄텧?섏? ?딄쾶 ?쒕떎.
+- 寃利?湲곗?? ?숈깮????2媛? 援먯궗????3媛? ?숈깮???꾪솚 ??怨좊벑 肄붿뒪 誘몃끂異? 鍮뚮뱶, 諛고룷, ?ㅼ튂 ?뚯씪 媛깆떊?대떎.
+- 援ы쁽 ?꾨즺: ?숈깮?⑹? 珥덈벑?숈깮쨌以묓븰????쭔 ?쒖떆?섍퀬, 援먯궗?⑹? 珥덈벑?숈깮쨌以묓븰?씲룰퀬?깊븰????쓣 ?쒖떆?섍쾶 ?덈떎.
+- 援ы쁽 ?꾨즺: 援먯궗??紐⑤땲?곕쭅 ?꾨옒 ?숈뒿 硫붾돱? 肄붿뒪 紐⑸줉??遺숈뿬 援먯궗?⑹뿉??怨좊벑?숈깮 ??쓣 ?ъ슜?????덇쾶 ?덈떎.
+- 援ы쁽 ?꾨즺: ?숈깮???꾪솚 ??怨좊벑 怨쇰ぉ ?곹깭瑜?珥덈벑 湲곕낯 怨쇰ぉ?쇰줈 珥덇린?뷀븯怨? ?숈깮??怨좊벑 怨쇰ぉ ?좏깮??李⑤떒?덈떎.
+- 諛고룷 ?꾨즺: `npm run deploy`瑜??ㅼ튂 ?곗텧臾??쒖쇅 ?꾩떆 諛고룷 諛⑹떇?쇰줈 蹂댁젙?섍퀬 `https://purunet-academy.pages.dev/`??諛섏쁺?덈떎. 理쒖쥌 ?꾨━酉곕뒗 `https://8fce8b4c.purunet-academy.pages.dev`??
+- 寃利??꾨즺: 濡쒖뺄怨??댁쁺 Playwright?먯꽌 ?숈깮????2媛? 援먯궗????3媛? 援먯궗??怨좊벑 移대뱶 7媛? ?꾩껜 紐⑤뱢 1204媛쒕? ?뺤씤?덈떎.
+- ?ㅼ튂 ?뚯씪 媛깆떊 ?꾨즺: `academy-portal/release/?몃Ⅴ???꾩뭅?곕?-?ㅼ튂-1.0.0.exe`? `academy-portal/release.zip`??理쒖떊 UI 湲곗??쇰줈 ?ㅼ떆 ?앹꽦?덈떎.
+- 理쒖떊 ?곗텧臾?SHA256: ?ㅼ튂 EXE `760F5BDD3D5188B8FE65CC583F64A7791785959F8260BDA48E1A28032D41386A`, blockmap `3CE061E351BDB04FE48C9C0DA7C64B20785186BC7EE90EEBFD703F42092C7E8F`, app.asar `CA89BE71D8D6FC9D90E7C8F52BDC19CEE0A6839DCA5B1F06C3517F9AD6F78ED9`, release.zip `AC53F6E5E376FA9BD68CB3721606C973D775369BA82557CE409F1DACD5AEBE11`?대떎.
+
+## PC ?ㅼ튂 ?뚯씪 ?ш갚??(2026-05-22)
+- ?대쾲 ?붿껌? `academy-portal`??PC ?ㅼ튂 ?뚯씪??理쒖떊 ?숈깮??怨좊벑?숈깮 ???쒗븳 UI 湲곗??쇰줈 ?ㅼ떆 ?앹꽦?섎뒗 ?묒뾽?대떎.
+- 寃利?湲곗?? `npm run installer:win`, `app.asar` ?대? UI 濡쒖쭅 ?뺤씤, `release.zip` ?ъ븬異? ?곗텧臾??댁떆 湲곕줉?대떎.
+- ?ㅼ튂 ?뚯씪 ?ъ깮???꾨즺: `academy-portal`?먯꽌 `npm run installer:win`???듦낵?덈떎.
+- ?⑦궎吏 寃利??꾨즺: `app.asar` ?대??먯꽌 ?댁쁺 URL, `visibleSubjectsForRole`, 援먯궗???숈뒿 硫붾돱 ?뚮뜑留? 怨좊벑?숈깮 硫붾돱 李⑤떒 臾멸뎄瑜??뺤씤?덈떎.
+- `release.zip` ?ъ븬異??꾨즺: 理쒖떊 `academy-portal/release/` 湲곗??쇰줈 ?ㅼ떆 ?앹꽦?덈떎.
+- 理쒖떊 ?곗텧臾?SHA256: ?ㅼ튂 EXE `96B1F56940D5ABC85E05C8E1CD1FD1AFA6D1A33248DD7F63C17FEC2A47D44C31`, blockmap `EB9C927BC63C31FE0325B1A111C4A5972F57CE4136142AA691D00DB1A7E1B973`, app.asar `CA89BE71D8D6FC9D90E7C8F52BDC19CEE0A6839DCA5B1F06C3517F9AD6F78ED9`, release.zip `EC5B7D6F58D50789C0772BA514B9890B1F998289EF16828437AEE44DC09551B6`?대떎.
+
+## 以? ?섑븰 ?곗궛 PDF 湲곕컲 ?숈뒿 ?섏씠吏 ?쒖옉 (2026-05-24)
+- ?붿껌 紐⑺몴???낅줈?쒕맂 `諛붾튌?섑븰(以?)?곗궛1沅?, `諛붾튌?섑븰(以?)?곗궛2沅?, `諛붾튌以??꾪삎` 3媛?PDF瑜?李멸퀬??以묓븰援?3?숇뀈 ?섑븰 ?곗궛 ?숈뒿 ?섏씠吏瑜?留뚮뱶??寃껋씠??
+- ??묎텒 蹂댄샇瑜??꾪빐 PDF 吏硫? 臾명빆, ?댁꽕??洹몃?濡?蹂듭젣?섏? ?딄퀬 ?⑥썝쨌?좏삎 ?먮쫫留??뺤씤????臾몄젣 ?앹꽦 猷⑦떞怨??숈뒿 UI瑜?留뚮뱾?덈떎.
+- 湲곗〈 `academy-portal`?먮뒗 ?ъ슜??蹂寃쎌쑝濡?蹂댁씠??`elem-vocab.html`, `assets/elem-vocab.css`, `js/elem-vocab.js` 蹂寃쎌씠 ?덉쑝誘濡??대쾲 ?묒뾽?먯꽌??嫄대뱶由ъ? ?딆븯??
+- 援ы쁽 ?꾨즺: `academy-portal/middle3-math.html`, `academy-portal/assets/middle3-math.css`, `academy-portal/js/middle3-math.js`瑜?異붽????곗궛 1沅?24?④퀎, ?곗궛 2沅?23?④퀎, ?꾪삎 25?④퀎??珥?72?④퀎 臾몄젣 ?앹꽦???숈뒿 ?섏씠吏瑜?留뚮뱾?덈떎.
+- 諛고룷 蹂댁젙: `academy-portal/scripts/deploy-pages.mjs`??諛고룷 ?ы븿 紐⑸줉??`middle3-math.html`??異붽??덈떎.
+- 寃利??꾨즺: `node --check`, `npm run build`, 濡쒖뺄 Playwright, Cloudflare ?꾨━酉?Playwright, ?댁쁺 URL 紐⑤컮??Playwright媛 ?듦낵?덈떎. `npm run lint`, `npm run verify`, `npm run onefile`? ?꾩옱 `package.json`???ㅽ겕由쏀듃媛 ?놁뼱 ?ㅽ뻾 遺덇??덈떎.
+- ?댁쁺 ?묎렐 URL? `https://purunet-academy.pages.dev/middle3-math.html`?대떎.
+
+## 以? ?섑븰 ?곗궛 ?숈뒿 ?섏씠吏 臾몄젣 ???뺤옣 (2026-05-24)
+- ?ъ슜???쇰뱶諛깆? ?꾩옱 ?④퀎 ?섎뒗 ?덉쑝??臾몄젣吏묒뿉 鍮꾪빐 ?ㅼ젣 ???臾몄젣 ?섍? ?덈Т ?곷떎??寃껋씠??
+- ??묎텒 蹂댄샇 湲곗?? ?좎??쒕떎. PDF ?먮Ц 臾몄젣瑜?洹몃?濡???린吏 ?딄퀬, 臾몄젣吏?遺꾨웾??留욌뒗 紐⑺몴 臾명빆 ?섏? ??臾댁옉???앹꽦 臾몄젣 ????섎━??諛⑹떇?쇰줈 泥섎━?쒕떎.
+- 湲곗〈 ?ъ슜??蹂寃쎌쑝濡?蹂댁씠??`academy-portal/assets/elem-vocab.css`, `academy-portal/elem-vocab.html`, `academy-portal/js/elem-vocab.js`??怨꾩냽 嫄대뱶由ъ? ?딅뒗??
+- 援ы쁽 ?꾨즺: `middle3-math.html`, `assets/middle3-math.css`, `js/middle3-math.js`瑜?媛깆떊??媛??④퀎 20臾명빆, ?꾩껜 72?④퀎 1,440臾명빆 紐⑺몴瑜??쒖떆?섍퀬 ?④퀎蹂?吏꾪뻾瑜좎쓣 ??ν븯寃??덈떎.
+- 寃利??꾨즺: `node --check js/middle3-math.js`, `node --check scripts/deploy-pages.mjs`, `npm run build`, 濡쒖뺄 Playwright, ?댁쁺 URL Playwright媛 ?듦낵?덈떎.
+- ?꾨줈?앺듃 怨듯넻 紐낅졊 `npm run lint`, `npm run verify`, `npm run onefile`? ?꾩옱 `academy-portal/package.json`???ㅽ겕由쏀듃媛 ?놁뼱 `Missing script`濡??ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: ?댁쁺 URL `https://purunet-academy.pages.dev/middle3-math.html`?먯꽌 紐⑺몴 1,440臾명빆怨??④퀎蹂?0/20 ??1/20 吏꾪뻾 利앷?瑜??뺤씤?덈떎.
+
+## 以? ?섑븰 ?ㅻ챸쨌?꾪삎 吏곴???怨좊룄??(2026-05-24)
+- ?ъ슜???붿껌? ?ㅻ챸 遺遺꾧낵 ?꾪삎 遺遺꾩쓣 ??怨좊룄?뷀빐 ?댄빐?섍린 ?쎄퀬 吏곴??곸쑝濡??쒗쁽?섎뒗 寃껋씠??
+- 湲곗〈 ?ъ슜??蹂寃쎌쑝濡?蹂댁씠??`academy-portal/assets/elem-vocab.css`, `academy-portal/elem-vocab.html`, `academy-portal/js/elem-vocab.js`??怨꾩냽 嫄대뱶由ъ? ?딅뒗??
+- 援ы쁽 諛⑺뼢? 臾몄젣 ?먮Ц 蹂듭젣 ?놁씠 ?꾩옱 ?앹꽦??臾몄젣??留욎떠 ?④퀎蹂?????쒖꽌, ?쒓컖 ?⑥꽌, ?꾪삎 SVG瑜?蹂닿컯?섎뒗 寃껋씠??
+- 援ы쁽 ?꾨즺: `middle3-math.html`??????덈궡 ?⑤꼸??異붽??섍퀬, `assets/middle3-math.css`濡?諛섏쓳???ㅻ챸 移대뱶 ?ㅽ??쇱쓣 遺숈???
+- 援ы쁽 ?꾨즺: `js/middle3-math.js`???좏삎蹂?????쒖꽌쨌洹몃┝ ?쎄린 ?ㅻ챸??異붽??섍퀬, ?쇳?怨좊씪?ㅒ룹궪媛곷퉬쨌???⑥썝? 臾몄젣 媛믪씠 ?쒖떆?섎뒗 ?숈쟻 SVG濡?媛쒖꽑?덈떎.
+- ?ㅻ떟 ?쇰뱶諛깅룄 ?뺣떟留?蹂댁뿬二쇱? ?딄퀬 ?대떦 ?좏삎??????쒖꽌瑜??④퍡 ?덈궡?섍쾶 ?덈떎.
+- 寃利??꾨즺: `node --check js/middle3-math.js`, `npm run build`, 濡쒖뺄 Playwright, ?댁쁺 URL Playwright媛 ?듦낵?덈떎. `npm run lint`, `npm run verify`, `npm run onefile`? ?꾩옱 ?ㅽ겕由쏀듃媛 ?놁뼱 `Missing script`濡??ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/middle3-math.html`?먯꽌 ?쇳?怨좊씪???ㅻ챸, ?숈쟻 ?쇨컖??媛??쒖떆, ?ㅻ챸 ?⑤꼸 2媛? overflow 0???뺤씤?덈떎.
+
+## 以? ?섑븰 SVG ?뺥솗?꽷룸Ц???곕룞 怨좊룄??(2026-05-24)
+- ?ъ슜??吏?곸? SVG ?대?吏媛 臾몄젣??留욎떠 異⑸텇??諛붾뚯? ?딄퀬, 洹몃옒?꾩? 洹몃┝???뺥솗?꾧? ??떎??寃껋씠??
+- 湲곗〈 ?ъ슜??蹂寃쎌쑝濡?蹂댁씠??`academy-portal/assets/elem-vocab.css`, `academy-portal/elem-vocab.html`, `academy-portal/js/elem-vocab.js`??怨꾩냽 嫄대뱶由ъ? ?딅뒗??
+- 援ы쁽 諛⑺뼢? 洹몃옒?꽷룹궪媛곹삎쨌??SVG??臾몄젣蹂?`visualData`瑜???留롮씠 ?ｊ퀬, 怨좎젙 洹몃┝ ???媛믨낵 鍮꾩쑉??諛섏쁺?섎뒗 ?뚮뜑?щ줈 諛붽씀??寃껋씠??
+- 援ы쁽 ?꾨즺: ?댁감?⑥닔 臾몄젣 ?앹꽦 ?⑥닔?ㅼ씠 怨꾩닔, 瑗?쭞?? 異? ?덊렪, ??낆젏 ?곗씠?곕? SVG???섍린怨? `graphSvg`媛 ?대? 醫뚰몴濡?蹂?섑빐 ?숈쟻 ?щЪ?좉낵 ?쒖떆?먯쓣 洹몃━寃??덈떎.
+- 援ы쁽 ?꾨즺: `triangleSvg`??臾몄젣??蹂 湲몄씠 鍮꾩쑉??諛섏쁺???쇨컖?뺤쓽 諛묐?怨??믪씠瑜?議곗젅?섍퀬, 吏곴컖 ?쒖떆? 媛뺤“ 蹂 ?됱긽???좎??섍쾶 ?덈떎.
+- 援ы쁽 ?꾨즺: `circleSvg`???먯＜媛?臾몄젣??媛곷룄???곕씪 媛숈? ?몄쓽 ???앹젏, 以묒떖媛? ?먯＜媛곸쓣 怨꾩궛??洹몃━寃??덈떎.
+- 寃利??꾨즺: `node --check js/middle3-math.js`, `npm run build`, 濡쒖뺄 Playwright, ?댁쁺 URL Playwright媛 ?듦낵?덈떎. ?댁쁺 URL?먯꽌 x?덊렪, ?쇨컖??蹂 湲몄씠, ?먯＜媛겶룹쨷?ш컖 ?띿뒪?멸? 臾몄젣蹂꾨줈 諛붾뚮뒗 寃껋쓣 ?뺤씤?덈떎.
+- `npm run lint`, `npm run verify`, `npm run onefile`? ?꾩옱 ?ㅽ겕由쏀듃媛 ?놁뼱 `Missing script`濡??ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/middle3-math.html`??諛섏쁺?덈떎.
+
+## buk.io 沅뚰븳 蹂댁쑀 ?섏씠吏 PDF ?앹꽦 ?ㅽ겕由쏀듃 (2026-05-24)
+- ?ъ슜???붿껌? `https://buk.io/@kb4010/1`遺??`https://buk.io/@kb4010/42`源뚯? ???щ·留곸쑝濡?PDF 臾몄꽌瑜?留뚮뱶???뚯씠???뚯씪???묒꽦?섎뒗 寃껋씠??
+- ?댁쟾 ?뺤씤?먯꽌 泥?URL? ?몃? ?묎렐 ??403?댁뿀?? ?곕씪???묎렐 ?쒗븳 ?고쉶, 濡쒓렇???고쉶, ?좊즺/??묎텒 ?먮즺 蹂듭젣瑜?吏?먰븯吏 ?딅뒗 ?덉쟾???ㅽ겕由쏀듃濡??묒꽦?쒕떎.
+- ?ㅽ겕由쏀듃???ъ슜?먭? 沅뚰븳??媛吏??섏씠吏???쒗빐 ?ㅽ뻾?섎ŉ, robots.txt? HTTP 401/403??議댁쨷?섎룄濡?留뚮뱺??
+- 理쒖떊 ?붿껌? PDF ?ㅽ겕由쏀듃媛 ?꾨땲??`@kb4010` 1~42, `@kb4011` 1~48, `@kb4007` 1~64 踰붿쐞瑜?李멸퀬??以? ?곗궛 ?섏씠吏瑜?留뚮뱶??寃껋씠??
+- ?뺤씤 寃곌낵 `https://buk.io/robots.txt`??`Allow: /`?닿퀬 ??泥??섏씠吏??HTTP 200?쇰줈 ?묎렐?먮떎. ?ㅻ쭔 ?섏씠吏 ?띿뒪?몃뒗 ???ㅽ겕由쏀듃 以묒떖?대씪 ?먮Ц 臾명빆??異붿텧쨌蹂듭젣?섏? ?딄퀬, 踰붿쐞 履쎌닔留?諛섏쁺???앹꽦??以? ?곗궛 ?섏씠吏濡?泥섎━?쒕떎.
+- 援ы쁽 ?꾨즺: `academy-portal/middle1-math.html`, `academy-portal/assets/middle1-math.css`, `academy-portal/js/middle1-math.js`瑜?異붽??덈떎.
+- 援ъ꽦 ?꾨즺: `@kb4010`? 42?④퀎, `@kb4011`? 48?④퀎, `@kb4007`? 64?④퀎濡?留뚮뱾怨?媛??④퀎 20臾명빆 紐⑺몴瑜??곸슜??珥?3,080臾명빆 紐⑺몴濡??쒖떆?덈떎.
+- 諛고룷 蹂댁젙: `academy-portal/scripts/deploy-pages.mjs`??`middle1-math.html`???ы븿?덈떎.
+- 寃利??꾨즺: `node --check js/middle1-math.js`, `node --check scripts/deploy-pages.mjs`, `npm run build`, 濡쒖뺄 Playwright, ?댁쁺 URL Playwright媛 ?듦낵?덈떎. `npm run lint`, `npm run verify`, `npm run onefile`? ?꾩옱 ?ㅽ겕由쏀듃媛 ?놁뼱 `Missing script`濡??ㅽ뻾 遺덇??덈떎.
+- ?댁쁺 ?묎렐 URL? `https://purunet-academy.pages.dev/middle1-math.html`?대떎.
+
+## 以?쨌以? ?섑븰 湲고샇 ?쒓린 怨좊룄??(2026-05-24)
+- ?ъ슜???붿껌? 以? 臾몄젣吏묎낵 以? 臾몄젣吏묒쓽 ?섑븰 湲고샇?ㅼ쓣 ?섑븰 ?꾨Ц 湲고샇??留욎떠 怨좊룄?뷀븯??寃껋씠??
+- 援ы쁽 諛⑺뼢? ?뺣떟 鍮꾧탳 臾몄옄?댁? ?좎??섍퀬, ?붾㈃ ?쒖떆留??꾩꺼?? 猷⑦듃, ?몃줈 遺꾩닔, ?섑븰 ?고듃濡??뚮뜑留곹븯??寃껋씠??
+- 湲곗〈 ?ъ슜??蹂寃쎌쑝濡?蹂댁씠??`academy-portal/assets/elem-vocab.css`, `academy-portal/elem-vocab.html`, `academy-portal/js/elem-vocab.js`??怨꾩냽 嫄대뱶由ъ? ?딅뒗??
+- 援ы쁽 ?꾨즺: `middle1-math.js`? `middle3-math.js`??`mathHtml` ?뚮뜑?щ? 異붽???臾몄젣, ?좏깮吏, ?뚰듃, ?쇰뱶諛??쒖떆瑜??섑븰 湲고샇 HTML濡?蹂?섑븯寃??덈떎.
+- 援ы쁽 ?꾨즺: `middle1-math.css`? `middle3-math.css`??`Cambria Math` 怨꾩뿴 ?고듃, ?꾩꺼?? ?몃줈 遺꾩닔, 猷⑦듃 ?쀬쨪 ?ㅽ??쇱쓣 異붽??덈떎.
+- 寃利??꾨즺: `node --check js/middle1-math.js`, `node --check js/middle3-math.js`, `npm run build`, 濡쒖뺄 Playwright, ?댁쁺 URL Playwright媛 ?듦낵?덈떎. ?댁쁺?먯꽌 以? `??/2`瑜??좏깮吏媛 猷⑦듃+?몃줈遺꾩닔濡? 以? 遺꾩닔 臾몄젣媛 ?몃줈遺꾩닔濡??쒖떆?섎뒗 寃껋쓣 ?뺤씤?덈떎.
+- `npm run lint`, `npm run verify`, `npm run onefile`? ?꾩옱 ?ㅽ겕由쏀듃媛 ?놁뼱 `Missing script`濡??ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/middle1-math.html`, `https://purunet-academy.pages.dev/middle3-math.html`??諛섏쁺?덈떎.
+
+## 以? ?곗궛 ?섏씠吏 ?쒖옉 (2026-05-24)
+- ?ъ슜???붿껌? `@kb4012` 1~38, `@kb4013` 1~64, `@kb4014` 1~70?????щ·留곹빐 以? ?곗궛 ???섏씠吏瑜?留뚮뱾怨?媛??⑥썝留덈떎 臾몄젣吏묒쓽 理쒕?移?臾몄젣 ?レ옄濡??묒꽦?섎뒗 寃껋씠??
+- `https://buk.io/robots.txt`??`Allow: /`?닿퀬 ??泥??섏씠吏??HTTP 200?쇰줈 ?묎렐?먮떎.
+- ?먮Ц 臾몄젣瑜?洹몃?濡?異붿텧쨌蹂듭젣?섏? ?딄퀬 URL 踰붿쐞??履쎌닔留?諛섏쁺???앹꽦??以? ?곗궛 ?섏씠吏濡?泥섎━?쒕떎.
+- 湲곗〈 ?ъ슜??蹂寃쎌쑝濡?蹂댁씠??`academy-portal/assets/elem-vocab.css`, `academy-portal/elem-vocab.html`, `academy-portal/js/elem-vocab.js`??怨꾩냽 嫄대뱶由ъ? ?딅뒗??
+- 援ы쁽 ?꾨즺: `middle2-math.html`, `assets/middle2-math.css`, `js/middle2-math.js`瑜?異붽??덈떎.
+- 援ъ꽦 ?꾨즺: `@kb4012` 38?④퀎, `@kb4013` 64?④퀎, `@kb4014` 70?④퀎?대ŉ 媛??④퀎 20臾명빆 紐⑺몴???꾩껜 紐⑺몴??3,440臾명빆?대떎.
+- 諛고룷 蹂댁젙: `scripts/deploy-pages.mjs`??`middle2-math.html`???ы븿?덈떎.
+- 寃利??꾨즺: `node --check js/middle2-math.js`, `node --check scripts/deploy-pages.mjs`, `npm run build`, 濡쒖뺄 Playwright, ?댁쁺 URL Playwright媛 ?듦낵?덈떎.
+- `npm run lint`, `npm run verify`, `npm run onefile`? ?꾩옱 ?ㅽ겕由쏀듃媛 ?놁뼱 `Missing script`濡??ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/middle2-math.html`?먯꽌 38쨌64쨌70?④퀎? 紐⑺몴 3,440臾명빆???뺤씤?덈떎.
+
+## 以묐벑 ?꾩닔 ?곷떒???숈뒿 ?섏씠吏 ?몄텧 蹂댁젙 (2026-05-24)
+- ?ъ슜???붿껌? 以묐벑 珥덇툒쨌以묎툒쨌怨좉툒 ?꾩닔 ?곷떒???묒뾽? ?덈뒗???숈뒿???섏씠吏媛 ?섏삤吏 ?딅뒗 臾몄젣瑜??섏젙?섎뒗 寃껋씠??
+- 議곗궗 寃곌낵 `middle-vocab.html`, `js/middle-vocab.js`, `js/middle-vocab-data.js`??濡쒖뺄???덇퀬 `js/views.js`?먯꽌??iframe?쇰줈 ?곌껐?섏?留? `scripts/deploy-pages.mjs`??Cloudflare Pages 諛고룷 ?ы븿 紐⑸줉?먮뒗 `middle-vocab.html`??鍮좎졇 ?덉뿀??
+- ?섏젙 湲곗?? 湲곗〈 珥덈벑 ?곷떒???뚯씪 蹂寃쎌? 嫄대뱶由ъ? ?딄퀬, ?꾨씫??以묐벑 ?곷떒??HTML??諛고룷 ?곗텧臾쇱뿉 ?ы븿????珥덇툒쨌以묎툒쨌怨좉툒 URL??媛곴컖 寃利앺븯??寃껋씠??
+- 援ы쁽 ?꾨즺: `scripts/deploy-pages.mjs` 諛고룷 ?ы븿 紐⑸줉??`middle-vocab.html`??異붽??덈떎.
+- 援ы쁽 ?꾨즺: `js/middle-vocab.js`媛 `?level=beginner`, `?level=intermediate`, `?level=advanced`瑜??쎌뼱 ?대떦 ?덈꺼 ?숈뒿 ?몄뀡?쇰줈 諛붾줈 吏꾩엯?섍쾶 ?덈떎.
+- 寃利??꾨즺: `node --check js/middle-vocab.js`, `node --check js/middle-vocab-data.js`, `node --check scripts/deploy-pages.mjs`, `npm run build`, 濡쒖뺄 Playwright, ?댁쁺 URL Playwright媛 ?듦낵?덈떎.
+- `npm run lint`, `npm run verify`, `npm run onefile`? ?꾩옱 `package.json`???ㅽ겕由쏀듃媛 ?놁뼱 媛곴컖 `Missing script`濡??ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: ?꾨━酉?`https://a1d3a78c.purunet-academy.pages.dev`, ?댁쁺 `https://purunet-academy.pages.dev/middle-vocab.html?level=beginner` ?깆뿉?????덈꺼 紐⑤몢 HTTP 200, ?숈뒿 ?몄뀡 1媛? ?⑥뼱 移대뱶 1媛? 肄섏넄 ?ㅻ쪟 0???뺤씤?덈떎.
+
+## 珥덈벑쨌以묐벑 ?곷떒???섎??곗긽?붽린 怨좊룄??(2026-05-24)
+- ?ъ슜???붿껌? AutoVoca???섎??곗긽?붽린踰뺢낵 ScienceDirect ?쇰Ц??李멸퀬??珥덈벑 ?곷떒?댁? 以묐벑 ?곷떒???숈뒿????怨좊룄?뷀븯??寃껋씠??
+- AutoVoca ???섏씠吏??釉뚮씪?곗? ?묎렐? 媛?ν뻽吏留??뺤쟻 ?띿뒪??異붿텧??嫄곗쓽 ?섏? ?딆븘 ?먮Ц 臾멸뎄??肄섑뀗痢좊뒗 蹂듭젣?섏? ?딄퀬, ?ъ슜?먭? ?쒖떆???쒕뇤怨쇳븰 ?먮━??湲곕컲???섎??곗긽?붽린踰뺚?諛⑺뼢留?李멸퀬?쒕떎.
+- ScienceDirect ?쇰Ц? Kiwamu Kasahara??2011??System ?쇰Ц?대ŉ, ?듭닕???⑥뼱? ???⑥뼱瑜?寃고빀??two-word collocation???⑥씪 ?⑥뼱 ?숈뒿蹂대떎 ?섎? 蹂댁〈怨??몄텧???????뺣뒗?ㅻ뒗 寃곌낵瑜??쒖떆?쒕떎. DOI??`10.1016/j.system.2011.10.001`?대떎.
+- 援ы쁽 湲곗?? ???⑥뼱瑜?familiar cue, ?섎? ?λ㈃, ?뚯긽 吏덈Ц怨??④퍡 遺?명솕?섍퀬, 移대뱶 ?ㅼ쭛湲곗? ?뺤씤 ?댁쫰?먯꽌 媛숈? cue瑜??ㅼ떆 蹂댁뿬二쇱뼱 ?몄텧 ?⑥꽌瑜??쇨??섍쾶 ?쒓났?섎뒗 寃껋씠??
+- 援ы쁽 ?꾨즺: `js/elem-vocab.js`? `js/middle-vocab.js`??`meaningLink`, `familiarCue`, `linkBox`瑜?異붽???媛숈? ?뚮쭏 ?덉쓽 ?듭닕???⑥뼱? 紐⑺몴 ?⑥뼱瑜?寃고빀???섎??곗긽 怨좊━瑜??앹꽦?쒕떎.
+- 援ы쁽 ?꾨즺: ???⑥뼱 移대뱶 ?욌㈃쨌?룸㈃, ?ㅽ렆留?移대뱶, 臾띠쓬 ?뺤씤 ?댁쫰, 蹂듭뒿 移대뱶???섎??곗긽 怨좊━? ?뚯긽 吏덈Ц???쒖떆?쒕떎.
+- 援ы쁽 ?꾨즺: 珥덈벑 ?곷떒?대룄 `?level=beginner`, `?level=intermediate`, `?level=advanced`濡?諛붾줈 ?숈뒿 ?몄뀡??吏꾩엯?섍쾶 ?덈떎.
+- 援ы쁽 ?꾨즺: `assets/elem-vocab.css`???섎??곗긽 諛뺤뒪 ?ㅽ??쇱쓣 異붽??덈떎.
+- 寃利??꾨즺: `node --check js/elem-vocab.js`, `node --check js/middle-vocab.js`, `node --check js/elem-vocab-data.js`, `node --check js/middle-vocab-data.js`, `npm run build`, 濡쒖뺄 Playwright, ?댁쁺 Playwright, ?댁쁺 紐⑤컮??390px Playwright媛 ?듦낵?덈떎.
+- `npm run lint`, `npm run verify`, `npm run onefile`? ?꾩옱 `package.json`???ㅽ겕由쏀듃媛 ?놁뼱 媛곴컖 `Missing script`濡??ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: ?꾨━酉?`https://28bff01a.purunet-academy.pages.dev`, ?댁쁺 珥덈벑쨌以묐벑 ?곷떒??6媛??덈꺼 URL?먯꽌 HTTP 200, ?섎??곗긽 諛뺤뒪 2媛? overflow 0, 肄섏넄 ?ㅻ쪟 0???뺤씤?덈떎.
+
+## 珥덈벑 ?곷Ц踰??④퀎???⑦꽩 ?꾩옄遺?怨좊룄??(2026-05-24)
+- ?ъ슜???붿껌? 珥덈벑 ?곷Ц踰뺤쓣 珥덇툒쨌以묎툒쨌怨좉툒?쇰줈 ?섎늻怨? 誘멸뎅怨??곴뎅 ?좊챸 ?곸뼱 異쒗뙋?ъ쓽 臾몃쾿梨끒룹쟾?먮턿 援ъ꽦??李멸퀬??理쒖떊 ?곸뼱 援먯쑁踰뺢낵 ?⑦꽩 ?곸뼱 ?숈뒿踰뺤쓣 ?곸슜???ъ슜??移쒗솕???꾩옄遺곸쑝濡?怨좊룄?뷀븯??寃껋씠??
+- 李멸퀬??怨듭떇 ?먮즺??諛⑺뼢? Cambridge Primary Grammar Box???곕졊쨌?덈꺼蹂?臾몃쾿 寃뚯엫怨??쒕룞, Oxford Grammar Friends??6?덈꺼 young learner 臾몃쾿 蹂댁땐 援먯옱, Pearson Primary??paced content? age-appropriate assessment, Macmillan Primary Grammar??Pre-A1~A1+ 3?덈꺼 援ъ“?? ?먮Ц 臾명빆怨?吏硫댁? 蹂듭젣?섏? ?딄퀬 踰붿쐞? 援먯닔 ?ㅺ퀎 ?먮━留?李멸퀬?쒕떎.
+- 援ы쁽 諛⑺뼢? `elementary-grammar` ?⑥씪 怨쇰ぉ??珥덇툒쨌以묎툒쨌怨좉툒?쇰줈 遺꾨━?섍퀬, 媛?臾몃쾿 移대뱶瑜??낅젰쨌?⑦꽩 留먰븯湲걔룰퇋移?諛쒓껄쨌?ㅻ쪟 ?섏젙쨌臾몄옣 ?곗텧 猷⑦떞?쇰줈 ?ш뎄?깊븯??寃껋씠??
+- 援ы쁽 ?꾨즺: `elementary-grammar` ?⑥씪 怨쇰ぉ??`elementary-grammar-beginner`, `elementary-grammar-intermediate`, `elementary-grammar-advanced` 3媛?怨쇰ぉ?쇰줈 遺꾨━?덈떎.
+- 援ъ꽦 ?꾨즺: 媛??④퀎 8媛?臾몃쾿 紐⑤뱢, 珥?24媛?紐⑤뱢濡?留뚮뱾怨?珥덇툒? 紐낆궗쨌be?숈궗쨌蹂듭닔쨌?꾩튂?? 以묎툒? ?쇰컲?숈궗쨌吏덈Ц쨌議곕룞??룻쁽?ъ쭊?? 怨좉툒? 怨쇨굅쨌誘몃옒쨌鍮꾧탳쨌?묒냽쨌愿怨??뺤옣?쇰줈 諛곗튂?덈떎.
+- 援ы쁽 ?꾨즺: ?숈뒿 移대뱶???④퀎 ?쒖떆, 由щ벉 ?⑦꽩 留먰븯湲? 4?④퀎 ?숈뒿 ?꾨줈?몄뒪, ?곗텧 誘몄뀡??異붽??덇퀬 臾몃쾿 ??猷⑦떞???낅젰쨌?⑦꽩 留먰븯湲걔룹삤瑜??섏젙쨌?곗텧 以묒떖?쇰줈 諛붽엥??
+- 寃利??꾨즺: `node --check`, `npm run build`, 濡쒖뺄 Playwright, ?댁쁺 Playwright, ?댁쁺 紐⑤컮??390px Playwright媛 ?듦낵?덈떎.
+- `npm run lint`, `npm run verify`, `npm run onefile`? ?꾩옱 `package.json`???ㅽ겕由쏀듃媛 ?놁뼱 媛곴컖 `Missing script`濡??ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/`?먯꽌 珥덈벑 ?곷Ц踰?珥덇툒쨌以묎툒쨌怨좉툒 3媛?怨쇰ぉ怨?媛?8媛?紐⑤뱢, 臾몃쾿 移대뱶 ?붿냼, overflow 0, 肄섏넄 ?ㅻ쪟 0???뺤씤?덈떎.
+## 以묐벑 ?곷Ц踰??④퀎???⑦꽩 ?꾩옄遺?怨좊룄??(2026-05-24)
+- ?ъ슜???붿껌? 以묐벑 ?곷Ц踰뺣룄 珥덇툒쨌以묎툒쨌怨좉툒?쇰줈 ?섎늻怨? 誘멸뎅쨌?곴뎅 ?좊챸 ?곸뼱 異쒗뙋?ъ쓽 臾몃쾿梨끒룹쟾?먮턿 援ъ꽦??李멸퀬??理쒖떊 ?곸뼱 援먯쑁踰뺢낵 ?⑦꽩 ?곸뼱 ?숈뒿踰뺤쓣 ?곸슜???ъ슜??移쒗솕??臾몃쾿 ?꾩옄遺곸쑝濡?怨좊룄?뷀븯??寃껋씠??
+- 怨듭떇 ?먮즺 議곗궗 ?붿빟: Pearson Focus on Grammar??二쇱젣 湲곕컲 臾몃쾿, 異⑸텇???곗뒿, 鍮꾪뙋???ш퀬, 吏???됯?, ?섏궗?뚰넻 ?먯떊媛먯쓣 媛뺤“?쒕떎. Macmillan English Grammar in Context??留λ씫 ???듭떖 臾몃쾿 援ъ“??蹂듭뒿怨??뺤갑???꾪븳 3?덈꺼 援ъ꽦?대떎. Cambridge쨌Oxford 怨꾩뿴 ?먮즺???대┛ ?숈뒿?먯? 泥?냼?꾩뿉寃??④퀎??臾몃쾿, ?쒕룞??怨쇱젣, 臾몃쾿???곌린쨌留먰븯湲곕줈 ?곌껐?섎뒗 ?먮쫫???쒓났?쒕떎.
+- 援ы쁽 湲곗?? ?먮Ц 吏硫댁씠??臾명빆 蹂듭젣媛 ?꾨땲??以묐벑 臾몃쾿 ?꾧퀎? ?숈뒿 ?꾨줈?몄뒪留?李멸퀬??留λ씫 ?낅젰, ?⑦꽩 留먰븯湲? ?ㅻ쪟 ?섏젙, 臾몄옣 蹂?? ?먭린 ?곗텧 猷⑦떞?쇰줈 ?ш뎄?깊븯??寃껋씠??
+- 援ы쁽 ?꾨즺: `middle-grammar` ?⑥씪 怨쇰ぉ??`middle-grammar-beginner`, `middle-grammar-intermediate`, `middle-grammar-advanced` 3媛?怨쇰ぉ?쇰줈 遺꾨━?덈떎.
+- 援ъ꽦 ?꾨즺: 媛??④퀎 10媛?臾몃쾿 紐⑤뱢, 珥?30媛?紐⑤뱢濡?留뚮뱾怨?珥덇툒? ?쒖젣쨌議곕룞??룹??숈궗 湲곗큹, 以묎툒? ?꾩옱?꾨즺쨌?섎룞?쑣룰?怨꾩궗쨌媛꾩젒?섎Ц臾? 怨좉툒? 媛?뺣쾿쨌遺꾩궗援щЦ쨌紐낆궗?댟룰컯議곗? ?꾩튂쨌?듯빀 ?몄쭛?쇰줈 諛곗튂?덈떎.
+- 援ы쁽 ?꾨즺: 以묐벑 臾몃쾿???④퀎 ?쒖떆, 由щ벉 ?⑦꽩 留먰븯湲? 4?④퀎 ?숈뒿 ?꾨줈?몄뒪, ?곗텧 誘몄뀡??蹂댁씠??臾몃쾿 移대뱶???꾩옄遺곸쑝濡??뚮뜑留곹븳??
+- 寃利??꾨즺: `node --check`, `npm run build`, 濡쒖뺄 Playwright, ?댁쁺 Playwright, ?댁쁺 紐⑤컮??390px Playwright媛 ?듦낵?덈떎.
+- `npm run lint`, `npm run verify`, `npm run onefile`? ?꾩옱 `package.json`???ㅽ겕由쏀듃媛 ?놁뼱 媛곴컖 `Missing script`濡??ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/`?먯꽌 以묐벑 ?곷Ц踰?珥덇툒쨌以묎툒쨌怨좉툒 3媛?怨쇰ぉ怨?媛?10媛?紐⑤뱢, 臾몃쾿 移대뱶 ?붿냼, overflow 0, 肄섏넄 ?ㅻ쪟 0???뺤씤?덈떎.
+## 珥덈벑쨌以묐벑 ?꾨Ц 臾몃쾿梨??좉퇋 ?섏씠吏 遺꾨━ ?쒖옉 (2026-05-24)
+- ?ъ슜???붿껌? `珥덈벑 以묐벑 ?꾨Ц 臾몃쾿梨??쒖옉 ?명븯??26.05.24).md`瑜??곕씪 珥덈벑 臾몃쾿梨??좉퇋 ?섏씠吏? 以묐벑 臾몃쾿梨??좉퇋 ?섏씠吏瑜??곕줈 ?묒꽦?섎뒗 寃껋씠??
+- ?뺤씤 寃곌낵 ?대떦 ?명븯??臾몄꽌???꾩옱 0諛붿씠?몃줈 鍮꾩뼱 ?덉뼱, 湲곗〈??諛섏쁺??誘멸뎅쨌?곴뎅 ELT 異쒗뙋?ы삎 臾몃쾿梨??먮━? ?꾩옱 `english-core-sites.js`??珥덈벑쨌以묐벑 ?④퀎??臾몃쾿 ?곗씠?곕? 湲곗??쇰줈 援ы쁽?쒕떎.
+- 援ы쁽 諛⑺뼢? 湲곗〈 ?듯빀 ?숈뒿 ?붾㈃怨?蹂꾧컻濡??쎄린 醫뗭? ?꾩옄臾몃쾿梨??섏씠吏瑜?留뚮뱾怨? ?④퀎蹂?紐⑹감, 踰붿쐞?? 媛쒕뀗 ?ㅻ챸, ????덈Ц, ?ㅻ쪟 援먯젙, 蹂???곗뒿, ?곗텧 誘몄뀡, 蹂듭뒿 泥댄겕瑜????붾㈃?먯꽌 ?쒓났?섎뒗 寃껋씠??
+- 援ы쁽 ?꾨즺: `elementary-grammar-book.html`, `middle-grammar-book.html`, `assets/grammar-book.css`, `js/grammar-book.js`瑜?異붽??덈떎.
+- 援ы쁽 ?꾨즺: 珥덈벑 ?섏씠吏??珥덇툒쨌以묎툒쨌怨좉툒 媛?8?⑥썝, 以묐벑 ?섏씠吏??珥덇툒쨌以묎툒쨌怨좉툒 媛?10?⑥썝??遺덈윭?ㅻŉ, ?⑥썝蹂??⑦꽩쨌媛쒕뀗쨌?덈Ц쨌?ㅻ쪟援먯젙쨌臾몄옣蹂?빧??④퀎 ?뚰겕遺곸쓣 ?쒓났?쒕떎.
+- 諛고룷 蹂댁젙 ?꾨즺: `scripts/deploy-pages.mjs` ?ы븿 紐⑸줉???좉퇋 臾몃쾿梨?2媛?HTML??異붽??덈떎.
+- 寃利??꾨즺: `node --check js/grammar-book.js`, `node --check scripts/deploy-pages.mjs`, `npm run build`, 濡쒖뺄 Playwright ?곗뒪?ы넲쨌紐⑤컮?? ?댁쁺 Playwright ?곗뒪?ы넲쨌紐⑤컮?쇱씠 ?듦낵?덈떎.
+- `npm run lint`, `npm run verify`, `npm run onefile`? ?꾩옱 `package.json`???ㅽ겕由쏀듃媛 ?놁뼱 媛곴컖 `Missing script`濡??ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/elementary-grammar-book.html`, `https://purunet-academy.pages.dev/middle-grammar-book.html`?먯꽌 stages 3, ?⑥썝 ???뺤긽, workbook rows 4, overflow 0, 肄섏넄 ?ㅻ쪟 0???뺤씤?덈떎.
+## ?곌뎄쨌?ㅽ뵂?뚯뒪 湲곕컲 ?곷Ц踰??숈뒿 怨좊룄??(2026-05-24)
+- ?ъ슜???붿껌? GitHub???곷Ц踰??숈뒿 愿???먮즺? 誘멸뎅쨌?곴뎅 ?곸뼱援먯쑁 ?쇰Ц??李얠븘 ?꾩옱 珥덈벑쨌以묐벑 ?곷Ц踰??숈뒿 ?ъ씠?몃? ?낃렇?덉씠?쒗븯??寃껋씠??
+- 議곗궗??GitHub ?먮즺 諛⑺뼢? `learn-english` topic????댄븨쨌?댁쫰쨌媛꾧꺽 蹂듭뒿???숈뒿 UI, LanguageTool???ㅽ뵂?뚯뒪 臾몃쾿 ?ㅻ쪟 ?먯?, Harper??濡쒖뺄쨌?꾨씪?대쾭???곗꽑 臾몃쾿 寃?? GrammarTagger??臾몃쾿 feature profiling?대떎.
+- 議곗궗???쇰Ц쨌?곌뎄 諛⑺뼢? Cambridge Core??focus-on-form/corrective feedback, ScienceDirect??紐낆떆쨌?붿떆 臾몃쾿 吏??鍮꾧탳, extensive reading/translation 湲곕컲 臾몃쾿 吏???곌뎄, RetrievalPractice.org??spaced retrieval practice 媛?대뱶??
+- 援ы쁽 湲곗?? ?몃? 肄섑뀗痢좊굹 臾몄젣瑜?蹂듭젣?섏? ?딄퀬, ?꾩옱 臾몃쾿梨??섏씠吏???λ룞 ?뚯긽, 臾몄옣 議곕┰, ?ㅻ쪟 ?좏삎 遺꾩꽍, 媛꾧꺽 蹂듭뒿 ?덉빟, ?곌뎄 湲곕컲 猷⑦떞 ?ㅻ챸??湲곕뒫?쇰줈 諛섏쁺?섎뒗 寃껋씠??
+- 援ы쁽 ?꾨즺: `js/grammar-book.js`???곌뎄 湲곕컲 ?숈뒿 移대뱶 4媛? 臾몃쾿 feature ?꾨줈?뚯씪, ?ㅻ쪟 ?좏삎 ?쒓렇, ?λ룞 ?뚯긽 臾몄옣 議곕┰湲? localStorage 湲곕컲 1?셋??셋???媛꾧꺽 蹂듭뒿 ???湲곕뒫??異붽??덈떎.
+- 援ы쁽 ?꾨즺: `assets/grammar-book.css`???곌뎄 移대뱶, feature ?쒓렇, 臾몄옣 議곕┰, 蹂듭뒿 ?덉빟 UI???곗뒪?ы넲쨌紐⑤컮??諛섏쓳???ㅽ??쇱쓣 異붽??덈떎.
+- 寃利??꾨즺: `node --check js/grammar-book.js`, `npm run build`, 濡쒖뺄 Playwright ?곗뒪?ы넲쨌紐⑤컮?? ?댁쁺 Playwright ?곗뒪?ы넲쨌紐⑤컮?쇱씠 ?듦낵?덈떎.
+- `npm run lint`, `npm run verify`, `npm run onefile`? ?꾩옱 `package.json`???ㅽ겕由쏀듃媛 ?놁뼱 媛곴컖 `Missing script`濡??ㅽ뻾 遺덇??덈떎.
+- 諛고룷 ?꾨즺: `https://purunet-academy.pages.dev/elementary-grammar-book.html`, `https://purunet-academy.pages.dev/middle-grammar-book.html`?먯꽌 ?곌뎄 移대뱶 4媛? builder 1媛? 蹂듭뒿 諛뺤뒪 1媛? overflow 0, 肄섏넄 ?ㅻ쪟 0???뺤씤?덈떎.
+
+## 珥덈벑 援먭낵 ?곷Ц踰??꾩껜 ???섏씠吏 ?쒖옉 (2026-05-25)
+- ?붿껌 紐⑺몴??ClassCard Grammar???숈뒿 援ъ“瑜?李멸퀬?섍퀬, 援먯쑁泥?珥덈벑 援먭낵?쒖뿉 諛섎났 異쒗쁽?섎뒗 珥덈벑 ?곸뼱 ?몄뼱?뺤떇??鍮좎쭚?놁씠 ?ㅻ（????臾몃쾿 ?섏씠吏瑜?留뚮뱶??寃껋씠??
+- ClassCard Grammar 怨듦컻 ?섏씠吏?먯꽌 ?뺤씤??諛섏쁺 ?붿냼??珥덈벑 ???69媛??좊떅, ?좊떅蹂?諛섎났?덈젴, ?ㅻ떟 ?ㅼ떆?湲? 臾몄젣??? 媛쒕뀗?? ?먮룞梨꾩젏, ?쒖닠??以묒떖 ?덈젴?대떎.
+- 援먯쑁怨쇱젙 湲곗?? 2022 媛쒖젙 ?곸뼱怨?援먯쑁怨쇱젙??珥덈벑 ?곸뼱 ?깆랬湲곗?怨??몄뼱?뺤떇 踰붿쐞瑜?吏곸젒 ?먮Ц 蹂듭젣?섏? ?딄퀬, ?먯껜 ?덈Ц怨??먯껜 臾몄젣濡??ш뎄?깊븳??
+- 湲곗〈 `elementary-grammar-book.html`? ?ㅻⅨ ?묒뾽???곗텧臾쇱씠誘濡?蹂댁〈?섍퀬, ?대쾲 ?붿껌 ?꾩슜 ???섏씠吏瑜?蹂꾨룄濡?異붽????묎렐 URL??遺꾨━?쒕떎.
+
+## 珥덈벑 援먭낵 ?곷Ц踰??꾩껜 ???섏씠吏 ?쒖옉 ?꾨즺 湲곕줉 (2026-05-25)
+- ???섏씠吏??`?몃Ⅴ???곸뼱 ?섑븰 ?숈썝(26.05.21)/academy-portal/elementary-school-grammar.html`?대떎.
+- ???먯궛? `assets/elementary-school-grammar.css`, `js/elementary-school-grammar.js`?대ŉ, 3~4?숇뀈 23?좊떅, 5?숇뀈 23?좊떅, 6?숇뀈 23?좊떅?쇰줈 珥?69?좊떅??援ъ꽦?덈떎.
+- 湲곕뒫? 媛쒕뀗?? ?덈Ц ?ｊ린, 鍮덉뭏 ?먮룞梨꾩젏, ?ㅻ떟 ?ㅼ떆?湲? 臾몄옣 議곕┰, 臾몄젣???移대뱶, XP? ?ㅻ떟 localStorage ??μ쓣 ?ы븿?쒕떎.
+- 諛고룷 ?ㅽ겕由쏀듃 `scripts/deploy-pages.mjs`??`elementary-school-grammar.html`???ы븿??Cloudflare Pages 諛고룷 ??곸뿉 ?ㅼ뼱媛?꾨줉 ?덈떎.
+- 寃利?寃곌낵 `node --check js/elementary-school-grammar.js`, `node --check scripts/deploy-pages.mjs`, `npm.cmd run build`, Playwright ?곗뒪?ы넲 1280px, 紐⑤컮??390px ?뚮뜑留곸씠 ?듦낵?덈떎.
+
+## 以묐벑 援먭낵 ?곷Ц踰??꾩껜 ???섏씠吏 ?쒖옉 (2026-05-25)
+- ?붿껌 紐⑺몴??ClassCard Grammar瑜?李멸퀬??援먯쑁泥?以묐벑 ?곸뼱 援먭낵?쒖뿉 ?섏삤??二쇱슂 ?곷Ц踰??꾩껜瑜???臾몃쾿 ?섏씠吏濡?留뚮뱶??寃껋씠??
+- ClassCard Grammar 怨듦컻 ?섏씠吏?먯꽌 以묐벑 ???179媛??좊떅, ?좊떅蹂?100臾명빆, ?ㅻ떟 ?ㅼ떆?湲? 臾몄젣??? 媛쒕뀗?? ?먮룞梨꾩젏, ?댁떊?鍮??쒖닠??以묒떖 ?먮쫫???뺤씤?덈떎.
+- ??묎텒 蹂댄샇瑜??꾪빐 ClassCard 臾명빆?대굹 援먯옱 臾명빆? 蹂듭젣?섏? ?딄퀬, 以묐벑 援먭낵 臾몃쾿 踰붿쐞? ?숈뒿 援ъ“留?諛섏쁺???먯껜 ?덈Ц怨??먯껜 ?ㅻ떟 臾몄옣?쇰줈 援ъ꽦?쒕떎.
+- 湲곗〈 `middle-grammar-book.html`? 蹂댁〈?섍퀬, ?대쾲 ?붿껌 ?꾩슜 ???섏씠吏瑜?蹂꾨룄濡?異붽??쒕떎.
+
+## 以묐벑 援먭낵 ?곷Ц踰??꾩껜 ???섏씠吏 ?쒖옉 ?꾨즺 湲곕줉 (2026-05-25)
+- ???섏씠吏??`?몃Ⅴ???곸뼱 ?섑븰 ?숈썝(26.05.21)/academy-portal/middle-school-grammar.html`?대떎.
+- ???먯궛? `assets/middle-school-grammar.css`, `js/middle-school-grammar.js`?대ŉ, 以? 湲곗큹 60?좊떅, 以? ?뺤옣 60?좊떅, 以? ?댁떊 59?좊떅?쇰줈 珥?179?좊떅??援ъ꽦?덈떎.
+- 湲곕뒫? 媛쒕뀗?? ?덈Ц ?ｊ린, 鍮덉뭏 ?먮룞梨꾩젏, ?ㅻ떟 ?ㅼ떆?湲? 臾몄옣 議곕┰, 臾몄젣???移대뱶, XP? ?ㅻ떟 localStorage ??μ쓣 ?ы븿?쒕떎.
+- 諛고룷 ?ㅽ겕由쏀듃 `scripts/deploy-pages.mjs`??`middle-school-grammar.html`???ы븿??Cloudflare Pages 諛고룷 ??곸뿉 ?ㅼ뼱媛?꾨줉 ?덈떎.
+- 寃利?寃곌낵 `node --check js/middle-school-grammar.js`, `node --check scripts/deploy-pages.mjs`, `npm.cmd run build`, Playwright ?곗뒪?ы넲 1280px, 紐⑤컮??390px ?뚮뜑留곸씠 ?듦낵?덈떎.
+
+## 珥덈벑쨌以묐벑 ?댁떊 臾몃쾿 ??硫붾돱 遺꾨━ (2026-05-25)
+- ?붿껌 紐⑺몴??吏곸쟾??留뚮뱺 `elementary-school-grammar.html`怨?`middle-school-grammar.html`??硫붿씤 ?숈뒿 硫붾돱?먯꽌 媛곴컖 珥덈벑 ?댁떊 臾몃쾿, 以묐벑 ?댁떊 臾몃쾿?쇰줈 ?곕줈 蹂댁씠寃??섎뒗 寃껋씠??
+- 湲곗〈 怨쇰ぉ ?곗씠?곗? ?숈뒿 ?먮쫫? ?좎??섍퀬, `js/views.js`?????숆탳湲됰퀎 硫붾돱???몃? ?섏씠吏 諛붾줈媛湲?移대뱶留?異붽??섎뒗 諛⑹떇?쇰줈 泥섎━?쒕떎.
+
+## 珥덈벑쨌以묐벑 ?댁떊 臾몃쾿 ??硫붾돱 遺꾨━ ?꾨즺 湲곕줉 (2026-05-25)
+- `js/views.js`???숆탳湲됰퀎 ??硫붾돱??`elementary-school-grammar.html` 諛붾줈媛湲?移대뱶? `middle-school-grammar.html` 諛붾줈媛湲?移대뱶瑜?異붽??덈떎.
+- 珥덈벑 硫붾돱 移대뱶??`珥덈벑 ?댁떊 臾몃쾿`?쇰줈 69?좊떅???쒖떆?섍퀬, 以묐벑 硫붾돱 移대뱶??`以묐벑 ?댁떊 臾몃쾿`?쇰줈 179?좊떅???쒖떆?쒕떎.
+- `assets/styles.css`??`.subject-card`??留곹겕 移대뱶??`cursor: pointer`, `text-decoration: none`??異붽??덈떎.
+- 寃利?寃곌낵 `node --check js/views.js`, `npm.cmd run build`, 濡쒖뺄 HTTP Playwright?먯꽌 ??href? overflow ?놁쓬, 肄섏넄 ?ㅻ쪟 0???뺤씤?덈떎.
+
+## 珥덈벑쨌以묐벑 ?댁떊 臾몃쾿 ?댁쁺 諛고룷 (2026-05-25)
+- ?ъ슜?먭? ?댁쁺 URL `https://purunet-academy.pages.dev/`????臾몃쾿 硫붾돱媛 ?꾩쭅 蹂댁씠吏 ?딅뒗?ㅺ퀬 ?붿껌?덈떎.
+- `academy-portal`?먯꽌 `npm.cmd run build` ?듦낵 ??`npm.cmd run deploy`瑜??ㅽ뻾??Cloudflare Pages瑜?媛깆떊?덈떎.
+- Wrangler 諛고룷 寃곌낵 ?꾨━酉?URL? `https://066e8f79.purunet-academy.pages.dev`?대떎.
+- ?댁쁺 URL 寃利앹뿉??`elementary-school-grammar.html`, `middle-school-grammar.html` 硫붾돱 href媛 蹂댁씠怨? ???섏씠吏 紐⑤몢 HTTP 200?대ŉ 肄섏넄 ?ㅻ쪟 0, 媛濡?overflow ?놁쓬?쇰줈 ?뺤씤?덈떎.
+
+## 怨좊벑 援먭낵 ?곷Ц踰??꾩껜 ???섏씠吏 ?쒖옉 (2026-05-25)
+- ?붿껌 紐⑺몴??ClassCard Grammar瑜?李멸퀬??援먯쑁泥?怨좊벑 ?곸뼱 援먭낵?쒖뿉 ?섏삤??二쇱슂 ?곷Ц踰??꾩껜瑜???臾몃쾿 ?섏씠吏濡?留뚮뱶??寃껋씠??
+- ClassCard Grammar 怨듦컻 ?섏씠吏?먯꽌 怨좊벑 ???23媛??좊떅, ?좊떅蹂?100臾명빆, ?ㅻ떟 ?ㅼ떆?湲? 臾몄젣??? 媛쒕뀗?? ?먮룞梨꾩젏, ?댁떊?鍮??쒖닠??以묒떖 ?먮쫫???뺤씤?덈떎.
+- ??묎텒 蹂댄샇瑜??꾪빐 ClassCard 臾명빆?대굹 援먯옱 臾명빆? 蹂듭젣?섏? ?딄퀬, 怨좊벑 援먭낵 臾몃쾿 踰붿쐞? ?숈뒿 援ъ“留?諛섏쁺???먯껜 ?덈Ц怨??먯껜 ?ㅻ떟 臾몄옣?쇰줈 援ъ꽦?쒕떎.
+- 湲곗〈 `high-grammar` ?숈뒿 ?먮쫫? 蹂댁〈?섍퀬, ?대쾲 ?붿껌 ?꾩슜 ???섏씠吏瑜?蹂꾨룄濡?異붽??쒕떎.
+
+## 怨좊벑 援먭낵 ?곷Ц踰??꾩껜 ???섏씠吏 ?쒖옉 ?꾨즺 湲곕줉 (2026-05-25)
+- ???섏씠吏??`?몃Ⅴ???곸뼱 ?섑븰 ?숈썝(26.05.21)/academy-portal/high-school-grammar.html`?대떎.
+- ???먯궛? `assets/high-school-grammar.css`, `js/high-school-grammar.js`?대ŉ, 怨좊벑 ?듭떖 臾몃쾿 23?좊떅??援ъ꽦?덈떎.
+- 湲곕뒫? 媛쒕뀗?? ?덈Ц ?ｊ린, 鍮덉뭏 ?먮룞梨꾩젏, ?ㅻ떟 ?ㅼ떆?湲? 臾몄옣 議곕┰, 臾몄젣???移대뱶, XP? ?ㅻ떟 localStorage ??μ쓣 ?ы븿?쒕떎.
+- `js/views.js`??怨좊벑?숈깮 硫붾돱??`怨좊벑 ?댁떊 臾몃쾿` 23?좊떅 諛붾줈媛湲?移대뱶瑜?異붽??덈떎.
+- ?숈깮 湲곕낯 ?붾㈃?먯꽌??怨좊벑 ?꾩껜 怨쇰ぉ 沅뚰븳? 洹몃?濡?留됯퀬, 怨좊벑 ??쓽 ??臾몃쾿 諛붾줈媛湲?移대뱶留?蹂댁씠?꾨줉 `js/controllers.js`???숆탳湲????좏깮 ?쒗븳??議곗젙?덈떎.
+- 諛고룷 ?ㅽ겕由쏀듃 `scripts/deploy-pages.mjs`??`high-school-grammar.html`???ы븿?덈떎.
+- 寃利?寃곌낵 `node --check js/high-school-grammar.js`, `node --check js/views.js`, `node --check js/controllers.js`, `node --check scripts/deploy-pages.mjs`, `npm.cmd run build`, Playwright ?곗뒪?ы넲 1280px, 紐⑤컮??390px ?뚮뜑留곸씠 ?듦낵?덈떎.
+
+## 怨좊벑 援먭낵 ?곷Ц踰??댁쁺 諛고룷 (2026-05-25)
+- `academy-portal` 而ㅻ컠? `7f19182 Add high school grammar page`?대떎.
+- `npm.cmd run deploy`濡?Cloudflare Pages瑜?媛깆떊?덇퀬 ?꾨━酉?URL? `https://bf3f6dd8.purunet-academy.pages.dev`?대떎.
+- ?댁쁺 URL 寃利앹뿉??怨좊벑?숈깮 ??쓽 `high-school-grammar.html` 硫붾돱 href媛 蹂댁씠怨? ?섏씠吏 HTTP 200, 肄섏넄 ?ㅻ쪟 0, 媛濡?overflow ?놁쓬?쇰줈 ?뺤씤?덈떎.
+
+## 珥덉쨷怨??댁떊 ?곷Ц踰?硫붾돱紐??댁쁺 諛섏쁺 (2026-05-25)
+- ?ъ슜?먭? 珥덈벑?숈깮 硫붾돱??`珥덈벑 ?댁떊 ?곷Ц踰?, 以묓븰??硫붾돱??`以묐벑 ?댁떊 ?곷Ц踰?, 怨좊벑?숈깮 硫붾돱??`怨좊벑 ?댁떊 ?곷Ц踰???異붽????щ씪怨??붿껌?덈떎.
+- 湲곗〈 諛붾줈媛湲?移대뱶媛 `?댁떊 臾몃쾿`?쇰줈 ?섏뼱 ?덉뼱 `js/views.js`????shortcut label??紐⑤몢 `?댁떊 ?곷Ц踰??쇰줈 ?섏젙?덈떎.
+- 濡쒖뺄 Playwright?먯꽌 ??移대뱶媛 媛곴컖 `珥덈벑 ?댁떊 ?곷Ц踰?69?좊떅`, `以묐벑 ?댁떊 ?곷Ц踰?179?좊떅`, `怨좊벑 ?댁떊 ?곷Ц踰?23?좊떅`?쇰줈 蹂댁씠??寃껋쓣 ?뺤씤?덈떎.
+
+## 臾몃쾿 ?섏씠吏 ??踰꾪듉 臾멸뎄 ?섏젙 (2026-05-25)
+- ?붿껌 紐⑺몴??珥덈벑쨌以묐벑쨌怨좊벑 ?댁떊 ?곷Ц踰??섏씠吏 ?곷떒??`?듯빀 ?숈뒿` 踰꾪듉 臾멸뎄瑜???吏곴??곸씤 `???쇰줈 諛붽씀??寃껋씠??
+- 蹂寃?踰붿쐞??`js/elementary-school-grammar.js`, `js/middle-school-grammar.js`, `js/high-school-grammar.js`???곷떒 ??留곹겕 ?띿뒪?몃줈 ?쒗븳?덈떎.
+- 寃利?寃곌낵 `node --check` 3媛??뚯씪, `npm.cmd run build`, ?댁쁺 URL Playwright ?뺤씤???듦낵?덇퀬, ???섏씠吏 紐⑤몢 留곹겕 ?띿뒪?멸? `???대ŉ 湲곗〈 `?듯빀 ?숈뒿` 臾멸뎄??0媛쒕줈 ?뺤씤?덈떎.
+
+## ?댁떊 ?곷Ц踰?臾몄젣????명듃 ?뺤옣 (2026-05-25)
+- ?붿껌 紐⑺몴??珥덈벑쨌以묐벑쨌怨좊벑 ?댁떊 ?곷Ц踰뺤쓽 媛?紐⑹감 臾몄젣??됱뿉??10, 20, 30, 40, 50, 60, 70, 80, 90, 100臾몄젣 ?명듃瑜?硫붾돱諛??뺤떇?쇰줈 ?좏깮?섍퀬 ?ㅼ젣 臾명빆??蹂????덇쾶 留뚮뱶??寃껋씠??
+- 援ы쁽 諛⑺뼢? 湲곗〈 ?좊떅 ?곗씠?곕? 洹몃?濡??쒖슜??鍮덉뭏, ?ㅻ쪟?섏젙, 媛쒕뀗?뺤씤, 臾몄옣?곌린, ?댁떊???쒖닠 臾몄젣瑜?諛섎났 蹂???앹꽦?섎뒗 諛⑹떇?쇰줈 ?≪븯?? ??묎텒 蹂댄샇瑜??꾪빐 ?몃? 臾명빆 蹂듭젣媛 ?꾨땲??湲곗〈 ?먯껜 ?덈Ц怨?洹쒖튃 湲곕컲 臾명빆??留뚮뱺??
+- 寃利?寃곌낵 `node --check` 3媛??뚯씪, `npm.cmd run build`, 濡쒖뺄쨌?댁쁺 Playwright媛 ?듦낵?덈떎. ?댁쁺 URL 紐⑤컮????뿉?????섏씠吏 紐⑤몢 硫붾돱 10媛? 湲곕낯 10臾몄젣, 100臾몄젣 ?좏깮 ??移대뱶 100媛? 肄섏넄 ?ㅻ쪟 0, 媛濡?overflow ?놁쓬?쇰줈 ?뺤씤?덈떎.
+
+## ?댁떊 ?곷Ц踰?臾몄젣?????댄삎 ?꾪솚 (2026-05-25)
+- ?붿껌 紐⑺몴??臾몄젣??됱쓣 ?뺣떟 ?몄텧 移대뱶媛 ?꾨땲???ㅼ젣 ??댄삎 ?붾㈃?쇰줈 諛붽씀??寃껋씠??
+- 援ы쁽 諛⑺뼢? 媛?臾명빆??鍮덉뭏, ?ㅻ떟, 議곕┰ ?좏삎?쇰줈 ?쒗솚 ?앹꽦?섍퀬, ?숈깮???듭쓣 ?곕뒗 ?낅젰移몄쓣 ?쒓났????`?뺣떟 蹂닿린` 踰꾪듉???꾨? ?뚮쭔 ?듭쓣 蹂댁뿬二쇰뒗 諛⑹떇?대떎.
+- 寃利?寃곌낵 珥덈벑쨌以묐벑쨌怨좊벑 ?댁쁺 URL?먯꽌 臾몄젣???泥?3臾명빆??`鍮덉뭏`, `?ㅻ떟`, `議곕┰` ?쒖꽌濡??섏삤怨? 珥덇린 ?뺣떟 ?몄텧 0媛? ?낅젰移?10媛? `?뺣떟 蹂닿린` ?대┃ ???뺣떟 1媛쒕쭔 ?몄텧?⑥쓣 ?뺤씤?덈떎.
+
+## ?댁떊 ?곷Ц踰?臾몄젣???湲곗〈 ????뺤떇 諛섏쁺 (2026-05-25)
+- ?ъ슜?먭? 臾몄젣??됱쓣 二쇨????낅젰 諛⑹떇???꾨땲??湲곗〈 `鍮덉뭏`, `?ㅻ떟`, `議곕┰` ??뿉???곕뜕 ????뺤떇?쇰줈 諛붽씀湲??붿껌?덈떎.
+- 援ы쁽 ?꾨즺: 臾몄젣???臾명빆 ?앹꽦? `鍮덉뭏`, `?ㅻ떟`, `議곕┰`留??쒗솚?섍퀬, ?뚮뜑留곸? 媛곴컖 蹂닿린 ?좏깮, ?뺣떟 蹂닿린 ?좉?, ?좏겙 議곕┰쨌梨꾩젏 UI瑜??ъ슜?쒕떎.
+- 寃利?寃곌낵 ?댁쁺 URL??珥덈벑쨌以묐벑쨌怨좊벑 臾몃쾿 ?섏씠吏 紐⑤몢 臾몄젣???泥?3臾명빆??`鍮덉뭏`, `?ㅻ떟`, `議곕┰`?쇰줈 ?섏삤怨? textarea 0媛? 鍮덉뭏 蹂닿린 4媛? ?ㅻ떟 ?뺣떟 珥덇린 0媛??대┃ ??1媛? 議곕┰ ?좏겙 諛??숈옉 踰꾪듉 ?뺤긽, 100臾몄젣 ?뚮뜑留? 肄섏넄 ?ㅻ쪟 0, 媛濡?overflow ?놁쓬?쇰줈 ?뺤씤?덈떎.
+
+## NLP ?댁떊 臾몃쾿 ?딆뼱?쎄린 臾몄젣 ?뺤옣怨??됱긽 媛뺤“ (2026-05-25)
+- ?붿껌 紐⑺몴??珥덈벑쨌以묐벑쨌怨좊벑 NLP ?댁떊 臾몃쾿 ?붾㈃???딆뼱?쎄린 ?붾㈃??`?딆뼱?쎄린 NLP 臾몄젣`濡?紐낇솗??諛붽씀怨? 10~100?명듃 臾몄젣 ?좏깮???쒓났?섎ŉ, 媛쒕뀗쨌鍮덉뭏쨌?ㅻ떟쨌議곕┰쨌臾몄젣??됱쓽 臾몄옣怨??⑥뼱瑜?媛?낆꽦 ?믪? ?됱긽 ?쒗쁽?쇰줈 諛붽씀??寃껋씠??
+- 援ы쁽 諛⑺뼢? 湲곗〈 臾몃쾿 JS ???뚯씪??NLP 紐⑤뱶 ?쇰꺼??諛붽씀怨? `makeNLPQuestions()` 湲곕컲 ?명듃 ?좏깮 UI瑜??좎??섎㈃?? ?⑥뼱 ??븷 異붿젙 ?⑥닔? `renderColorText()`瑜?異붽???議곕룞??룹쟾移섏궗쨌?묒냽??룸?紐낆궗쨌?대? 蹂?붾? ?됱긽 移⑹쑝濡??쒖떆?섎뒗 諛⑹떇?대떎.
+- `nlp-elementary-grammar.html`, `nlp-middle-grammar.html`, `nlp-high-grammar.html`??Cloudflare Pages 諛고룷 紐⑸줉???ы븿?섎룄濡?諛고룷 ?ㅽ겕由쏀듃瑜?媛깆떊?덈떎.
+- 寃利?寃곌낵 ?댁쁺 URL??珥덈벑쨌以묐벑쨌怨좊벑 NLP 臾몃쾿 ?섏씠吏 紐⑤몢 HTTP 200, ??챸 `?딆뼱?쎄린 NLP 臾몄젣`, ?명듃 踰꾪듉 10媛? 100?명듃 ?좏깮 ??臾몄젣 移대뱶 100媛? ?됱긽 ?⑥뼱 移??뚮뜑留? 肄섏넄 ?ㅻ쪟 0, 紐⑤컮??媛濡?overflow ?놁쓬?쇰줈 ?뺤씤?덈떎.
+
+## NLP 怨좊룄???꾨왂 湲곕컲 臾몄젣????ш뎄??(2026-05-25)
+- ?ъ슜?먭? `珥덈벑 以묐벑 怨좊벑 nlp ?곷Ц踰?怨좊룄???꾨왂(26.05.25).md`瑜?湲곗??쇰줈 臾몄젣????꾩껜 ?섏젙怨?遺덊븘?뷀븳 以꾨컮轅?蹂듦?瑜??붿껌?덈떎.
+- 臾몄꽌 ?듭떖? ?⑥닚 POS/?됱긽 ?쒓퉭留뚯쑝濡쒕뒗 `The song sounds beautiful` 媛숈? 2?뺤떇 SVC瑜??섎せ 遺꾩꽍?????덉쑝誘濡? S/V/O/C ?깅텇, 5?뺤떇, ?곌껐?숈궗, 紐⑹쟻蹂댁뼱 洹쒖튃??寃고빀?댁빞 ?쒕떎??寃껋씠??
+- 援ы쁽 諛⑺뼢? 湲곗〈 臾몄젣????앹꽦湲곕? ?덈Ц 湲곕컲 臾몄젣 ?濡?諛붽씀怨? 鍮덉뭏쨌?ㅻ떟쨌議곕┰ ?몄뿉 `臾명삎`怨?`?깅텇` ?좏깮??臾몄젣瑜?異붽??섎뒗 寃껋씠??
+- ?됱긽 媛뺤“ ?⑥뼱??inline-block 移⑹뿉??inline 媛뺤“濡?諛붽퓭 遺덊븘?뷀븳 以꾨컮轅덉쓣 以꾩???
+- 寃利?寃곌낵 ?댁쁺 URL??珥덈벑쨌以묐벑쨌怨좊벑 臾몃쾿 ?섏씠吏 紐⑤몢 臾몄젣???100臾몄젣?먯꽌 `鍮덉뭏`, `?ㅻ떟`, `議곕┰`, `臾명삎`, `?깅텇` ?좏삎???욎뿬 ?섏삤怨? ?됱긽 ?⑥뼱 ?쒖떆媛 `inline`, 肄섏넄 ?ㅻ쪟 0, 紐⑤컮??媛濡?overflow ?놁쓬?쇰줈 ?뺤씤?덈떎.
+
+## ?댁떊 ?곷Ц踰?臾몄젣???以꾨컮轅?蹂듦?? NLP 臾명삎 遺꾩꽍 蹂댁젙 (2026-05-25)
+- ?붿껌 紐⑺몴??珥덈벑쨌以묐벑쨌怨좊벑 ?댁떊 ?곷Ц踰?臾몄젣??됱뿉???됱긽 ?⑥뼱 媛뺤“ ?뚮Ц???앷릿 遺덊븘?뷀븳 以꾨컮轅덉쓣 ?섎룎由ш퀬, ?딆뼱?쎄린 NLP 臾몄젣??5?뺤떇 ?깅텇 遺꾩꽍???ㅼ떆 ?먭??섎뒗 寃껋씠?덈떎.
+- 臾몄젣??됱쓽 `esg-color-text`, `esg-word-tone` ?쒖떆瑜?inline ?먮쫫?쇰줈 留욎떠 臾몄옣 ?덉뿉???⑥뼱 ?됱긽留?媛뺤“?섎룄濡??좎??덈떎.
+- 湲곗〈 NLP 遺꾩꽍? POS 異붿젙 以묒떖?대씪 `My name is Minho`, `I am happy today`, `The train leaves at seven` 媛숈? 臾몄옣?먯꽌 紐낆궗쨌?섏떇?대? 紐⑹쟻???먮뒗 ?숈궗濡??ㅼ씤?????덉뿀?? ?대쾲 蹂댁젙?먯꽌???덈Ц 湲곕컲 5?뺤떇 洹쒖튃???곗꽑 ?곸슜?섍퀬, SC(二쇨꺽蹂댁뼱), OC(紐⑹쟻寃⑸낫??, M(?섏떇??瑜?蹂꾨룄 泥?겕濡?遺꾨━?덈떎.
+- ?곌껐?숈궗??蹂댁뼱瑜?SC濡??〓릺 ?ㅻ뵲瑜대뒗 ?쒓컙쨌?μ냼 ?쒗쁽? M?쇰줈 遺꾨━?쒕떎. ?ъ뿭쨌吏媛겶룸ぉ?곴꺽蹂댁뼱 ?숈궗???紐낆궗 紐⑹쟻?댁? ?ㅼ젣 蹂댁뼱媛 ?ㅻ뵲瑜대뒗 寃쎌슦?먮쭔 O+OC濡?遺꾨━??`made a birthday cake` 媛숈? ?쇰컲 ??숈궗 援щЦ??5?뺤떇?쇰줈 ?ㅻ텇?앺븯吏 ?딄쾶 ?덈떎.
+- 臾몄젣??됱쓽 臾명삎쨌?깅텇 臾몄젣??媛숈? `buildPatternChunks` 遺꾩꽍 寃곌낵瑜??ъ슜?섎룄濡?諛붽퓭, ?섏떇?닿? 遺숈? 1?뺤떇 臾몄옣??3?뺤떇?쇰줈 異쒖젣?섎뒗 臾몄젣瑜?以꾩???
+- 寃利?寃곌낵 `node --check` 3媛?JS, `npm.cmd run build`, 濡쒖뺄 Playwright 6媛??섏씠吏, ?댁쁺 URL Playwright 6媛??섏씠吏媛 ?듦낵?덈떎. ?댁쁺 諛고룷 ?꾨━酉곕뒗 `https://48004bc1.purunet-academy.pages.dev`???
+
+## 珥덈벑 臾몄젣???臾명삎쨌?깅텇 臾몄젣 ?쒖쇅 (2026-05-25)
+- ?붿껌 紐⑺몴??珥덈벑 臾몄젣??됱뿉??以묐벑 援먯쑁怨쇱젙??媛源뚯슫 臾몄옣 ?깅텇 吏덈Ц???쒓굅?섎뒗 寃껋씠?덈떎.
+- 珥덈벑 臾몄젣????앹꽦湲?`makeBankQuestions`?먯꽌 `臾명삎`怨?`?깅텇` 臾몄젣瑜?紐⑤몢 ?쒖쇅?덈떎. 珥덈벑 ?붾㈃?먮뒗 `鍮덉뭏`, `議곕┰`, `?ㅻ떟` ?좏삎留??④꼈??
+- 以묐벑쨌怨좊벑 臾몄젣??됯낵 NLP ?딆뼱?쎄린 臾몄젣???대쾲 ?붿껌 踰붿쐞媛 ?꾨땲誘濡??좎??덈떎.
+- 寃利?寃곌낵 濡쒖뺄怨??댁쁺 URL??珥덈벑 臾몄젣???100臾몄젣?먯꽌 `臾명삎`, `?깅텇` 臾몄젣??0嫄댁씠?덈떎. 諛고룷 ?꾨━酉곕뒗 `https://04c03298.purunet-academy.pages.dev`???
+
+## 以묐벑 臾몄젣????깅텇 蹂닿린 ?쒓? 蹂묓뻾 ?쒓린 (2026-05-25)
+- ?붿껌 紐⑺몴??以묓븰援?臾몄젣??됱뿉??臾몄옣 ?깅텇 臾몄젣??`S/V/O/C` 蹂닿린瑜??쒓?怨??④퍡 ?쒓린?섎뒗 寃껋씠?덈떎.
+- `js/middle-school-grammar.js`??`makeRoleQuestion`?먯꽌 蹂닿린? ?뺣떟 ?쒖떆瑜?`S(二쇱뼱)`, `V(?숈궗)`, `O(紐⑹쟻??`, `C(蹂댁뼱)` ?뺤떇?쇰줈 蹂寃쏀뻽??
+- ?뺣떟 鍮꾧탳?????쒓린 臾몄옄??湲곗??쇰줈 留욎떠, ?붾㈃ ?쒓린? 梨꾩젏 湲곗????닿툔?섏? ?딄쾶 ?덈떎.
+- 濡쒖뺄怨??댁쁺 URL?먯꽌 以묐벑 臾몄젣???100臾몄젣瑜??댁뼱 ?깅텇 移대뱶媛 33媛??앹꽦?섍퀬 ?쒓? 蹂묓뻾 ?쒓린媛 ?쒖떆?섎뒗 寃껋쓣 ?뺤씤?덈떎. 諛고룷 ?꾨━酉곕뒗 `https://bcae166e.purunet-academy.pages.dev`???
+
+## ?섎룞??p.p. NLP ?숈궗援?遺꾩꽍 蹂댁젙 (2026-05-25)
+- ?붿껌 紐⑺몴??NLP ?딆뼱?쎄린 臾몄젣?먯꽌 ?섎룞?쒖쓽 p.p.媛 二쇨꺽蹂댁뼱濡??댁꽍?섎뒗 臾몄젣瑜??꾩껜 ?섏젙?섎뒗 寃껋씠?덈떎.
+- ?먯씤? `has been told`, `were taken`, `is sung`, `has been broken`泥섎읆 `be/have + p.p.`媛 ?댁뼱吏???遺덇퇋移?p.p.瑜??숈궗援ъ뿉 ?ы븿?섏? 紐삵븯怨?`been/were/is`瑜??곌껐?숈궗泥섎읆 泥섎━?섎뒗 ???덉뿀??
+- 珥덈벑쨌以묐벑쨌怨좊벑 臾몃쾿 JS??`buildPatternChunks`??怨듯넻?쇰줈 遺덇퇋移?怨쇨굅遺꾩궗 紐⑸줉怨?`isVerbPhraseFollower` 洹쒖튃??異붽??덈떎. ?댁젣 `was written`, `is sung`, `were taken`, `has been broken`, `had been spoken`, `will have been completed`瑜??섎굹???숈궗援щ줈 臾띕뒗??
+- `have never seen`泥섎읆 議곕룞?ъ? p.p. ?ъ씠??`never`, `already`, `just`, `not` ?깆씠 ?ㅼ뼱媛??꾨즺?뺣룄 ?숈궗援щ줈 ?좎??섎룄濡?蹂댁젙?덈떎.
+- 寃利?寃곌낵 濡쒖뺄怨??댁쁺 URL??以묐벑 ?섎룞?? 怨좊벑 遺덇퇋移?p.p., 怨좊벑 ?꾨즺?섎룞??NLP 100臾몄젣?먯꽌 p.p.媛 二쇨꺽蹂댁뼱濡??쒖떆?섎뒗 ?щ???0嫄댁씠?덈떎. 諛고룷 ?꾨━酉곕뒗 `https://5ec85bc1.purunet-academy.pages.dev`???
+
+## 怨좊벑 援먯쑁遺 ?꾩닔 ?곷떒??3000?⑥뼱 硫붾돱 異붽? (2026-05-25)
+- ?붿껌 紐⑺몴???낅줈?쒕맂 `2022??援먯쑁遺 湲곕낯 ?댄쐶 3000媛??꾩껜.txt`瑜??ъ슜??怨좊벑?숈깮 硫붾돱??怨좊벑 珥덇툒, 以묎툒, 怨좉툒 ?곷떒??硫붾돱瑜?留뚮뱶??寃껋씠??
+- ?묒뾽 ??媛?뺤? 3000?⑥뼱瑜??먮낯 ?쒖꽌 湲곗??쇰줈 1000媛쒖뵫 珥덇툒쨌以묎툒쨌怨좉툒?쇰줈 ?섎늻怨? 湲곗〈 ?곷떒???숈뒿 UI ?⑦꽩???ъ궗?⑺븯??寃껋씠??
+
+- ?먮낯 txt??3206媛???ぉ?쇰줈 ?뚯떛?섏뿀怨? ?붿껌 紐낆묶??留욎떠 ??3000媛쒕? 珥덇툒쨌以묎툒쨌怨좉툒 媛?1000媛쒕줈 遺꾨━?덈떎.
+- 怨좊벑 ?⑥뼱 ?붾㈃? 湲곗〈 以묐벑 ?⑥뼱 ?숈뒿 UI瑜??ㅼ젙?뷀빐 ?ъ궗?⑺븯怨? 吏꾪뻾??????ㅻ뒗 hv3:*濡?遺꾨━?덈떎.
+- 怨좊벑 珥덇툒쨌以묎툒쨌怨좉툒 硫붾돱??怨좊벑?숈깮 ??뿉 ?쒖떆?섎ŉ ?숈깮 ?붾㈃?먯꽌???????덇쾶 怨좊벑 ?⑥뼱 3?④퀎留??쒗븳 ?덉쇅濡??먯뿀??
+- 寃利앹? node --check 6媛??뚯씪, npm.cmd run build, 濡쒖뺄 Playwright, ?댁쁺 URL怨??꾨━酉?URL Playwright濡??꾨즺?덈떎.
+- Cloudflare Pages 諛고룷 ?꾨━酉곕뒗 https://15ee3206.purunet-academy.pages.dev ?대ŉ, ?댁쁺 https://purunet-academy.pages.dev ?먯꽌??怨좊벑 3?④퀎 硫붾돱? high-vocab.html ?붾㈃???뺤씤?덈떎.
+
+## 珥덉쨷怨?TEPS ?⑥뼱 湲곗〈 ?곷떒??湲곕컲 ?뺤옣 (2026-05-26)
+- ?붿껌 紐⑺몴??TEPS ?⑥뼱?μ쓣 湲곗〈 珥덈벑 ?곷떒??800媛? 以묐벑 ?곷떒??1800媛? 怨좊벑 ?곷떒??3000媛??곗씠?곕? 湲곕컲?쇰줈 媛숈? 紐⑺몴 媛쒖닔源뚯? ?뺤옣?섎뒗 寃껋씠??
+- 援ы쁽 湲곗?? TEPS HTML?먯꽌 湲곗〈 ?곷떒???곗씠???뚯씪??癒쇱? 濡쒕뱶?섍퀬, TEPS JS媛 ?대떦 ?곗씠?곕? 20媛??⑥쐞 ?⑥뼱 ?좊떅?쇰줈 蹂?섑빐 ?⑥뼱 ??뿉 ?쒖떆?섎뒗 諛⑹떇?대떎.
+- 湲곗〈 TEPS 臾몃쾿, ?ｊ린, ?낇빐, ?ㅼ쟾 紐⑥쓽怨좎궗 ?뺤옣 猷⑦떞? ?좎??섍퀬, ?대쾲 蹂寃쎌쓽 吏곸젒 ??곸? TEPS ?⑥뼱 ?곗씠???곌껐怨??뺥솗???⑥뼱 ??蹂댁옣?쇰줈 ?쒗븳?쒕떎.
+- 援ы쁽 ?꾨즺: `elementary-teps.html`, `middle-teps.html`, `high-teps.html`?먯꽌 媛곴컖 湲곗〈 ?곷떒???곗씠???뚯씪??TEPS JS蹂대떎 癒쇱? 濡쒕뱶?섎룄濡??곌껐?덈떎.
+- 援ы쁽 ?꾨즺: `js/elementary-teps.js`, `js/middle-teps.js`, `js/high-teps.js`??湲곗〈 ?곷떒???곗씠?곕? 20媛??⑥쐞 TEPS ?⑥뼱 ?좊떅?쇰줈 蹂?섑븯???⑥닔瑜?異붽??덈떎.
+- 寃利??꾨즺: ?먮낯 ?곗씠??移댁슫?몃뒗 珥덈벑 800媛? 以묐벑 1800媛? 怨좊벑 3000媛쒖씠怨? 釉뚮씪?곗? ?뚮뜑留곸뿉??TEPS ?⑥뼱 ?좊떅? 珥덈벑 40媛? 以묐벑 90媛? 怨좊벑 150媛쒖씠硫?媛??좊떅? 20媛??⑥뼱濡??뺤씤?덈떎.
+
+## 珥덉쨷怨?TEPS 臾몃쾿 NLP ?댁떊 ?섏? ?뺤옣 (2026-05-26)
+- ?붿껌 紐⑺몴??珥덈벑 TEPS 臾몃쾿??珥덈벑 NLP ?댁떊 臾몃쾿 ?섏??쇰줈, 以묐벑 TEPS 臾몃쾿??以묐벑 NLP ?댁떊 臾몃쾿 ?섏??쇰줈, 怨좊벑 TEPS 臾몃쾿??怨좊벑 NLP ?댁떊 臾몃쾿 ?섏??쇰줈 ?뺤옣?섎뒗 寃껋씠??
+- 湲곗〈 NLP ?댁떊 臾몃쾿 ?섏씠吏???듭떖 援ъ“???⑥닚 媛앷??앹씠 ?꾨땲??媛쒕뀗, ?ㅻ떟援먯젙, 臾몄옣 ?깅텇 ?먮뒗 援щЦ ??븷 遺꾩꽍, ?쒖닠???꾪솚?????⑥썝 ?덉뿉 ?④퍡 ?쒓났?섎뒗 諛⑹떇?대떎.
+- 援ы쁽 湲곗?? TEPS 臾몃쾿 ??쓽 湲곗〈 ?뚮뜑留?援ъ“瑜??좎??섎㈃??DATA.grammar瑜??숆탳湲됰퀎 NLP ?ㅽ????⑥썝?쇰줈 ?ш뎄?깊븯怨? ?ｊ린쨌?낇빐쨌?ㅼ쟾 ??? 湲곗〈 ?뺤옣 ?먮쫫???좎??섎뒗 寃껋씠??
+- 援ы쁽 ?꾨즺: 珥덈벑 TEPS 臾몃쾿? 23媛?NLP 臾몃쾿 二쇱젣??媛쒕뀗쨌?ㅻ떟援먯젙쨌NLP ?깅텇 蹂?뺤쓣 遺숈뿬 69媛??⑥썝?쇰줈 援ъ꽦?덈떎.
+- 援ы쁽 ?꾨즺: 以묐벑 TEPS 臾몃쾿? 30媛?NLP ?댁떊 ?듭떖 二쇱젣??媛쒕뀗쨌?ㅻ떟援먯젙쨌NLP ?깅텇 蹂?뺤쓣 遺숈뿬 90媛??⑥썝?쇰줈 援ъ꽦?덈떎.
+- 援ы쁽 ?꾨즺: 怨좊벑 TEPS 臾몃쾿? 27媛?怨좊벑 NLP ?ы솕 二쇱젣???ы솕 媛쒕뀗쨌?쒖닠???꾪솚쨌NLP ?낇빐臾몃쾿 蹂?뺤쓣 遺숈뿬 81媛??⑥썝?쇰줈 援ъ꽦?덈떎.
+- 寃利??꾨즺: `node --check` 3媛?TEPS JS, `npm.cmd run build`, 濡쒖뺄 Playwright 臾몃쾿 ???뚮뜑留?寃利앹쓣 ?듦낵?덈떎.
+
+## 珥덉쨷怨?TEPS ?ｊ린쨌?낇빐쨌?쒕룞 50??紐⑥쓽怨좎궗 ?뺤옣 (2026-05-26)
+- ?붿껌 紐⑺몴??TEPS ?ｊ린, ?낇빐, ?쒕룞 ?곸뿭??紐⑥쓽怨좎궗 50??遺꾨웾?쇰줈 ?뺤옣?섎뒗 寃껋씠??
+- 援ы쁽 湲곗?? 珥덈벑? ?ｊ린쨌?낇빐쨌?쒕룞??媛곴컖 50臾띠쓬?쇰줈 留욎텛怨? 以묐벑쨌怨좊벑? ?ｊ린쨌?낇빐쨌?ㅼ쟾 ?뚯뒪?몃? 媛곴컖 50臾띠쓬?쇰줈 留욎텛??寃껋씠??
+- 湲곗〈 ?⑥뼱 800쨌1800쨌3000媛쒖? NLP 臾몃쾿 ?뺤옣 ?곗씠?곕뒗 洹몃?濡??좎??쒕떎.
+
+## 중3 영어 천재 이재영 04과 PDF 기반 학습 페이지 업데이트 (2026-05-31)
+- 목표는 운영 04과 페이지의 준비 중 탭을 업로드 PDF 기반 학습 활동으로 채우되, 기존 03과 페이지의 UI와 상호작용 방식을 최대한 승계하는 것이다.
+- 저작권 보호를 위해 PDF 원문 전체를 장문 그대로 복제하기보다, 문장 단위 학습 데이터와 자체 문제·해설 흐름으로 구성한다.
+- 우선 본문·대화문 텍스트 추출 가능성을 확인하고, 페이지가 이미 가진 어휘·문법 구조 위에 본문 해석, 분석, 확인, 영작, 어순, 번역 활동을 단계적으로 붙인다.
+- 검증은 academy-portal에서 JavaScript 문법 검사, 빌드, 주요 화면 렌더링 확인, 배포 후 운영 URL 확인 순서로 진행한다.
+
+## 중3 영어 천재 이재영 04과 실제 반영 메모 (2026-05-31)
+- 4과 HTML은 이미 `js/middle3-english-chunjae-lee-4.js`를 참조하는 외부 JS 구조였지만 해당 파일이 없어서 페이지 본문 앱이 렌더링되지 않는 상태였다.
+- 새 JS는 03과의 탭형 학습 UI를 유지하되 HTML을 더 건드리지 않고 `section-nav`와 `app` 컨테이너를 동적으로 채우는 방식으로 구성했다.
+- PDF 추출본의 핵심 범위를 어휘, 관계부사, whether/if, 본문 시장 소개, 관광 안내소·식당·유통기한 대화문으로 나누어 학습 데이터화했다.
+- 구현된 탭은 개요, 어휘, 문법, 본문 해석, 기출형, 빈칸·서술형, 독해, 본문 분석, 본문 확인·영작·어순·번역, 대화문 분석·확인·영작·어순·번역이다.
+- 검증 결과 `node --check`, `npm.cmd run build`, Playwright 데스크톱과 모바일 렌더링이 통과했다. 로컬 URL은 `http://localhost:8765/middle3-english-chunjae-lee-4.html`이다.
+- Cloudflare Pages 배포 프리뷰는 `https://d4b9643f.purunet-academy.pages.dev/middle3-english-chunjae-lee-4.html`이며, 운영 URL `https://purunet-academy.pages.dev/middle3-english-chunjae-lee-4.html`에서도 탭 17개, 어휘 46개, 본문 28문장, 콘솔 오류 0개를 확인했다.
+
+## 중3 영어 천재 이재영 04과 본문 PDF 세부 보강 메모 (2026-05-31)
+- 이번 보강 범위는 사용자가 다시 지정한 `본문 해석`, `본문 확인`, `본문 어순` PDF에 맞춰 본문 활동 단위를 촘촘히 맞추는 것이다.
+- 기존 4과 페이지에는 큰 본문 흐름은 있었지만 Grand Bazaar Extra Tip, Damnoen Saduak Extra Tip, Aalsmeer Flower Market의 수레·전기 트럭 설명과 마지막 Extra Tip이 빠져 있었다.
+- `passage` 데이터를 28문장에서 36문장으로 확장했고, 분석 그룹 인덱스를 문화 소개, Grand Bazaar, Floating Market, Flower Market 흐름에 맞게 다시 나누었다.
+- 본문 어순 탭은 기존 일부 문장만 다루던 `passage.slice(3,18)`을 본문 전체 `passage.slice(3)`로 확장했다.
+- 개요 탭에 본문 해석 PDF, 본문 확인 PDF, 본문 어순 PDF 바로가기 카드를 추가해 Codex가 처리 가능한 단계형 흐름을 학생 화면에도 보이게 했다.
+- 검증 결과 로컬 Playwright에서 데스크톱과 모바일 모두 탭 17개, 본문 36문장, 본문 확인 33카드, 본문 어순 33카드, 콘솔 오류 0개, 가로 overflow 없음으로 확인했다.
+- Cloudflare Pages 배포 프리뷰는 `https://28d900db.purunet-academy.pages.dev/middle3-english-chunjae-lee-4.html`이며, 운영 URL에서도 동일하게 본문 36문장과 본문 확인·어순 33카드를 확인했다.
+
+## 중3 영어 천재 이재영 02과 PDF 기반 학습 페이지 업데이트 (2026-06-01)
+- 목표는 운영 URL `/middle3-english-chunjae-lee-2`에 대응하는 02과 학습 페이지를 업로드 PDF 기반 단계형 활동으로 채우는 것이다.
+- 기존 04과 페이지가 동일한 학습 탭 구조를 가지고 있으므로 HTML/CSS/JS 패턴은 그쪽을 재사용하고, 02과의 데이터만 새로 구성한다.
+- 저작권 보호와 유지보수를 위해 PDF 원문을 무작정 장문 복제하기보다 어휘, 문법, 본문·대화문 문장 단위, 자체 확인 문제로 나누어 학생용 상호작용 데이터로 정리한다.
+- 검증은 JS 문법 검사, 포털 빌드, 로컬 렌더링에서 탭 수·주요 카드 수·콘솔 오류를 확인하는 방식으로 진행한다.
+
+## 중3 영어 천재 이재영 02과 실제 반영 메모 (2026-06-01)
+- 02과 PDF 추출은 기존 `.pdf-tools`의 `pdfjs-dist`를 사용해 진행했고, 추출 결과는 `.pdf-tools/lesson2` 아래 TXT 18개로 남겼다.
+- 02과 운영 경로는 사용자가 지정한 `/middle3-english-chunjae-lee-2`이므로 정적 파일 `middle3-english-chunjae-lee-2.html`과 `_redirects`의 확장자 없는 경로를 함께 추가했다.
+- 새 JS는 04과처럼 탭형 학습 페이지를 렌더링하되 SRS 어휘 허브는 넣지 않고, PDF 기반 내신 활동에 직접 필요한 어휘 카드, 어법 카드, 본문·대화문 활동, 객관식과 빈칸 검사를 중심으로 구성했다.
+- Playwright 검증 결과 데스크톱 1280px와 모바일 390px 모두 탭 17개, 어휘 카드 47개, 본문 문장 36개, 대화문 라인 47개, 객관식 12문항, 콘솔 오류 0개, 가로 overflow 0으로 확인했다.
+
+## 중3 영어 천재 이재영 02과 운영 배포 메모 (2026-06-01)
+- Cloudflare Pages는 `middle3-english-chunjae-lee-2.html`을 확장자 없는 `/middle3-english-chunjae-lee-2`로 자동 제공한다.
+- `_redirects`에 02과 rewrite를 추가하면 리다이렉트 루프가 생겨 제거했고, 제거 후 운영 URL이 정상 렌더링됐다.
+- 최종 검증 기준은 운영 URL HTTP 200, 콘솔 오류 0개, 탭·어휘·본문·대화문 수 정상, 모바일 overflow 0이었다.
