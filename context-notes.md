@@ -1458,3 +1458,11 @@
 - 구현 후 2과는 `m3-english-chunjae-lee-2`와 `middle3-english-chunjae-lee-2`, 4과는 `m3-english-chunjae-lee-4`와 `middle3-english-chunjae-lee-4`, 5과는 `m3-english-chunjae-lee-5`와 `middle3-english-chunjae-lee-5`로 저장한다.
 - 검증 결과 `node --check`, `npm.cmd run build`, 로컬 Playwright, 운영 URL Playwright가 통과했다. 운영 검증은 `/api/progress`를 가로채 실제 학생 DB를 오염시키지 않았다.
 - Cloudflare Pages 배포 프리뷰는 `https://be39f986.purunet-academy.pages.dev`이며 운영 URL `/middle3-english-chunjae-lee-2.html`, `/middle3-english-chunjae-lee-4.html`, `/middle3-english-chunjae-lee-5.html`에서도 서버 진도 payload를 확인했다.
+
+## 천재교육 StreamDocs PDF 다운로드 확인 (2026-06-02)
+- 목표는 사용자가 준 천재교육 StreamDocs 뷰어 URL에서 우회 없이 공식적으로 접근 가능한 PDF 파일을 찾아 작업 폴더에 저장하는 것이다.
+- 성공 기준은 저장된 PDF 파일이 존재하고 `%PDF` 헤더 또는 PDF로 인식되는 콘텐츠를 가진다는 점을 확인하는 것이다.
+- 만약 뷰어가 페이지 이미지 조각만 제공하거나 다운로드 권한을 막는다면, 접근 제한을 우회하지 않고 결과를 보고한다.
+- StreamDocs 앱 번들 확인 결과 `<base href="/streamdocs/">`와 `apiPath="/v4"`를 조합해 API URL이 `/streamdocs/v4`로 만들어진다.
+- 공식 GET 엔드포인트 `/streamdocs/v4/documents/{streamdocsId}`가 `Content-Disposition` 파일명 `천재_중학_수학1(김화경)_교과서.pdf`와 `x-streamdocs-content-length=32358186`을 반환했다.
+- 저장 파일은 작업 폴더의 `천재_중학_수학1(김화경)_교과서.pdf`이며, 헤더가 `%PDF-1.7`로 확인됐다.
