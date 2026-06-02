@@ -359,6 +359,9 @@ function showFeedback(type, title, body) {
   const box = $("feedback");
   box.className = `feedback show ${type}`;
   box.innerHTML = `<strong>${escapeHTML(title)}</strong><span>${body}</span>`;
+  requestAnimationFrame(() => {
+    box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
 }
 
 function render() {
@@ -434,7 +437,7 @@ function renderProblem() {
   $("problem-visual").innerHTML = problemVisual(problem);
   $("feedback").className = problem.done ? `feedback show ${problem.correct ? "correct" : "wrong"}` : "feedback";
   $("feedback").innerHTML = problem.done ? `<strong>${problem.correct ? "정답입니다." : "오답입니다."}</strong><span>${solutionText(problem, !problem.correct)}</span>` : "";
-  $("answer-input").focus();
+  $("answer-input").focus({ preventScroll: true });
 }
 
 function renderStats() {

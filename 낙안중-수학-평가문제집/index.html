@@ -1,78 +1,109 @@
-<!-- 낙안중 중1 수학 연산 웹북의 학습 화면 문서 -->
+<!-- 낙안중 중1 AI 수학 학습 플랫폼 문서 -->
 <!doctype html>
 <html lang="ko">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>낙안중 중1 수학 연산 웹북</title>
+    <title>AI 수학 · 낙안중 1학년</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <div class="app-shell">
+
+      <!-- ── 상단 헤더 ── -->
       <header class="topbar">
         <div class="brand-block">
-          <p class="eyebrow">낙안중 1학년 · 천재교육 수학1</p>
-          <h1>수학 전문 학원형 연산 웹북</h1>
+          <div class="logo-row">
+            <div class="logo-icon">🧮</div>
+            <div class="brand-text">
+              <h1>AI 수학</h1>
+              <p class="brand-sub">낙안중 1학년 · 천재교육 수학1</p>
+            </div>
+          </div>
         </div>
+
+        <div class="header-stats">
+          <div class="header-stat-item">
+            <span class="header-stat-icon">⭐</span>
+            <div class="header-stat-info">
+              <span class="header-stat-value" id="total-solved">0</span>
+              <span class="header-stat-label">총 풀이</span>
+            </div>
+          </div>
+          <div class="header-stat-item">
+            <span class="header-stat-icon">🎯</span>
+            <div class="header-stat-info">
+              <span class="header-stat-value" id="accuracy">0%</span>
+              <span class="header-stat-label">정확도</span>
+            </div>
+          </div>
+          <div class="header-stat-item">
+            <span class="header-stat-icon">📝</span>
+            <div class="header-stat-info">
+              <span class="header-stat-value" id="wrong-count">0</span>
+              <span class="header-stat-label">오답 누적</span>
+            </div>
+          </div>
+        </div>
+
         <div class="top-actions">
-          <button class="icon-button" id="print-sheet" type="button" title="학습지 인쇄">⎙</button>
-          <button class="text-button" id="wrong-set" type="button">오답 재출제</button>
-          <button class="text-button danger" id="reset-progress" type="button">기록 초기화</button>
+          <button class="icon-button" id="print-sheet" type="button" title="학습지 인쇄">🖨️</button>
+          <button class="action-btn" id="wrong-set" type="button">📚 오답 재출제</button>
+          <button class="action-btn danger" id="reset-progress" type="button">🔄 초기화</button>
         </div>
       </header>
 
-      <main class="layout">
-        <aside class="sidebar">
-          <section class="status-panel">
-            <div>
-              <span>오늘 세트</span>
-              <strong id="set-score">0 / 0</strong>
-            </div>
-            <div class="progress-track" aria-hidden="true"><span id="set-bar"></span></div>
-            <dl class="mini-stats">
-              <div><dt>정확도</dt><dd id="accuracy">0%</dd></div>
-              <div><dt>누적 풀이</dt><dd id="total-solved">0</dd></div>
-              <div><dt>오답</dt><dd id="wrong-count">0</dd></div>
-            </dl>
-          </section>
-          <nav class="unit-list" id="unit-list" aria-label="단원 선택"></nav>
-        </aside>
+      <!-- ── 단원 선택 스트립 ── -->
+      <div class="unit-strip-wrapper">
+        <nav class="unit-list" id="unit-list" aria-label="단원 선택"></nav>
+      </div>
 
-        <section class="workspace">
+      <!-- ── 메인 학습 영역 ── -->
+      <main class="learning-area">
+
+        <!-- ── 문제 컬럼 ── -->
+        <div class="problem-column">
+
+          <!-- 학습 설정 컨트롤 -->
           <section class="control-band">
-            <div class="control-group">
-              <label for="skill-select">유형</label>
-              <select id="skill-select"></select>
+            <div class="control-row">
+              <div class="control-group">
+                <label for="skill-select">📌 유형</label>
+                <select id="skill-select"></select>
+              </div>
+              <div class="control-group">
+                <label for="mode-select">🎮 학습 모드</label>
+                <select id="mode-select">
+                  <option value="concept">💡 개념 확인</option>
+                  <option value="drill" selected>⚡ 연산 집중</option>
+                  <option value="exam">📋 실전 평가</option>
+                  <option value="weak">🔥 약점 복습</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label for="difficulty-select">📊 난이도</label>
+                <select id="difficulty-select">
+                  <option value="basic">🟢 기본</option>
+                  <option value="standard" selected>🟡 표준</option>
+                  <option value="challenge">🔴 심화</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label for="set-size">📦 문항 수</label>
+                <select id="set-size">
+                  <option value="10">10문항</option>
+                  <option value="20" selected>20문항</option>
+                  <option value="30">30문항</option>
+                  <option value="50">50문항</option>
+                </select>
+              </div>
+              <button class="start-button" id="start-set" type="button">
+                ▶ 세트 시작
+              </button>
             </div>
-            <div class="control-group">
-              <label for="mode-select">학습 모드</label>
-              <select id="mode-select">
-                <option value="concept">개념 확인</option>
-                <option value="drill" selected>연산 집중</option>
-                <option value="exam">실전 평가</option>
-                <option value="weak">약점 복습</option>
-              </select>
-            </div>
-            <div class="control-group">
-              <label for="difficulty-select">난이도</label>
-              <select id="difficulty-select">
-                <option value="basic">기본</option>
-                <option value="standard" selected>표준</option>
-                <option value="challenge">심화</option>
-              </select>
-            </div>
-            <div class="control-group">
-              <label for="set-size">세트</label>
-              <select id="set-size">
-                <option value="10">10문항</option>
-                <option value="20" selected>20문항</option>
-                <option value="30">30문항</option>
-                <option value="50">50문항</option>
-              </select>
-            </div>
-            <button class="primary-button" id="start-set" type="button">세트 시작</button>
           </section>
 
+          <!-- 단원 히어로 배너 -->
           <section class="unit-hero">
             <div class="unit-copy">
               <p class="eyebrow" id="unit-kicker">Ⅰ. 수와 연산</p>
@@ -83,41 +114,67 @@
             <div class="vector-board" id="unit-visual" aria-hidden="true"></div>
           </section>
 
-          <section class="study-grid">
-            <article class="problem-stage">
-              <div class="stage-head">
-                <div>
-                  <p class="stage-kicker" id="problem-meta">문항 대기</p>
-                  <h3 id="problem-title">세트를 시작하세요.</h3>
-                </div>
-                <div class="timer" id="timer">00:00</div>
+          <!-- 문제 카드 -->
+          <article class="problem-stage">
+            <div class="stage-head">
+              <div class="stage-meta">
+                <p class="stage-kicker" id="problem-meta">문항 대기</p>
+                <h3 id="problem-title">단원과 유형을 선택한 뒤 세트를 시작하세요.</h3>
               </div>
-              <div class="problem-visual" id="problem-visual"></div>
-              <p class="question" id="question"></p>
-              <div class="answer-row">
-                <input id="answer-input" class="answer-input" autocomplete="off" inputmode="text" placeholder="답을 입력하세요" />
-                <button class="primary-button" id="check-answer" type="button">채점</button>
-              </div>
-              <div class="quick-actions">
-                <button class="secondary-button" id="hint-button" type="button">힌트</button>
-                <button class="secondary-button" id="solution-button" type="button">풀이</button>
-                <button class="secondary-button" id="next-problem" type="button">다음</button>
-              </div>
-              <div class="feedback" id="feedback" aria-live="polite"></div>
-            </article>
+              <div class="timer" id="timer">00:00</div>
+            </div>
 
-            <aside class="lesson-panel">
-              <section>
-                <h3>세트 진행</h3>
-                <ol class="session-list" id="session-list"></ol>
-              </section>
-              <section>
-                <h3>약점 진단</h3>
-                <div class="weak-list" id="weak-list"></div>
-              </section>
-            </aside>
+            <div class="session-progress-bar">
+              <div class="session-progress-fill" id="set-bar"></div>
+              <span class="session-progress-label" id="set-score">0 / 0</span>
+            </div>
+
+            <div class="problem-visual" id="problem-visual"></div>
+
+            <div class="question-card">
+              <p class="question" id="question">전 범위 핵심 유형에서 문항이 계속 생성됩니다.</p>
+            </div>
+
+            <div class="answer-zone">
+              <input id="answer-input" class="answer-input" autocomplete="off" inputmode="text" placeholder="답을 입력하세요" />
+              <button class="grade-button" id="check-answer" type="button">채점 ✓</button>
+            </div>
+
+            <div class="quick-actions">
+              <button class="ghost-button" id="hint-button" type="button">💡 힌트</button>
+              <button class="ghost-button" id="solution-button" type="button">📖 풀이</button>
+              <button class="ghost-button accent" id="next-problem" type="button">다음 →</button>
+            </div>
+
+            <div class="feedback" id="feedback" aria-live="polite"></div>
+          </article>
+
+        </div>
+
+        <!-- ── 우측 사이드 패널 ── -->
+        <aside class="side-panel">
+
+          <section class="panel-card">
+            <h3 class="panel-title">📋 세트 진행</h3>
+            <ol class="session-list" id="session-list">
+              <li class="session-item">
+                <strong>세트 없음</strong>
+                <small>학습 모드를 고르고 세트를 시작하세요.</small>
+              </li>
+            </ol>
           </section>
-        </section>
+
+          <section class="panel-card">
+            <h3 class="panel-title">🔥 약점 진단</h3>
+            <div class="weak-list" id="weak-list">
+              <div class="weak-item">
+                <strong>진단 대기</strong>
+                <small>문제를 풀면 약점 유형이 자동 정렬됩니다.</small>
+              </div>
+            </div>
+          </section>
+
+        </aside>
       </main>
     </div>
 
