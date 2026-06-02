@@ -1,0 +1,52 @@
+<!-- 낙안중 중1 수학 평가문제집 학습 사이트의 기본 문서 -->
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>낙안중 중1 천재교육 수학 평가문제집</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">낙안중 1학년 수학</p>
+          <h1>천재교육 수학 평가문제집 학습 사이트</h1>
+        </div>
+        <div class="top-actions">
+          <button class="icon-button" id="print-test" type="button" title="평가지 인쇄">⎙</button>
+          <button class="text-button" id="reset-progress" type="button">진행 초기화</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <aside class="sidebar" aria-label="단원 목록">
+          <div class="status-panel">
+            <span>전체 진행률</span>
+            <strong id="overall-score">0%</strong>
+            <div class="progress-track" aria-hidden="true">
+              <span id="overall-bar"></span>
+            </div>
+          </div>
+          <nav id="unit-list" class="unit-list"></nav>
+        </aside>
+
+        <section class="workspace" aria-live="polite">
+          <div id="unit-summary" class="unit-summary"></div>
+          <div class="tool-row">
+            <div id="filter-tabs" class="filter-tabs" role="tablist" aria-label="문항 필터"></div>
+            <button class="text-button" id="mistake-mode" type="button">오답노트</button>
+          </div>
+          <div class="study-grid">
+            <section id="problem-list" class="problem-list" aria-label="문항 목록"></section>
+            <section id="problem-stage" class="problem-stage" aria-label="풀이 영역"></section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <section id="print-sheet" class="print-sheet" aria-hidden="true"></section>
+    <script src="./app.js"></script>
+  </body>
+</html>
