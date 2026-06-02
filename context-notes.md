@@ -1476,3 +1476,14 @@
 - 구현 결과 `낙안중-수학-평가문제집/index.html`, `styles.css`, `app.js`를 추가했다. 총 6단원 43문항을 제공하고 단원별 SVG 학습 시각 자료를 포함한다.
 - 기능은 단원 전환, 주제·난이도·문항 유형 필터, 선택형·입력형 채점, 해설 보기, 전체 진행률 표시, localStorage 풀이 저장, 오답노트, 단원별 인쇄 평가지 생성이다.
 - 검증 결과 `node --check app.js`가 통과했고, Playwright 데스크톱 1280px와 모바일 390px에서 콘솔 오류 0개, 가로 overflow 없음, 오답노트 빈 상태 안내 표시를 확인했다.
+
+## 낙안중 중1 수학 평가문제집 포털 연결과 영어 주소 적용 (2026-06-02)
+- 목표는 `https://purunet-academy.pages.dev/` 포털에서 낙안중 중1 수학 평가문제집 사이트를 열 수 있게 연결하고, 한글 URL 대신 영어 주소를 쓰는 것이다.
+- 선택한 영어 주소는 `/nakan-middle1-math-workbook`이며, 실제 정적 파일은 포털 루트의 `nakan-middle1-math-workbook.html`, `assets/nakan-middle1-math-workbook.css`, `js/nakan-middle1-math-workbook.js`로 둔다.
+- 포털 홈 메뉴는 `js/views.js`에서 href 카드로 외부 페이지를 연결하는 기존 패턴을 사용한다. 학생 권한에서도 보이도록 중학생 그룹과 내신시험대비반 그룹 양쪽에 바로가기를 넣는 방향으로 진행한다.
+- 구현 결과 포털 `중학생` 탭과 `내신시험대비반` 탭에 `낙안중 중1 수학 평가문제집` 바로가기를 추가했고, 카드 href는 확장자 없는 영어 주소 `nakan-middle1-math-workbook`으로 설정했다.
+- Cloudflare Pages는 `.html` 파일을 확장자 없는 주소로 자동 제공하므로 `_redirects`에 rewrite를 추가하면 리다이렉트 루프가 생긴다. 따라서 별도 `_redirects` 규칙은 두지 않는다.
+- 포털 커밋은 `7b64315 feat: link Nakan middle1 math workbook`이다.
+- 검증 결과 `node --check js/views.js`, `node --check js/nakan-middle1-math-workbook.js`, `npm.cmd run build`, 로컬 HTTP Playwright, 운영 URL Playwright가 통과했다.
+- 운영 배포는 미커밋 변경이 섞이지 않도록 포털 `HEAD` 아카이브 임시 폴더에서 실행했고, 최종 프리뷰는 `https://c1c31331.purunet-academy.pages.dev`이다.
+- 운영 URL `https://purunet-academy.pages.dev/nakan-middle1-math-workbook`에서 데스크톱 1280px와 모바일 390px 모두 카드 연결, 문제 채점, 콘솔 오류 0개, 가로 overflow 없음으로 확인했다.
