@@ -1487,3 +1487,15 @@
 - 검증 결과 `node --check js/views.js`, `node --check js/nakan-middle1-math-workbook.js`, `npm.cmd run build`, 로컬 HTTP Playwright, 운영 URL Playwright가 통과했다.
 - 운영 배포는 미커밋 변경이 섞이지 않도록 포털 `HEAD` 아카이브 임시 폴더에서 실행했고, 최종 프리뷰는 `https://c1c31331.purunet-academy.pages.dev`이다.
 - 운영 URL `https://purunet-academy.pages.dev/nakan-middle1-math-workbook`에서 데스크톱 1280px와 모바일 390px 모두 카드 연결, 문제 채점, 콘솔 오류 0개, 가로 overflow 없음으로 확인했다.
+
+## 낙안중 중1 수학 연산 웹북 전면 개편 (2026-06-02)
+- 사용자의 피드백은 현재 사이트가 벡터 이미지가 부족하고, 문항 수가 너무 적으며, 기본 연산 문제집이라고 보기 어렵다는 것이다.
+- 개편 목표는 고정 43문항 평가 사이트가 아니라 전문 학원에서 반복 훈련용으로 사용할 수 있는 생성형 인터랙티브 수학 연산 웹북이다.
+- 저작권 보호 방침은 유지한다. 교과서 원문 문제를 복제하지 않고 중1 단원 흐름에 맞춘 자체 생성 문항과 자체 풀이 단계로 구성한다.
+- 성공 기준은 수와 연산, 문자와 식, 좌표평면과 그래프, 도형의 기초, 도형의 성질, 통계 전 범위에서 유형별 무제한 문제 생성, 오답 재출제, 타이머, 풀이 단계, 벡터 시각 자료, 인쇄 학습지, 모바일 가독성을 제공하는 것이다.
+- 완료 구현은 로컬 `낙안중-수학-평가문제집/`와 포털 `nakan-middle1-math-workbook`에 동일하게 반영했다.
+- 웹북은 6대 단원, 37개 핵심 유형, 개념 확인·집중 연산·시험 대비·오답 재도전 모드, 10·20·30·50문항 세트, 자동 채점, 힌트, 풀이, 오답 노트, 취약 유형 진단, 인쇄용 20문항 학습지를 제공한다.
+- 시각 자료는 수직선, 소인수분해 나무, 분수 모델, 대수 타일, 좌표평면, 표, 각, 다각형, 원, 입체도형, 히스토그램을 SVG 기반으로 자체 제작했다.
+- 검증은 `node --check`, 포털 `npm run build`, 로컬 Playwright 데스크톱·모바일 렌더링, 운영 Playwright 데스크톱·모바일 렌더링으로 수행했고 운영 주소에서 콘솔 오류와 400 이상 응답이 없었다.
+- 포털 커밋은 `b9f812c feat: redesign Nakan math webbook`이며 운영 URL은 `https://purunet-academy.pages.dev/nakan-middle1-math-workbook`이다.
+- 배포 프리뷰는 `https://23e2fa3a.purunet-academy.pages.dev`이며 배포 중 docs 경로 tar 경고가 출력됐지만 Wrangler 배포는 정상 완료됐다.
