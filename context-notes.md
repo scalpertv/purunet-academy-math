@@ -1499,3 +1499,12 @@
 - 검증은 `node --check`, 포털 `npm run build`, 로컬 Playwright 데스크톱·모바일 렌더링, 운영 Playwright 데스크톱·모바일 렌더링으로 수행했고 운영 주소에서 콘솔 오류와 400 이상 응답이 없었다.
 - 포털 커밋은 `b9f812c feat: redesign Nakan math webbook`이며 운영 URL은 `https://purunet-academy.pages.dev/nakan-middle1-math-workbook`이다.
 - 배포 프리뷰는 `https://23e2fa3a.purunet-academy.pages.dev`이며 배포 중 docs 경로 tar 경고가 출력됐지만 Wrangler 배포는 정상 완료됐다.
+
+## 낙안중 수학 웹북 적응형 화면 최적화 (2026-06-02)
+
+- 사용자의 피드백은 학습 화면이 너무 커서 한 화면에 보이지 않는다는 것이다.
+- 원인은 상단바, 단원 소개 카드, 벡터 보드, 문항 시각화, 질문 박스, 세션 목록이 모두 여유 있는 패딩과 큰 최소 높이를 갖고 있어 1280×720급 노트북에서 풀이 카드 하단이 밀리는 구조였다.
+- `styles.css`와 포털 `assets/nakan-middle1-math-workbook.css`를 조정해 상단바, 컨트롤, 단원 카드, 벡터 보드, 문항 카드, 버튼, 오답 목록의 여백과 최소 높이를 줄였다.
+- 1060px 이하에서는 사이드바 단원 목록을 가로 스크롤형으로 전환하고, 820px 이하에서는 단원 소개를 1열로 바꾸며, 740px 이하 낮은 화면에서는 추가 압축 규칙을 적용한다.
+- 검증은 로컬 사이트와 포털 개발 서버에서 1366×768, 1280×720, 390×844 화면으로 실행했다. 운영 주소와 프리뷰 주소에서도 풀이 카드, 질문 영역, SVG, 10문항 세션 목록, 가로 넘침 없음, 콘솔 오류 없음, 400 이상 응답 없음이 통과했다.
+- 포털 커밋은 `2c0bb34 fix: optimize Nakan workbook viewport layout`이며 배포 프리뷰는 `https://7ebdc210.purunet-academy.pages.dev`이다.
