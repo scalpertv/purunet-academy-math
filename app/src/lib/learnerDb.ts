@@ -1015,7 +1015,16 @@ function mergeCloudSettingsWithLocalSession(
 function cloudSnapshotHasData(
   snapshot: Pick<
     CloudLearningSnapshot,
-    "teachers" | "classes" | "students" | "adminAccounts" | "teacherAccounts" | "studentAccounts" | "assignments" | "attempts"
+    | "teachers"
+    | "classes"
+    | "students"
+    | "adminAccounts"
+    | "teacherAccounts"
+    | "studentAccounts"
+    | "progressOverrides"
+    | "assignments"
+    | "attempts"
+    | "securityAlerts"
   >,
 ) {
   return (
@@ -1025,9 +1034,57 @@ function cloudSnapshotHasData(
     snapshot.adminAccounts.length > 0 ||
     snapshot.teacherAccounts.length > 0 ||
     snapshot.studentAccounts.length > 0 ||
+    snapshot.progressOverrides.length > 0 ||
     (snapshot.assignments?.length ?? 0) > 0 ||
-    snapshot.attempts.length > 0
+    snapshot.attempts.length > 0 ||
+    snapshot.securityAlerts.length > 0
   );
+}
+
+function snapshotRecordCount(
+  snapshot: Pick<
+    CloudLearningSnapshot,
+    | "teachers"
+    | "classes"
+    | "students"
+    | "adminAccounts"
+    | "teacherAccounts"
+    | "studentAccounts"
+    | "progressOverrides"
+    | "assignments"
+    | "attempts"
+    | "securityAlerts"
+  >,
+) {
+  return (
+    snapshot.teachers.length +
+    snapshot.classes.length +
+    snapshot.students.length +
+    snapshot.adminAccounts.length +
+    snapshot.teacherAccounts.length +
+    snapshot.studentAccounts.length +
+    snapshot.progressOverrides.length +
+    (snapshot.assignments?.length ?? 0) +
+    snapshot.attempts.length +
+    snapshot.securityAlerts.length
+  );
+}
+
+function cloudSnapshotAppearsOlderThanLocal(
+  cloudSnapshot: CloudLearningSnapshot,
+  localSnapshot: CloudLearningSnapshot,
+) {
+  const localCount = snapshotRecordCount(localSnapshot);
+  const cloudCount = snapshotRecordCount(cloudSnapshot);
+  if (localCount > cloudCount) return true;
+
+  const localUpdatedAt = Date.parse(localSnapshot.settings?.updatedAt ?? localSnapshot.syncedAt ?? "");
+  const cloudUpdatedAt = Date.parse(cloudSnapshot.settings?.updatedAt ?? cloudSnapshot.syncedAt ?? "");
+  if (Number.isFinite(localUpdatedAt) && Number.isFinite(cloudUpdatedAt) && localUpdatedAt > cloudUpdatedAt) {
+    return true;
+  }
+
+  return false;
 }
 
 function cloudAvailableNow() {
@@ -1140,6 +1197,13 @@ async function hydrateCloudSnapshotOnce() {
 
     const localSnapshot = await readFullIndexedSnapshotDirect().catch(() => null);
     if (!cloudSnapshotHasData(cloudSnapshot) && localSnapshot && cloudSnapshotHasData(localSnapshot)) {
+      await saveCloudLearningSnapshot(localSnapshot);
+      cloudSnapshotHydrated = true;
+      cloudSnapshotActive = true;
+      return;
+    }
+
+    if (localSnapshot && cloudSnapshotAppearsOlderThanLocal(cloudSnapshot, localSnapshot)) {
       await saveCloudLearningSnapshot(localSnapshot);
       cloudSnapshotHydrated = true;
       cloudSnapshotActive = true;

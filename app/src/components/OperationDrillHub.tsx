@@ -84,6 +84,7 @@ export default function OperationDrillHub({ units, onStart, onPrint, onPrintAnsw
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [problemCount, setProblemCount] = useState<ProblemSetSize>(20);
   const [tipIdx] = useState(() => Math.floor(Math.random() * BRAIN_TIPS.length));
+  const [isMobileConfigOpen, setIsMobileConfigOpen] = useState(false);
 
   const cfg = GRADE_CONFIG[grade];
 
@@ -133,6 +134,7 @@ export default function OperationDrillHub({ units, onStart, onPrint, onPrintAnsw
   // 기본 연산 - 단원/유형 직접 선택
   function handleBasicStart() {
     if (!activeUnit) return;
+    setIsMobileConfigOpen(false);
     const gens = activeTopic
       ? [activeTopic.generate]
       : activeUnit.topics.map((t) => t.generate);
@@ -146,6 +148,7 @@ export default function OperationDrillHub({ units, onStart, onPrint, onPrintAnsw
   function handleMixedStart() {
     const gens = shuffle(semesterUnits.flatMap((u) => u.topics.map((t) => t.generate)));
     if (!gens.length) return;
+    setIsMobileConfigOpen(false);
     const label = `${cfg.label} ${semester}학기 혼합 연산`;
     onStart(label, cfg.color, gens, problemCount);
   }
@@ -185,6 +188,11 @@ export default function OperationDrillHub({ units, onStart, onPrint, onPrintAnsw
 
   return (
     <div className="drill-page">
+      {/* ── 모바일 오버레이 ── */}
+      {isMobileConfigOpen && (
+        <div className="drill-mobile-overlay" onClick={() => setIsMobileConfigOpen(false)} />
+      )}
+
       {/* ── 헤더 ── */}
       <header className="drill-header">
         <div className="drill-header-inner">
@@ -237,8 +245,12 @@ export default function OperationDrillHub({ units, onStart, onPrint, onPrintAnsw
         </nav>
 
         <div className="drill-main">
-          {/* ── 좌측 설정 패널 ── */}
-          <aside className="drill-config-panel">
+          {/* ── 좌측 설정 패널 (모바일: 하단 드로어) ── */}
+          <aside className={`drill-config-panel${isMobileConfigOpen ? " mobile-open" : ""}`}>
+            {/* 모바일 드래그 핸들 */}
+            <div className="drill-config-drag-handle" onClick={() => setIsMobileConfigOpen(false)}>
+              <span />
+            </div>
 
             {/* 연산 유형 토글 */}
             <div className="drill-config-block">
@@ -478,6 +490,7 @@ export default function OperationDrillHub({ units, onStart, onPrint, onPrintAnsw
                           className="drill-unit-start-btn"
                           onClick={(e) => {
                             e.stopPropagation();
+                            setIsMobileConfigOpen(false);
                             onStart(`${unit.label ?? unit.subtitle} 전체`, cfg.color, unit.topics.map((t) => t.generate), problemCount);
                           }}
                         >
@@ -508,6 +521,7 @@ export default function OperationDrillHub({ units, onStart, onPrint, onPrintAnsw
                       className="drill-unit-start-btn mixed"
                       onClick={(e) => {
                         e.stopPropagation();
+                        setIsMobileConfigOpen(false);
                         const gens = shuffle(semesterUnits.flatMap((u) => u.topics.map((t) => t.generate)));
                         if (gens.length) onStart(`${cfg.label} ${semester}학기 혼합`, cfg.color, gens, problemCount);
                       }}
@@ -567,6 +581,17 @@ export default function OperationDrillHub({ units, onStart, onPrint, onPrintAnsw
           </section>
         </div>
       </div>
+
+      {/* ── 모바일 FAB: 설정 드로어 열기 ── */}
+      <button
+        className="drill-mobile-fab"
+        style={{ ["--g-color" as string]: cfg.color }}
+        onClick={() => setIsMobileConfigOpen(true)}
+        aria-label="학습 설정 열기"
+      >
+        ⚙️ <span>학습 설정</span>
+        {problemCount && <small>{problemCount}문제 · {opType === "mixed" ? "혼합" : "기본"}</small>}
+      </button>
     </div>
   );
 }
