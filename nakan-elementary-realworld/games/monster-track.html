@@ -1,0 +1,36 @@
+<!-- 혼합계산 게임: 몬스터 트랙 스타일 -->
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>몬스터 트랙 올림픽 - 혼합계산</title>
+  <link rel="stylesheet" href="../assets/games.css">
+</head>
+<body>
+  <header class="top"><h1>몬스터 트랙 올림픽 (혼합계산)</h1></header>
+  <main class="panel">
+    <p>문제를 풀어 몬스터를 트랙 끝까지 이동시키세요. 난이도와 개수 선택 가능.</p>
+    <div class="controls">
+      <label>난이도: <select id="difficulty"><option value="easy">쉬움</option><option value="normal" selected>보통</option><option value="hard">어려움</option></select></label>
+      <label>문제 개수: <input id="count" type="number" min="3" max="20" value="6"></label>
+      <button id="start">게임 시작</button>
+    </div>
+
+    <div id="track" class="track">
+      <div id="monsters" class="monsters"></div>
+      <div id="player" class="player">🏃</div>
+    </div>
+
+    <div class="question-area">
+      <div id="question" class="question">문제를 시작하세요</div>
+      <input id="answer" type="text" placeholder="답을 입력하세요">
+      <button id="submit">제출</button>
+    </div>
+
+    <div id="result" class="score"></div>
+  </main>
+
+  <script src="../assets/monster.js"></script>
+</body>
+</html>

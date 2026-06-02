@@ -1,0 +1,5 @@
+body{margin:0;font-family:'Noto Sans KR',system-ui,Arial}
+.top{padding:12px;background:#0a67a3;color:#fff}
+.panel.controls{padding:12px}
+.controls button, .controls select{margin-right:8px;padding:8px}
+.info{margin-top:8px}

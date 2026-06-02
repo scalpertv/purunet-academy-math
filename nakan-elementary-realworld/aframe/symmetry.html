@@ -1,0 +1,33 @@
+<!-- 대칭 퀴즈: A-Frame 간단 씬 (2D 평면 기반) -->
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>대칭 퀴즈</title>
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <link rel="stylesheet" href="../assets/aframe-style.css">
+</head>
+<body>
+  <header class="top"><h1>대칭 퀴즈</h1></header>
+  <a-scene embedded>
+    <a-entity position="0 1.6 0">
+      <a-camera>
+        <a-cursor></a-cursor>
+      </a-camera>
+    </a-entity>
+
+    <a-entity id="plane" geometry="primitive: plane; width: 3; height: 2" material="color: #fff" position="0 1 -2">
+      <!-- 대칭 예시은 평면에 SVG 텍스처로 표현할 수 있음 -->
+    </a-entity>
+  </a-scene>
+
+  <div class="panel controls">
+    <button id="shuffle">문제 섞기</button>
+    <button id="check">정답 확인</button>
+    <div id="q-info">대칭점을 클릭하여 대칭을 완성하세요.</div>
+  </div>
+
+  <script src="../assets/aframe-symmetry.js"></script>
+</body>
+</html>

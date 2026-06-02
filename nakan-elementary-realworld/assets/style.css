@@ -1,0 +1,11 @@
+body{margin:0;font-family: 'Noto Sans KR', system-ui, Arial;background:#f7fbff;color:#122}
+.top{padding:16px;background:#0a67a3;color:#fff}
+.top h1{margin:0;font-size:1.3rem}
+main{padding:14px}
+.panel{background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.06);margin-bottom:12px}
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0}
+input[type=range]{width:160px}
+.cup{width:160px;height:200px;border:2px solid #ccc;border-radius:6px;background:linear-gradient(#fff,#f0f9ff);margin-top:8px}
+.score{margin-top:8px;color:#064; font-weight:600}
+#blocks-area{min-height:160px;background:#eef9ff;border-radius:6px;padding:12px;display:flex;flex-wrap:wrap;gap:8px}
+.block{width:40px;height:24px;background:#ffcc66;border-radius:4px;display:flex;align-items:center;justify-content:center}

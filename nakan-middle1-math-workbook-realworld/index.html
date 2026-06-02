@@ -1,0 +1,82 @@
+<!-- 실감형 수학 체험 데모 페이지: 중학교 1학년 워크북 리얼월드 버전 -->
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>나칸 중1 수학 워크북 - RealWorld</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+</head>
+<body>
+  <header class="top">
+    <h1>나칸 중1 수학 워크북 — RealWorld 체험</h1>
+    <p class="subtitle">실감형 인터랙티브 예시: 기하, 비율, 도형 조작</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>체험: 기하 놀이터</h2>
+      <p>오브젝트를 클릭해 보세요. 크기/색을 바꾸며 개념을 탐색합니다.</p>
+
+      <div id="scene-wrap">
+        <a-scene embedded vr-mode-ui="enabled: true">
+          <a-entity position="0 1.6 0">
+            <a-camera>
+              <a-cursor fuse="false" geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.02" material="color: #FFF"></a-cursor>
+            </a-camera>
+          </a-entity>
+
+          <a-entity id="floor" geometry="primitive: plane; width: 10; height: 10" rotation="-90 0 0" material="color:#f0f0f0; side:double"></a-entity>
+
+          <a-box class="interact" id="cube" position="-1 0.5 -3" depth="1" height="1" width="1" color="#4CC3D9"></a-box>
+          <a-sphere class="interact" id="sphere" position="1 0.75 -3" radius="0.75" color="#EF2D5E"></a-sphere>
+          <a-cylinder class="interact" id="cyl" position="0 0.6 -2" radius="0.4" height="1.2" color="#FFC65D"></a-cylinder>
+
+          <a-entity light="type: ambient; color: #888"></a-entity>
+          <a-entity light="type: directional; intensity: 0.8" position="0 4 1"></a-entity>
+        </a-scene>
+      </div>
+
+      <div id="info" class="info">
+        <h3 id="obj-title">선택된 오브젝트: 없음</h3>
+        <p id="obj-desc">오브젝트를 클릭하면 크기를 키우고 색을 바꿉니다.</p>
+        <div class="controls">
+          <button id="scale-up">크기 +</button>
+          <button id="scale-down">크기 -</button>
+          <button id="reset">초기화</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>교사용 메모</h2>
+      <p>여기에 워크북의 특정 문제와 연동되는 체험 시나리오(예: 분수 분할, 도형 넓이 비교)를 추가하세요.</p>
+    </section>
+
+    <section class="panel" id="fraction-panel">
+      <h2>체험: 분수 분할 (Fraction Partition)</h2>
+      <p>분모/분자 값을 조절해 도형을 분할하고 분수를 시각적으로 이해합니다.</p>
+
+      <div class="fraction-controls">
+        <label>분모 (Denominator): <input id="den" type="range" min="2" max="12" value="4"></label>
+        <span id="den-val">4</span>
+        <label>분자 (Numerator): <input id="num" type="range" min="0" max="12" value="1"></label>
+        <span id="num-val">1</span>
+        <button id="toggle-orient">가로/세로 전환</button>
+      </div>
+
+      <div id="fraction-wrap">
+        <svg id="fraction-svg" width="640" height="180" viewBox="0 0 640 180"></svg>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <small>Purunet Academy — RealWorld prototype</small>
+  </footer>
+
+  <script src="assets/app.js"></script>
+  <script src="assets/fractions.js"></script>
+</body>
+</html>

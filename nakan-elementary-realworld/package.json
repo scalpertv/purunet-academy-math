@@ -1,0 +1,11 @@
+{
+  "name": "nakan-elementary-realworld",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "deploy": "gh-pages -d ."
+  },
+  "devDependencies": {
+    "gh-pages": "^5.0.0"
+  }
+}

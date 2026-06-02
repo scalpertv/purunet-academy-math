@@ -1,0 +1,45 @@
+<!-- 입체도형 탐험: A-Frame 씬 -->
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>입체도형 탐험</title>
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <link rel="stylesheet" href="../assets/aframe-style.css">
+</head>
+<body>
+  <header class="top"><h1>입체도형 탐험</h1></header>
+  <a-scene embedded>
+    <a-entity position="0 1.6 0">
+      <a-camera>
+        <a-cursor></a-cursor>
+      </a-camera>
+    </a-entity>
+
+    <a-entity position="-1 0 -3">
+      <a-box id="box" class="shape" depth="1" height="1" width="1" color="#4CC3D9" position="-1 0.5 -3"></a-box>
+    </a-entity>
+
+    <a-entity position="1 0 -3">
+      <a-sphere id="sphere" class="shape" radius="0.7" color="#EF2D5E"></a-sphere>
+    </a-entity>
+
+    <a-entity position="0 0 -1.5">
+      <a-cylinder id="cyl" class="shape" radius="0.4" height="1.2" color="#FFC65D"></a-cylinder>
+    </a-entity>
+
+    <a-entity light="type: ambient; intensity:0.6"></a-entity>
+    <a-entity light="type: directional; intensity:0.8" position="0 4 2"></a-entity>
+  </a-scene>
+
+  <div class="panel controls">
+    <button id="explode">전개도 보기</button>
+    <button id="rotate">자동 회전 토글</button>
+    <select id="shape-select"><option value="box">정육면체</option><option value="sphere">구</option><option value="cyl">원기둥</option></select>
+    <div id="info" class="info">오브젝트 정보를 클릭해서 확인하세요</div>
+  </div>
+
+  <script src="../assets/aframe-shapes.js"></script>
+</body>
+</html>

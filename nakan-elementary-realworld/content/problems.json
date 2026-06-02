@@ -1,0 +1,6 @@
+[
+  {"id":"E1","module":"drink","title":"비율로 음료 맞추기","modulePath":"../index.html#drink"},
+  {"id":"E2","module":"blocks","title":"쌓기나무 개수 맞추기","modulePath":"../index.html#blocks"},
+  {"id":"E3","module":"fraction","title":"분수 분할 이해","modulePath":"../index.html#fraction-panel"},
+  {"id":"E4","module":"monster","title":"혼합계산 연습","modulePath":"../games/monster-track.html"}
+]

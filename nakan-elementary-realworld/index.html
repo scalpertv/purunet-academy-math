@@ -1,0 +1,59 @@
+<!-- 초등 실감형 콘텐츠 모음: 음료수 만들기, 쌓기나무 시뮬레이터 -->
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Purunet Elementary RealWorld</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="top">
+    <h1>초등 실감형 콘텐츠</h1>
+    <p class="subtitle">음료수 만들기 · 쌓기나무 시뮬레이터 예시</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>달콤상큼! 음료수 만들기 (비례)</h2>
+      <p>재료 비율을 조절하여 목표 레시피와 가장 가까운 음료를 만들어보세요.</p>
+      <div id="drink-wrap">
+        <div class="controls">
+          <label>물: <input id="water" type="range" min="0" max="100" value="50"> <span id="water-val">50</span> ml</label>
+          <label>시럽: <input id="syrup" type="range" min="0" max="100" value="30"> <span id="syrup-val">30</span> ml</label>
+          <label>레몬: <input id="lemon" type="range" min="0" max="50" value="10"> <span id="lemon-val">10</span> ml</label>
+        </div>
+        <div id="drink-cup" class="cup"></div>
+        <div id="drink-score" class="score"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>쌓기나무 시뮬레이터</h2>
+      <p>같은 개수의 블록을 만들어보거나 균형 맞추기 문제를 해결해보세요.</p>
+      <div class="controls">
+        <label>목표 블록 개수: <input id="target-count" type="number" min="1" max="20" value="6"></label>
+        <button id="start-build">시작</button>
+      </div>
+      <div id="blocks-area"></div>
+    </section>
+
+    <section class="panel">
+      <h2>A-Frame 모듈</h2>
+      <p>입체도형 탐험 및 대칭 퀴즈(3D/실감형)를 브라우저에서 실행해 보세요.</p>
+      <div class="controls">
+        <a href="aframe/shapes.html" target="_blank">입체도형 탐험(3D)</a>
+        <a href="aframe/symmetry.html" target="_blank">대칭 퀴즈(3D)</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <small>Purunet Academy — Elementary prototype</small>
+  </footer>
+
+  <script src="assets/drink.js"></script>
+  <script src="assets/blocks.js"></script>
+</body>
+</html>

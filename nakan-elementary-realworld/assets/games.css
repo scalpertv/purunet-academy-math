@@ -1,0 +1,11 @@
+body{margin:0;font-family:Inter,system-ui,Arial;background:#f7fbff;color:#112}
+.top{padding:12px;background:#0b5fa5;color:#fff}
+.panel{padding:12px}
+.controls{display:flex;gap:12px;align-items:center;margin:8px 0}
+.track{position:relative;height:80px;border:2px dashed #cde;border-radius:8px;background:linear-gradient(90deg,#fff,#f3fbff);overflow:hidden}
+.monsters{position:absolute;left:8px;top:10px;display:flex;gap:8px}
+.monster{width:48px;height:48px;background:#ffd1dc;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.player{position:absolute;left:8px;bottom:6px;font-size:28px}
+.question-area{margin-top:12px;display:flex;gap:8px;align-items:center}
+.question{font-weight:700}
+.score{margin-top:12px;color:#064;font-weight:700}

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Error Page</title>
+  <style>
+    html { height: 100%; }
+    body { font-family: 'Lato', sans-serif; color: #3b5bab; margin: 0; }
+    #main{ display: table; width: 100%; height: 100vh; text-align: center; }
+    .fof { display: table-cell; vertical-align: middle; }
+    .fof h1{ font-size: 30px; display: inline-block; padding-right: 12px; animation: type .5s alternate infinite; }
+  </style>
+</head>
+<body>
+  <div id="main">
+    <div class="fof">
+      <h1>올바른 접근 경로가 아닙니다.</h1>
+    </div>
+  </div>
+</body>
+</html>
