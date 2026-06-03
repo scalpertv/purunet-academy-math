@@ -293,6 +293,7 @@ h1,h2,h3,p { overflow-wrap: anywhere; }
 .problem-visual svg { width: 100%; height: auto; max-height: 220px; }
 .expr-display { font-size: 2.4rem; font-weight: 900; color: #dbeafe; letter-spacing: .02em; text-align: center; }
 .expr-question { font-size: 1rem; color: var(--muted); font-weight: 800; margin-bottom: 12px; text-align: center; }
+.problem-expr-text { font-size: 2rem; font-weight: 900; color: #dbeafe; letter-spacing: .02em; text-align: center; padding: 10px 8px 2px; width: 100%; white-space: pre-wrap; line-height: 1.35; }
 
 /* 4지선다 영역 */
 .choices-zone { padding: 0; }

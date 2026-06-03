@@ -1165,6 +1165,12 @@ function renderMission() {
   visualEl.innerHTML = "";
   void visualEl.offsetHeight;
   visualEl.innerHTML = buildElementaryVisual(p);
+  if (p.expression && p.expression.trim()) {
+    const exprDiv = document.createElement("div");
+    exprDiv.className = "problem-expr-text";
+    exprDiv.textContent = p.expression;
+    visualEl.appendChild(exprDiv);
+  }
   renderChoices(true);
   renderRoad();
   updateStats();
