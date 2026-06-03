@@ -1741,6 +1741,428 @@ function makeMission() {
   setMascot("ready","새 미션이 열렸습니다. 바로 답을 골라 AI 피드백을 받아보세요.");
 }
 
+// ============================================================
+// 국제 교과서 개념 설명 카드 (미국·영국·중국·홍콩)
+// ============================================================
+const CONCEPT_BANK = [
+  {
+    match: ['add-carry','make-ten','bridge','add-under-20','op-m08-add','op-m11-add'],
+    title: '받아올림 덧셈', emoji: '➕',
+    core: '일의 자리 합이 10이 넘으면 10을 십의 자리로 올려요.',
+    example: '7 + 8 = ?  →  7 + 3 = 10,  10 + 5 = 15',
+    real: '색연필 7자루에 8자루를 더 사면 모두 15자루!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Bridge through 10: split one number to make 10 first' },
+      { flag:'🇬🇧', label:'UK', text:'Number Bond: 8 = 3 + 5 → fill the 10, then add 5' },
+      { flag:'🇨🇳', label:'CN', text:'凑十法 — 先凑够10，再加剩余的数' },
+      { flag:'🇭🇰', label:'HK', text:'湊十法 — 數夠10，再數餘數加上去' },
+    ],
+    remember: '십의 자리에 올라간 "1"을 작게 꼭 써두세요!',
+  },
+  {
+    match: ['add-no-carry','add-under-10','add-wide','three-number-add','word-add'],
+    title: '기본 덧셈', emoji: '➕',
+    core: '두 수 또는 세 수를 합쳐서 전체를 구해요.',
+    example: '3 + 4 = 7',
+    real: '주머니에 사탕 3개, 가방에 4개 → 합치면 7개!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Use a number line — jump right!' },
+      { flag:'🇬🇧', label:'UK', text:'Count on from the bigger number' },
+      { flag:'🇨🇳', label:'CN', text:'数数法 — 从大数开始往上数' },
+      { flag:'🇭🇰', label:'HK', text:'從大數開始向上數' },
+    ],
+    remember: '덧셈은 순서를 바꿔도 같아요! 3+4 = 4+3',
+  },
+  {
+    match: ['sub-borrow','sub-bridge','op-m08-sub','op-m11-sub','two-digit-sub-borrow'],
+    title: '받아내림 뺄셈', emoji: '➖',
+    core: '일의 자리에서 뺄 수 없으면 십의 자리에서 10을 빌려 와요.',
+    example: '32 − 7 = ?  →  12 − 7 = 5,  20 + 5 = 25',
+    real: '지갑에 32,000원, 7,000원짜리 과자 사면 25,000원 남아요!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Regroup: borrow 10 from the tens place' },
+      { flag:'🇬🇧', label:'UK', text:'Count back or use a number line' },
+      { flag:'🇨🇳', label:'CN', text:'退位减法 — 从十位借1当10用' },
+      { flag:'🇭🇰', label:'HK', text:'退位減法 — 從十位借1作10用' },
+    ],
+    remember: '빌린 자리에 "작은 10"을 써서 헷갈리지 않게!',
+  },
+  {
+    match: ['sub-no-borrow','sub-under','sub-wide','word-sub'],
+    title: '기본 뺄셈', emoji: '➖',
+    core: '전체에서 일부를 덜어내면 나머지를 구할 수 있어요.',
+    example: '9 − 4 = 5',
+    real: '쿠키 9개 중 4개를 먹으면 5개 남아요!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Count back on a number line' },
+      { flag:'🇬🇧', label:'UK', text:'Think "what + 4 = 9?" → addition helps!' },
+      { flag:'🇨🇳', label:'CN', text:'想加算减 — 用加法帮助算减法' },
+      { flag:'🇭🇰', label:'HK', text:'想加做減 — 用加法想減法' },
+    ],
+    remember: '뺄셈과 덧셈은 거꾸로예요. 9−4=5 ↔ 5+4=9',
+  },
+  {
+    match: ['multiply-basic','times-table','times-missing','multiplication-array','repeated-addition','skip-count'],
+    title: '곱셈구구', emoji: '✖️',
+    core: '같은 수를 여러 번 더하는 것을 곱셈으로 나타내요.',
+    example: '4 × 3 = 4 + 4 + 4 = 12',
+    real: '한 상자에 과자 4개, 3상자이면 4×3=12개!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Arrays: rows × columns = total' },
+      { flag:'🇬🇧', label:'UK', text:'Repeated addition & skip-counting' },
+      { flag:'🇨🇳', label:'CN', text:'乘法口诀 — 背熟乘法表' },
+      { flag:'🇭🇰', label:'HK', text:'乘法口訣 — 背熟乘法表' },
+    ],
+    remember: '순서를 바꿔도 같아요! 4×3 = 3×4 = 12',
+  },
+  {
+    match: ['two-digit-two-digit','two-digit-times-two','three-digit-times','mul-3x2','mul-word'],
+    title: '두 자리(세 자리) 곱셈', emoji: '✖️',
+    core: '큰 수 곱셈은 자릿값으로 나눠서 더하면 쉬워요.',
+    example: '23 × 14 = 20×14 + 3×14 = 280 + 42 = 322',
+    real: '한 줄에 23명, 14줄이면 23×14=322명!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Area model: split into tens × tens, tens × ones…' },
+      { flag:'🇬🇧', label:'UK', text:'Grid method: draw a rectangle divided by place value' },
+      { flag:'🇨🇳', label:'CN', text:'竖式计算 — 对齐位数逐步相乘' },
+      { flag:'🇭🇰', label:'HK', text:'直式計算 — 對齊位數逐步相乘' },
+    ],
+    remember: '자릿수를 맞춰 써야 실수하지 않아요!',
+  },
+  {
+    match: ['division-basic','division-remainder','div-3by','long-division','div-word'],
+    title: '나눗셈', emoji: '➗',
+    core: '전체를 같은 크기로 나누거나 몇 묶음이 되는지 구해요.',
+    example: '12 ÷ 3 = 4  (3씩 4묶음)',
+    real: '초콜릿 12개를 친구 3명에게 나누면 각각 4개!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Equal groups: share equally or make equal groups' },
+      { flag:'🇬🇧', label:'UK', text:'Grouping & sharing — use times tables in reverse' },
+      { flag:'🇨🇳', label:'CN', text:'用乘法口诀帮助做除法' },
+      { flag:'🇭🇰', label:'HK', text:'用乘法口訣幫助做除法' },
+    ],
+    remember: '나눗셈 ↔ 곱셈! 12÷3=4 ↔ 4×3=12',
+  },
+  {
+    match: ['fraction-add','fraction-sub','like-denom','mixed-like','proper-fraction-sub'],
+    title: '분수 덧셈·뺄셈', emoji: '🍕',
+    core: '분모가 같으면 분자끼리만 더하거나 빼요.',
+    example: '3/7 + 2/7 = 5/7  (분모 7은 그대로)',
+    real: '피자 7조각 중 3조각 + 2조각 = 5조각!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Same denominator = add/subtract only numerators' },
+      { flag:'🇬🇧', label:'UK', text:'Fraction strips show equal parts visually' },
+      { flag:'🇨🇳', label:'CN', text:'同分母分数加减 — 分母不变，分子相加减' },
+      { flag:'🇭🇰', label:'HK', text:'同分母分數加減 — 分母不變，分子相加減' },
+    ],
+    remember: '분모는 절대 더하지 않아요. 분자만!',
+  },
+  {
+    match: ['fraction-compare','fraction-order','unit-fraction-compare','like-denom-compare'],
+    title: '분수 비교', emoji: '⚖️',
+    core: '분모가 같으면 분자가 클수록, 분자가 같으면 분모가 작을수록 커요.',
+    example: '3/5 > 2/5  /  1/3 > 1/5',
+    real: '피자 같은 크기에서 3조각 > 2조각!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Use fraction bars or number lines to compare' },
+      { flag:'🇬🇧', label:'UK', text:'Same denominator → compare numerators' },
+      { flag:'🇨🇳', label:'CN', text:'同分母比大小 — 分子大的分数大' },
+      { flag:'🇭🇰', label:'HK', text:'同分母比大小 — 分子大的分數大' },
+    ],
+    remember: '통분하면 어떤 분수든 비교할 수 있어요!',
+  },
+  {
+    match: ['fraction-times','fraction-of-quantity','integer-times-fraction','mixed-times'],
+    title: '분수의 곱셈', emoji: '✖️',
+    core: '분수 × 분수는 분자끼리, 분모끼리 곱해요.',
+    example: '2/3 × 3/4 = (2×3)/(3×4) = 6/12 = 1/2',
+    real: '케이크 2/3판의 3/4는 얼마? → 1/2판!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Multiply numerators and denominators straight across' },
+      { flag:'🇬🇧', label:'UK', text:'Simplify before multiplying to keep numbers small' },
+      { flag:'🇨🇳', label:'CN', text:'分数乘法 — 分子乘分子，分母乘分母' },
+      { flag:'🇭🇰', label:'HK', text:'分數乘法 — 分子乘分子，分母乘分母' },
+    ],
+    remember: '먼저 약분하면 계산이 훨씬 쉬워요!',
+  },
+  {
+    match: ['fraction-divide','natural-divide-fraction','mixed-divide'],
+    title: '분수의 나눗셈', emoji: '➗',
+    core: '나누는 분수를 뒤집어서(역수) 곱해요.',
+    example: '3/4 ÷ 1/2 = 3/4 × 2/1 = 6/4 = 3/2',
+    real: '3/4m 끈을 1/2m씩 자르면 몇 도막? → 1.5도막!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Keep-Change-Flip (KCF): keep ÷ → × → flip divisor' },
+      { flag:'🇬🇧', label:'UK', text:'Multiply by the reciprocal of the divisor' },
+      { flag:'🇨🇳', label:'CN', text:'除以一个数 = 乘以它的倒数' },
+      { flag:'🇭🇰', label:'HK', text:'除以一個數 = 乘以它的倒數' },
+    ],
+    remember: '나누는 분수만 뒤집어요. 앞의 수는 그대로!',
+  },
+  {
+    match: ['decimal-add','decimal-sub','decimal-tenths','decimal-read'],
+    title: '소수 덧셈·뺄셈', emoji: '🔢',
+    core: '소수점을 맞추면 자릿값끼리 더하거나 빼요.',
+    example: '1.4 + 0.8 = 2.2  (소수점 아래끼리 먼저)',
+    real: '키 1.4m인 친구보다 0.8m 더 크면 2.2m!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Line up decimal points before adding/subtracting' },
+      { flag:'🇬🇧', label:'UK', text:'Use place-value columns for tenths and hundredths' },
+      { flag:'🇨🇳', label:'CN', text:'小数加减 — 小数点对齐再计算' },
+      { flag:'🇭🇰', label:'HK', text:'小數加減 — 小數點對齊再計算' },
+    ],
+    remember: '소수점 위치가 어긋나면 틀려요 — 꼭 맞추세요!',
+  },
+  {
+    match: ['decimal-times','decimal-divide','decimal-missing-factor','decimal-area'],
+    title: '소수 곱셈·나눗셈', emoji: '🔢',
+    core: '소수 곱셈은 정수처럼 계산 후 소수점을 이동해요.',
+    example: '0.3 × 4 = 1.2  (3×4=12, 소수 한 자리 → 1.2)',
+    real: '한 병 0.3L짜리 주스 4병 → 1.2L!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Multiply as whole numbers, then adjust the decimal' },
+      { flag:'🇬🇧', label:'UK', text:'Count total decimal places in the answer' },
+      { flag:'🇨🇳', label:'CN', text:'先按整数乘，再点小数点' },
+      { flag:'🇭🇰', label:'HK', text:'先按整數乘，再點小數點' },
+    ],
+    remember: '곱한 뒤 소수점은 두 수의 소수 자리 수를 더한 만큼!',
+  },
+  {
+    match: ['place-value','tens-ones','three-digit','four-digit','big-number','million'],
+    title: '자릿값', emoji: '🏛️',
+    core: '같은 숫자라도 어느 자리에 있느냐에 따라 값이 달라요.',
+    example: '352 = 300 + 50 + 2',
+    real: '우리 학교 학생 352명 = 100명 묶음 3개 + 10명 묶음 5개 + 1명 2개!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Place value chart: ones, tens, hundreds…' },
+      { flag:'🇬🇧', label:'UK', text:'Base-ten blocks: cubes=1, rods=10, flats=100' },
+      { flag:'🇨🇳', label:'CN', text:'数位顺序 — 个十百千万' },
+      { flag:'🇭🇰', label:'HK', text:'數位順序 — 個十百千萬' },
+    ],
+    remember: '자릿값 표로 쓰면 덧셈·뺄셈 실수가 줄어요!',
+  },
+  {
+    match: ['number-bond','split-number','missing-add','zero-add','fact-family'],
+    title: '수 가르기·모으기', emoji: '🔗',
+    core: '하나의 수를 두 부분으로 나누거나, 두 부분을 하나로 합칠 수 있어요.',
+    example: '10 = 3 + 7  /  4 + 6 = 10',
+    real: '연필 10자루를 필통에 3자루, 책상에 7자루!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Number bond circle diagram: whole at top, parts below' },
+      { flag:'🇬🇧', label:'UK', text:'Part-part-whole model — fill in any missing part' },
+      { flag:'🇨🇳', label:'CN', text:'分与合 — 把一个数分成两部分' },
+      { flag:'🇭🇰', label:'HK', text:'分與合 — 把一個數分成兩部分' },
+    ],
+    remember: '3 + 7 = 10, 7 + 3 = 10, 10 − 3 = 7, 10 − 7 = 3 — 네 식이 한 가족!',
+  },
+  {
+    match: ['rectangle','square','area','perimeter','grid-area'],
+    title: '직사각형·넓이·둘레', emoji: '📐',
+    core: '둘레 = (가로 + 세로) × 2,  넓이 = 가로 × 세로',
+    example: '가로 5cm, 세로 3cm → 둘레 16cm, 넓이 15cm²',
+    real: '방 바닥 타일 몇 개 필요한지 → 넓이로 계산!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Area = tiling with unit squares' },
+      { flag:'🇬🇧', label:'UK', text:'Perimeter = walking around the edge' },
+      { flag:'🇨🇳', label:'CN', text:'周长 = 各边之和  /  面积 = 长×宽' },
+      { flag:'🇭🇰', label:'HK', text:'周界 = 各邊之和  /  面積 = 長×寬' },
+    ],
+    remember: '넓이는 cm², 둘레는 cm — 단위가 달라요!',
+  },
+  {
+    match: ['triangle-area','parallelogram-area','trapezoid-area','composite-area'],
+    title: '삼각형·평행사변형·사다리꼴 넓이', emoji: '📐',
+    core: '삼각형 = 밑×높이÷2,  평행사변형 = 밑×높이,  사다리꼴 = (윗변+아랫변)×높이÷2',
+    example: '밑 6cm, 높이 4cm인 삼각형 → 6×4÷2 = 12cm²',
+    real: '지붕 모양의 삼각형 판자 면적 구할 때!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Triangle = ½ × base × height (half of rectangle)' },
+      { flag:'🇬🇧', label:'UK', text:'Parallelogram: slide the triangle to make a rectangle' },
+      { flag:'🇨🇳', label:'CN', text:'三角形 = 底×高÷2  梯形 = (上底+下底)×高÷2' },
+      { flag:'🇭🇰', label:'HK', text:'三角形 = 底×高÷2  梯形 = (上底+下底)×高÷2' },
+    ],
+    remember: '높이는 반드시 밑변에 수직! 기울어진 옆면이 아니에요.',
+  },
+  {
+    match: ['angle','angle-sum','angle-measure','angle-estimate','angle-in-shape'],
+    title: '각도', emoji: '📐',
+    core: '각도는 두 선이 벌어진 크기예요. 직각 = 90°, 한 바퀴 = 360°.',
+    example: '삼각형 세 각의 합 = 180°',
+    real: '시계 12시 방향과 3시 방향 사이 → 90°(직각)!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Use a protractor — line up the baseline, read the scale' },
+      { flag:'🇬🇧', label:'UK', text:'Right angle = 90°, straight line = 180°, full turn = 360°' },
+      { flag:'🇨🇳', label:'CN', text:'用量角器量角 — 一边对准0度，读另一边' },
+      { flag:'🇭🇰', label:'HK', text:'用量角器量角 — 一邊對準0度，讀另一邊' },
+    ],
+    remember: '삼각형 내각의 합 = 180°,  사각형 내각의 합 = 360°',
+  },
+  {
+    match: ['volume','cuboid-volume','stacked-cubes','cube-count'],
+    title: '부피', emoji: '📦',
+    core: '직육면체 부피 = 가로 × 세로 × 높이',
+    example: '2cm × 3cm × 4cm = 24cm³',
+    real: '냉장고에 물 2×3×4=24L 들어가요!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Volume = filling with unit cubes layer by layer' },
+      { flag:'🇬🇧', label:'UK', text:'L × W × H — same as area × height' },
+      { flag:'🇨🇳', label:'CN', text:'体积 = 长×宽×高  (单位：立方厘米 cm³)' },
+      { flag:'🇭🇰', label:'HK', text:'體積 = 長×寬×高  (單位：立方厘米 cm³)' },
+    ],
+    remember: '단위가 cm³ (세제곱센티미터)예요 — cm²와 달라요!',
+  },
+  {
+    match: ['ratio','simplify-ratio','ratio-rate','ratio-write','ratio-equivalent'],
+    title: '비와 비율', emoji: '⚖️',
+    core: '두 수의 비교를 나타내요. A : B = A를 B로 나눈 값(비율)',
+    example: '3 : 5 → 비율 = 3/5 = 0.6',
+    real: '오렌지주스 3컵 : 물 5컵으로 음료 만들기!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Ratio = part-to-part, rate = part-to-whole' },
+      { flag:'🇬🇧', label:'UK', text:'Simplify ratio like a fraction: divide by GCD' },
+      { flag:'🇨🇳', label:'CN', text:'比 = A:B  / 比值 = A÷B' },
+      { flag:'🇭🇰', label:'HK', text:'比 = A:B  / 比值 = A÷B' },
+    ],
+    remember: '비를 가장 간단하게! 6:4 → 3:2 (÷2)',
+  },
+  {
+    match: ['direct-proportion','proportion-table','proportion-check','proportion-missing'],
+    title: '정비례', emoji: '📈',
+    core: 'x가 2배, 3배 되면 y도 2배, 3배 — 항상 x/y가 일정해요.',
+    example: '속도 60km/h → 1시간:60km, 2시간:120km, 3시간:180km',
+    real: '마트에서 사과 1개 500원, 3개 1500원 — 정비례!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Direct proportion: y = kx (k is the constant of proportionality)' },
+      { flag:'🇬🇧', label:'UK', text:'Double number line shows proportional relationships' },
+      { flag:'🇨🇳', label:'CN', text:'正比例 — y/x = 常数 (比例系数)' },
+      { flag:'🇭🇰', label:'HK', text:'正比例 — y/x = 常數 (比例係數)' },
+    ],
+    remember: '표에서 x × k = y가 항상 같으면 정비례!',
+  },
+  {
+    match: ['inverse-proportion','inverse-proportion-table'],
+    title: '반비례', emoji: '📉',
+    core: 'x가 2배 되면 y는 1/2배 — 두 수의 곱이 항상 일정해요.',
+    example: '속도×시간=거리 → 속도 2배이면 시간 1/2배',
+    real: '같은 일을 사람이 많을수록 빨리 끝내요!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Inverse proportion: y = k/x (xy = constant)' },
+      { flag:'🇬🇧', label:'UK', text:'As one increases, the other decreases proportionally' },
+      { flag:'🇨🇳', label:'CN', text:'反比例 — xy = 常数' },
+      { flag:'🇭🇰', label:'HK', text:'反比例 — xy = 常數' },
+    ],
+    remember: 'x × y = 항상 같은 수이면 반비례!',
+  },
+  {
+    match: ['gcd','lcm','common-factor','common-multiple','factor-basic','multiple-basic'],
+    title: '최대공약수·최소공배수', emoji: '🔢',
+    core: '약수: 나누어 떨어지는 수 / 배수: 곱해서 나오는 수',
+    example: '12와 18의 GCD = 6,  LCM = 36',
+    real: '12개·18개 사탕을 같은 봉지 수로 나눌 때 → GCD!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Prime factorization: 12=2²×3, 18=2×3² → GCD=2×3=6' },
+      { flag:'🇬🇧', label:'UK', text:'Venn diagram: shared factors in the overlap' },
+      { flag:'🇨🇳', label:'CN', text:'短除法求最大公因数和最小公倍数' },
+      { flag:'🇭🇰', label:'HK', text:'短除法求最大公因數和最小公倍數' },
+    ],
+    remember: 'GCD는 두 수를 모두 나눌 수 있는 가장 큰 수!',
+  },
+  {
+    match: ['bar-graph','line-graph','circle-graph','data-table','bar-chart','line-chart','pictograph'],
+    title: '통계·자료 정리', emoji: '📊',
+    core: '자료를 표나 그래프로 나타내면 한눈에 비교할 수 있어요.',
+    example: '막대그래프: 항목별 크기 비교 / 꺾은선: 변화 흐름',
+    real: '반 학생 좋아하는 과목 조사 → 막대그래프!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Bar graph = comparing categories, Line graph = over time' },
+      { flag:'🇬🇧', label:'UK', text:'Pie chart shows parts of a whole (360°)' },
+      { flag:'🇨🇳', label:'CN', text:'条形图比较大小 / 折线图看变化趋势' },
+      { flag:'🇭🇰', label:'HK', text:'柱形圖比較大小 / 折線圖看變化趨勢' },
+    ],
+    remember: '제목·축 이름·단위를 꼭 쓰세요!',
+  },
+  {
+    match: ['pattern','pattern-shape','pattern-number','pattern-table'],
+    title: '규칙과 패턴', emoji: '🔄',
+    core: '반복되는 규칙을 찾아 다음에 올 것을 예측해요.',
+    example: '2, 4, 6, 8, __  → 2씩 늘어나므로 10',
+    real: '달력의 요일, 계절의 순서도 모두 규칙!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Find the rule: +2, ×3, alternating shapes…' },
+      { flag:'🇬🇧', label:'UK', text:'Describe the pattern, then predict the next term' },
+      { flag:'🇨🇳', label:'CN', text:'找规律 — 说出变化的规则，再填空' },
+      { flag:'🇭🇰', label:'HK', text:'找規律 — 說出變化的規則，再填空' },
+    ],
+    remember: '규칙을 말로 설명할 수 있으면 완벽 이해!',
+  },
+  {
+    match: ['symmetry','congruent','line-symmetry','point-symmetry','motion-flip','motion-turn'],
+    title: '대칭·합동', emoji: '🪞',
+    core: '대칭: 선을 기준으로 양쪽이 똑같아요. 합동: 모양과 크기가 완전히 같아요.',
+    example: '나비의 날개 → 좌우 대칭!',
+    real: '알파벳 A, H, M 등은 세로 대칭!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Line of symmetry: fold the shape in half — it matches!' },
+      { flag:'🇬🇧', label:'UK', text:'Congruent shapes: same shape, same size (can be rotated/reflected)' },
+      { flag:'🇨🇳', label:'CN', text:'轴对称 — 沿对称轴折叠，两边完全重合' },
+      { flag:'🇭🇰', label:'HK', text:'線對稱 — 沿對稱軸摺疊，兩邊完全重疊' },
+    ],
+    remember: '대칭축에서의 거리가 같아야 진짜 대칭!',
+  },
+];
+
+function getConceptEntry(skillId) {
+  const sid = String(skillId || '');
+  for (const entry of CONCEPT_BANK) {
+    if (entry.match.some(kw => sid.includes(kw))) return entry;
+  }
+  if (/add/.test(sid))          return CONCEPT_BANK[1];
+  if (/sub/.test(sid))          return CONCEPT_BANK[3];
+  if (/mul|times/.test(sid))    return CONCEPT_BANK[4];
+  if (/div/.test(sid))          return CONCEPT_BANK[6];
+  if (/frac/.test(sid))         return CONCEPT_BANK[7];
+  if (/decimal|dec/.test(sid))  return CONCEPT_BANK[11];
+  if (/place|digit/.test(sid))  return CONCEPT_BANK[13];
+  if (/ratio/.test(sid))        return CONCEPT_BANK[19];
+  return null;
+}
+
+function renderConceptNote(skillId) {
+  const el = $('concept-note');
+  if (!el) return;
+  const c = getConceptEntry(skillId);
+  if (!c) { el.innerHTML = ''; return; }
+  const tipsHtml = c.tips.map(t =>
+    `<span class="concept-badge"><span class="concept-flag">${t.flag}</span><span class="concept-label">${escapeHTML(t.label)}</span><span class="concept-tip-text">${escapeHTML(t.text)}</span></span>`
+  ).join('');
+  el.innerHTML =
+    `<div class="concept-card">
+  <div class="concept-head">
+    <span class="concept-emoji" aria-hidden="true">${c.emoji}</span>
+    <span class="concept-title">${escapeHTML(c.title)}</span>
+    <button class="concept-toggle" type="button" aria-expanded="true" aria-controls="concept-body-inner">▲ 개념</button>
+  </div>
+  <div class="concept-body" id="concept-body-inner">
+    <p class="concept-core">${escapeHTML(c.core)}</p>
+    <p class="concept-example">✏️ 예시: ${escapeHTML(c.example)}</p>
+    <p class="concept-real">🌍 실생활: ${escapeHTML(c.real)}</p>
+    <div class="concept-tips-row">${tipsHtml}</div>
+    <p class="concept-remember">💡 기억법: ${escapeHTML(c.remember)}</p>
+  </div>
+</div>`;
+  el.querySelector('.concept-toggle')?.addEventListener('click', function() {
+    const body = $('concept-body-inner');
+    if (!body) return;
+    const show = body.style.display === 'none';
+    body.style.display = show ? '' : 'none';
+    this.textContent = show ? '▲ 개념' : '▼ 개념';
+    this.setAttribute('aria-expanded', String(show));
+  });
+}
+
+// ============================================================
+// 미션 렌더링
+// ============================================================
 function renderMission() {
   const p = app.problem;
   const gradeMeta = GRADE_META[app.grade] || { label:`${app.grade}학년`, emoji:"" };
@@ -1750,6 +2172,7 @@ function renderMission() {
   visualEl.innerHTML = "";
   void visualEl.offsetHeight;
   visualEl.innerHTML = buildElementaryVisual(p);
+  renderConceptNote(p.skillId);
   if (p.expression && p.expression.trim()) {
     const exprDiv = document.createElement("div");
     exprDiv.className = "problem-expr-text";
