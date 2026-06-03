@@ -8,7 +8,8 @@
   "author": "강태훈샘",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build:generators": "node build-generators.mjs",
+    "build": "node build-generators.mjs && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "verify": "node scripts/verify.mjs",
