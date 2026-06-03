@@ -461,3 +461,32 @@ h1,h2,h3,p { overflow-wrap: anywhere; }
   .choice-grid-4 { grid-template-columns: 1fr 1fr; }
   .grade-tabs { grid-template-columns: repeat(3,1fr); }
 }
+
+/* ============================================================
+   SVG 애니메이션 시각화 영역
+   ============================================================ */
+
+/* 문제 시각화 SVG */
+.problem-visual svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 240px;
+}
+
+/* AI 코치 보조 SVG (ai-stage 내부) */
+.coach-visual-svg {
+  position: absolute;
+  left: 50%;
+  bottom: 54px;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 48px;
+  z-index: 4;
+  pointer-events: none;
+}
+.coach-visual-svg svg { width: 100%; height: 100%; display: block; }
+
+/* 단원 select 글씨 (긴 텍스트 처리) */
+#unit-select option { font-size: 11px; }
+

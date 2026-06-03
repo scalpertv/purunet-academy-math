@@ -3,11 +3,12 @@
 import { GENERATORS } from "./lib/generators";
 import { UNITS } from "./lib/curriculum";
 
-// 연산 토픽만 필터링해 학년/학기별로 구조화
+// 단원 그룹핑된 OP_CURRICULUM 구조
+// { grade: { semester: [ { unitId, unitTitle, unitLabel, topics[] } ] } }
 function buildOpCurriculum() {
-  const result: Record<string, Record<string, Array<{
-    id: string; title: string; desc: string; generate: () => unknown
-  }>>> = {};
+  type Topic = { id: string; title: string; desc: string; learningArea: string; generate: () => unknown };
+  type UnitGroup = { unitId: string; unitTitle: string; unitLabel: string; topics: Topic[] };
+  const result: Record<string, Record<string, UnitGroup[]>> = {};
 
   for (const unit of UNITS) {
     const gradeMatch = /^(\d)학년/.exec(unit.course);
@@ -23,16 +24,28 @@ function buildOpCurriculum() {
     if (!result[grade]) result[grade] = {};
     if (!result[grade][semester]) result[grade][semester] = [];
 
+    // 이 unit의 연산 토픽만 추출
+    const opTopics: Topic[] = [];
     for (const topic of unit.topics) {
       if (!topic.id.startsWith(`g${grade}-op-`)) continue;
       if (typeof topic.generate !== "function") continue;
-      result[grade][semester].push({
+      opTopics.push({
         id: topic.id,
         title: topic.title,
         desc: topic.desc ?? "",
+        learningArea: (topic as { learningArea?: string }).learningArea ?? "basic",
         generate: topic.generate as () => unknown,
       });
     }
+
+    if (opTopics.length === 0) continue; // 연산 토픽 없는 단원 제외
+
+    result[grade][semester].push({
+      unitId: unit.id,
+      unitTitle: unit.title,
+      unitLabel: unit.label,
+      topics: opTopics,
+    });
   }
 
   return result;

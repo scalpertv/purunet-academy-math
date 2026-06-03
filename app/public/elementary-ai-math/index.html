@@ -85,7 +85,23 @@
           <button class="semester-btn active" data-sem="1" type="button">1학기</button>
           <button class="semester-btn" data-sem="2" type="button">2학기</button>
         </div>
-        <label>주제<select id="topic-select"></select></label>
+        <label>단원<select id="unit-select"></select></label>
+        <label>유형
+          <select id="type-select">
+            <option value="">전체 유형</option>
+            <option value="basic">기초</option>
+            <option value="concept">개념</option>
+            <option value="type">유형</option>
+            <option value="challenge">심화</option>
+          </select>
+        </label>
+        <label>난이도
+          <select id="diff-select">
+            <option value="basic">기본 (기초만)</option>
+            <option value="standard" selected>표준 (기초+개념+유형)</option>
+            <option value="challenge">심화 (전체)</option>
+          </select>
+        </label>
         <label>문제 수
           <select id="set-count-select">
             <option value="5">5세트</option>
@@ -205,6 +221,7 @@
             </div>
             <div class="ai-emotion-pill" id="ai-emotion">🎯 선택을 기다려요</div>
             <div class="ai-orb" id="ai-orb" aria-hidden="true">🤖</div>
+            <div id="coach-visual-svg" class="coach-visual-svg" aria-hidden="true"></div>
             <div class="ai-speech-box">
               <span id="ai-speech">정답을 선택하면 제가 바로 반응하고 이유를 설명해줄게요.</span>
             </div>
