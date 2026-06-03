@@ -491,17 +491,20 @@ ${mode==="diameter"?`<text x="${cx}" y="${cy+22}" text-anchor="middle" fill="#86
 
 // ── 각도 (angle-diagram) ─────────────────────────────────────
 function ivAngleDiagram(v, problem) {
-  const deg = Math.min(v.degrees||90, 340);
-  const W = 400, H = 140, cx = 80, cy = 110, armLen = 80;
+  const deg = Math.max(1, Math.min(v.degrees||90, 359));
+  const W = 400, H = 140, cx = 90, cy = 112, armLen = 82;
   const rad = deg*Math.PI/180;
   const ex = (cx+armLen*Math.cos(-rad)).toFixed(1), ey = (cy+armLen*Math.sin(-rad)).toFixed(1);
-  const arcR = 32, largeArc = deg>180?1:0;
+  const arcR = 36, largeArc = deg>180?1:0;
   const arcEx = (cx+arcR*Math.cos(-rad)).toFixed(1), arcEy = (cy+arcR*Math.sin(-rad)).toFixed(1);
+  const isRight = deg===90;
+  const rightMark = isRight ? `<rect x="${cx}" y="${cy-10}" width="10" height="10" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity="0" style="animation:iv-fade .3s ease .7s both"/>` : '';
   return svgWrap(W, H, "각도",
     `<line x1="${cx}" y1="${cy}" x2="${cx+armLen}" y2="${cy}" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" opacity="0" style="animation:iv-fade .4s ease .1s both"/>
 <line x1="${cx}" y1="${cy}" x2="${ex}" y2="${ey}" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" opacity="0" style="animation:iv-fade .4s ease .4s both"/>
 <path d="M ${cx+arcR} ${cy} A ${arcR} ${arcR} 0 ${largeArc} 0 ${arcEx} ${arcEy}" fill="rgba(245,158,11,.15)" stroke="#f59e0b" stroke-width="1.5" opacity="0" style="animation:iv-fade .4s ease .6s both"/>
-<text x="${cx+54}" y="${cy-24}" fill="#fde68a" font-size="14" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .7s both">${deg}°</text>
+${rightMark}
+<text x="${cx+58}" y="${cy-28}" fill="#fde68a" font-size="14" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .7s both">${deg}°</text>
 <text x="${W/2+30}" y="${H-5}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(v.title||`${deg}도 각도`)}</text>`);
 }
 
@@ -831,9 +834,32 @@ function ivExpressionBox(problem) {
 
 // ── withVisual 데이터용 렌더러 매핑 ────────────────────────
 function ivNumberLine(v, problem) {
-  const vals = v.values || v.points || [0];
-  const problem2 = { ...problem, expression: `${vals[0] || 0} + ?` };
-  return ivNumberLineAnim(problem2);
+  const vals = (v.values || v.points || [0]).map(Number);
+  const missingIdx = v.missingIndex !== undefined ? v.missingIndex : -1;
+  const W = 400, H = 110;
+  const lo = Math.min(...vals) - Math.max(2, Math.round((Math.max(...vals)-Math.min(...vals))*.3));
+  const hi = Math.max(...vals) + Math.max(2, Math.round((Math.max(...vals)-Math.min(...vals))*.3));
+  const X = n => 24 + (n-lo)/(hi-lo)*(W-48);
+  const ticks = [];
+  for (let i=lo; i<=hi; i++) {
+    const x = X(i).toFixed(1), isMark = vals.includes(i);
+    ticks.push(`<line x1="${x}" y1="${isMark?52:56}" x2="${x}" y2="64" stroke="${isMark?'#38bdf8':'#334155'}" stroke-width="${isMark?2:1}"/>`);
+    if (isMark||i%5===0) ticks.push(`<text x="${x}" y="76" text-anchor="middle" fill="${isMark?'#bae6fd':'#475569'}" font-size="9" font-weight="${isMark?700:400}">${i}</text>`);
+  }
+  const dots = vals.map((v2,i) => {
+    const x = X(v2).toFixed(1);
+    const isMissing = i === missingIdx;
+    const delay = (0.4+i*0.12).toFixed(2);
+    if (isMissing) return `<circle cx="${x}" cy="60" r="9" fill="rgba(56,189,248,.14)" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,3" class="iv-pop" style="animation-delay:${delay}s;transform-origin:${x}px 60px"/>
+<text x="${x}" y="64" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="700" class="iv-pop" style="animation-delay:${(+delay+.05).toFixed(2)}s;transform-origin:${x}px 60px">?</text>`;
+    return `<circle cx="${x}" cy="60" r="7" fill="#38bdf8" class="iv-pop" style="animation-delay:${delay}s;transform-origin:${x}px 60px"/>
+<text x="${x}" y="64" text-anchor="middle" fill="#0f172a" font-size="9" font-weight="700" class="iv-pop" style="animation-delay:${(+delay+.05).toFixed(2)}s;transform-origin:${x}px 60px">${v2}</text>`;
+  });
+  return svgWrap(W, H, "수직선",
+    `<line x1="16" y1="60" x2="${W-16}" y2="60" stroke="#334155" stroke-width="2" stroke-dasharray="${W-32}" stroke-dashoffset="${W-32}" style="animation:iv-draw .6s ease both"/>
+<polygon points="${W-16},60 ${W-23},56 ${W-23},64" fill="#334155" opacity="0" style="animation:iv-fade .3s ease .7s both"/>
+${ticks.join("")}${dots.join("")}
+<text x="${W/2}" y="${H-3}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(v.title||"수직선")}</text>`);
 }
 function ivFractionStrip(v, problem) { return ivFractionBars(v, problem); }
 function ivRectangle(v, problem)    { return ivRectShape(v, problem); }
@@ -842,7 +868,7 @@ function ivTriangle(v, problem)     { return ivRectShape(v, problem); }
 function ivParallelogram(v, problem){ return ivRectShape(v, problem); }
 function ivTrapezoid(v, problem)    { return ivRectShape(v, problem); }
 function ivTenFrame(v, problem) {
-  const count = v ? (v.count || 5) : 5;
+  const count = v ? (v.filled ?? v.count ?? 5) : 5;
   const W = 400, H = 100;
   const cw = 28, ch = 26;
   const ox = (W - 10 * cw) / 2;
