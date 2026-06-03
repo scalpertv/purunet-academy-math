@@ -277,20 +277,26 @@
         </div>
       </section>
 
-      <!-- AI 코치 리포트 -->
+      <!-- AI 코치 리포트 / 검산표 -->
       <section class="panel report-panel">
         <div class="section-head">
-          <h2>AI 코치 리포트</h2>
-          <span id="weak-signal">자동 진단</span>
+          <h2>학습 검산표</h2>
+          <span id="weak-signal">대기 중</span>
         </div>
         <div id="report-bars">
-          <div class="bar-row"><div class="bar-top"><span>정확도</span><strong>0%</strong></div><div class="bar-track-outer"><div class="bar-track-fill" style="width:0%"></div></div></div>
-          <div class="bar-row"><div class="bar-top"><span>미션 몰입도</span><strong>0%</strong></div><div class="bar-track-outer"><div class="bar-track-fill" style="width:0%"></div></div></div>
-          <div class="bar-row"><div class="bar-top"><span>힌트 독립성</span><strong>100%</strong></div><div class="bar-track-outer"><div class="bar-track-fill" style="width:100%"></div></div></div>
-          <div class="bar-row"><div class="bar-top"><span>오답 수정력</span><strong>0%</strong></div><div class="bar-track-outer"><div class="bar-track-fill" style="width:0%"></div></div></div>
+          <div class="report-summary">
+            <div class="rs-item"><span class="rs-num">0</span><span class="rs-lbl">총 문제</span></div>
+            <div class="rs-item rs-correct"><span class="rs-num">0</span><span class="rs-lbl">정답</span></div>
+            <div class="rs-item rs-wrong"><span class="rs-num">0</span><span class="rs-lbl">오답</span></div>
+            <div class="rs-item rs-streak"><span class="rs-num">0</span><span class="rs-lbl">연속정답</span></div>
+          </div>
+          <div class="bar-row"><div class="bar-top"><span>정확도</span><strong>0%</strong></div><div class="bar-track-outer"><div class="bar-track-fill" style="width:0%;background:#22c55e"></div></div></div>
+          <div class="bar-row"><div class="bar-top"><span>힌트 독립성</span><strong>100%</strong></div><div class="bar-track-outer"><div class="bar-track-fill" style="width:100%;background:#38bdf8"></div></div></div>
+          <div class="bar-row"><div class="bar-top"><span>오답 수정력</span><strong>0%</strong></div><div class="bar-track-outer"><div class="bar-track-fill" style="width:0%;background:#a78bfa"></div></div></div>
+          <div class="bar-row"><div class="bar-top"><span>연속 정답</span><strong>0%</strong></div><div class="bar-track-outer"><div class="bar-track-fill" style="width:0%;background:#f59e0b"></div></div></div>
         </div>
         <div class="weak-box">
-          <span id="weak-note">학생이 선택한 답에 따라 다음 복습 선택이 자동으로 바뀝니다.</span>
+          <span id="weak-note">미션을 시작하면 결과가 여기 표시됩니다.</span>
         </div>
       </section>
 

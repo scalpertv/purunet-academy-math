@@ -418,14 +418,29 @@ h1,h2,h3,p { overflow-wrap: anywhere; }
 
 .prompt-box { padding: 10px 12px; border-radius: 15px; background: rgba(2,6,23,.42); border: 1px solid var(--line); color: var(--muted); font-weight: 800; font-size: 12px; line-height: 1.45; }
 
-/* 리포트 패널 */
+/* 리포트 패널 (검산표) */
 .report-panel { padding: 14px; }
 .report-panel .section-head { padding: 0 0 10px 0; }
-.bar-row { margin-bottom: 11px; }
-.bar-top { display: flex; justify-content: space-between; font-weight: 950; color: #dbeafe; font-size: 12.5px; margin-bottom: 6px; }
-.bar-track-outer { height: 10px; background: rgba(255,255,255,.08); border-radius: 999px; overflow: hidden; }
-.bar-track-fill  { height: 100%; background: linear-gradient(90deg, var(--green), var(--cyan)); border-radius: 999px; transition: width .18s ease; }
-.weak-box { margin-top: 11px; border-radius: 16px; padding: 11px; background: rgba(251,113,133,.11); border: 1px solid rgba(251,113,133,.22); color: #fecdd3; font-weight: 900; font-size: 12.5px; line-height: 1.55; }
+
+/* 검산표 요약 행 */
+.report-summary {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 6px; margin-bottom: 14px;
+  background: rgba(255,255,255,.06); border-radius: 14px;
+  padding: 10px 8px; border: 1px solid rgba(255,255,255,.1);
+}
+.rs-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.rs-num { font-size: 20px; font-weight: 900; color: #e2e8f0; line-height: 1; }
+.rs-lbl { font-size: 10px; font-weight: 700; color: #94a3b8; }
+.rs-correct .rs-num { color: #4ade80; }
+.rs-wrong   .rs-num { color: #fb7185; }
+.rs-streak  .rs-num { color: #fbbf24; }
+
+.bar-row { margin-bottom: 12px; }
+.bar-top { display: flex; justify-content: space-between; font-weight: 950; color: #e2e8f0; font-size: 12.5px; margin-bottom: 6px; }
+.bar-track-outer { height: 10px; background: rgba(255,255,255,.18); border-radius: 999px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); }
+.bar-track-fill  { height: 100%; background: linear-gradient(90deg, var(--green), var(--cyan)); border-radius: 999px; transition: width .4s ease; }
+.weak-box { margin-top: 11px; border-radius: 14px; padding: 11px; background: rgba(251,113,133,.11); border: 1px solid rgba(251,113,133,.28); color: #fecdd3; font-weight: 900; font-size: 12px; line-height: 1.55; }
 
 /* coach-top section-head */
 .coach-top .section-head { padding: 0 0 8px 0; }
