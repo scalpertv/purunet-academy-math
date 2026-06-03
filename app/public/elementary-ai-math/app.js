@@ -64,9 +64,10 @@ const IV_CSS = `
 @keyframes iv-rise{from{transform:scaleY(0)}to{transform:scaleY(1)}}
 @keyframes iv-fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @keyframes iv-spin{to{transform:rotate(360deg)}}
-.iv-pop{transform-box:fill-box;transform-origin:center;animation:iv-pop .45s cubic-bezier(.34,1.56,.64,1) forwards both}
+@keyframes iv-wave{0%,100%{d:path("M10,24 Q25,16 40,24 Q55,32 70,24 Q85,16 100,24 Q115,32 120,24")}50%{d:path("M10,24 Q25,32 40,24 Q55,16 70,24 Q85,32 100,24 Q115,16 120,24")}}
+.iv-pop{transform-box:fill-box;transform-origin:center;animation:iv-pop .45s cubic-bezier(.34,1.56,.64,1) both}
 .iv-pulse{transform-box:fill-box;transform-origin:center;animation:iv-pulse 1.8s ease-in-out infinite}
-.iv-rise{transform-box:fill-box;transform-origin:50% 100%;animation:iv-rise .5s ease forwards both}
+.iv-rise{transform-box:fill-box;transform-origin:50% 100%;animation:iv-rise .5s ease both}
 `;
 
 function svgWrap(W, H, lbl, inner) {
@@ -355,6 +356,468 @@ function ivObjectArray(v, problem) {
 <text x="${W/2}" y="${H-5}" text-anchor="middle" fill="#64748b" font-size="9">${rows} × ${cols} = ${rows*cols}개</text>`);
 }
 
+// ── 수 가르기/모으기 (number-bond) ──────────────────────────
+function ivNumberBond(v, problem) {
+  const total = v.total || 10;
+  const left = v.left !== undefined ? v.left : "□";
+  const right = v.right !== undefined ? v.right : "□";
+  const W = 400, H = 130;
+  const cx = W / 2, topY = 28, botY = 92, sideX = 72;
+  const isLQ = String(left) === "□" || String(left) === "?";
+  const isRQ = String(right) === "□" || String(right) === "?";
+  const isTQ = String(total) === "□" || String(total) === "?";
+  return svgWrap(W, H, "수 가르기",
+    `<line x1="${cx}" y1="${topY+16}" x2="${cx-sideX}" y2="${botY-16}" stroke="#94a3b8" stroke-width="2" opacity="0" style="animation:iv-fade .3s ease .2s both"/>
+<line x1="${cx}" y1="${topY+16}" x2="${cx+sideX}" y2="${botY-16}" stroke="#94a3b8" stroke-width="2" opacity="0" style="animation:iv-fade .3s ease .2s both"/>
+<circle cx="${cx}" cy="${topY}" r="18" fill="${isTQ?'rgba(56,189,248,.14)':'rgba(56,189,248,.22)'}" stroke="#38bdf8" stroke-width="2" class="iv-pop" style="animation-delay:0s;transform-origin:${cx}px ${topY}px"/>
+<text x="${cx}" y="${topY+5}" text-anchor="middle" fill="${isTQ?'#38bdf8':'#bae6fd'}" font-size="14" font-weight="700" class="iv-pop" style="animation-delay:.05s;transform-origin:${cx}px ${topY}px">${escapeHTML(String(total))}</text>
+<circle cx="${cx-sideX}" cy="${botY}" r="16" fill="${isLQ?'rgba(56,189,248,.14)':'rgba(34,197,94,.22)'}" stroke="${isLQ?'#38bdf8':'#22c55e'}" stroke-width="2" class="iv-pop" style="animation-delay:.35s;transform-origin:${cx-sideX}px ${botY}px"/>
+<text x="${cx-sideX}" y="${botY+5}" text-anchor="middle" fill="${isLQ?'#38bdf8':'#86efac'}" font-size="14" font-weight="700" class="iv-pop" style="animation-delay:.4s;transform-origin:${cx-sideX}px ${botY}px">${escapeHTML(String(left))}</text>
+<circle cx="${cx+sideX}" cy="${botY}" r="16" fill="${isRQ?'rgba(56,189,248,.14)':'rgba(251,146,60,.22)'}" stroke="${isRQ?'#38bdf8':'#fb923c'}" stroke-width="2" class="iv-pop" style="animation-delay:.45s;transform-origin:${cx+sideX}px ${botY}px"/>
+<text x="${cx+sideX}" y="${botY+5}" text-anchor="middle" fill="${isRQ?'#38bdf8':'#fed7aa'}" font-size="14" font-weight="700" class="iv-pop" style="animation-delay:.5s;transform-origin:${cx+sideX}px ${botY}px">${escapeHTML(String(right))}</text>
+<text x="${W/2}" y="${H-5}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(v.title||"수 가르기 모형")}</text>`);
+}
+
+// ── 자 (ruler) ──────────────────────────────────────────────
+function ivRuler(v, problem) {
+  const length = v.length || 10;
+  const unit = v.unit || "cm";
+  const max = v.max || Math.max(length * 2, 20);
+  const W = 400, H = 100;
+  const margin = 30, rulerW = W - margin * 2;
+  const scale = rulerW / max;
+  const ticks = [];
+  for (let i = 0; i <= max; i++) {
+    const x = (margin + i * scale).toFixed(1);
+    const isMajor = i % 5 === 0, isEnd = i === length;
+    ticks.push(`<line x1="${x}" y1="40" x2="${x}" y2="${40+(isMajor?12:7)}" stroke="${isEnd?'#f59e0b':'#475569'}" stroke-width="${isEnd?2:1}"/>`);
+    if (isMajor) ticks.push(`<text x="${x}" y="62" text-anchor="middle" fill="${isEnd?'#fde68a':'#64748b'}" font-size="9" font-weight="${isEnd?700:400}">${i}</text>`);
+  }
+  return svgWrap(W, H, "자",
+    `<rect x="${margin}" y="32" width="${rulerW}" height="20" rx="3" fill="rgba(255,255,255,.04)" stroke="#334155" stroke-width="1.5" opacity="0" style="animation:iv-fade .4s ease both"/>
+${ticks.join("")}
+<rect x="${margin}" y="28" width="${(length*scale).toFixed(1)}" height="4" rx="2" fill="#f59e0b" opacity="0" style="animation:iv-fade .5s ease .4s both"/>
+<text x="${(margin+length*scale/2).toFixed(1)}" y="22" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .6s both">${length}${unit}</text>
+<text x="${W/2}" y="${H-5}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(v.title||`${length}${unit}`)}</text>`);
+}
+
+// ── 시계 (clock) ─────────────────────────────────────────────
+function ivClock(v, problem) {
+  const hour = v.hour || 3, minute = v.minute || 0;
+  const W = 400, H = 140;
+  const cx = W / 2, cy = 65, r = 48;
+  const hRad = ((hour % 12 + minute / 60) * 30 - 90) * Math.PI / 180;
+  const mRad = (minute * 6 - 90) * Math.PI / 180;
+  const hx = (cx + r * 0.55 * Math.cos(hRad)).toFixed(1), hy = (cy + r * 0.55 * Math.sin(hRad)).toFixed(1);
+  const mx = (cx + r * 0.75 * Math.cos(mRad)).toFixed(1), my = (cy + r * 0.75 * Math.sin(mRad)).toFixed(1);
+  const nums = Array.from({length:12}, (_,i) => {
+    const a = ((i+1)*30-90)*Math.PI/180;
+    return `<text x="${(cx+Math.cos(a)*(r-11)).toFixed(1)}" y="${(cy+Math.sin(a)*(r-11)+4).toFixed(1)}" text-anchor="middle" fill="#94a3b8" font-size="9" font-weight="700">${i+1}</text>`;
+  });
+  return svgWrap(W, H, "시계",
+    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(30,41,59,.8)" stroke="#475569" stroke-width="2.5" class="iv-pop" style="transform-origin:${cx}px ${cy}px"/>
+${nums.join("")}
+<line x1="${cx}" y1="${cy}" x2="${hx}" y2="${hy}" stroke="#bae6fd" stroke-width="3.5" stroke-linecap="round" opacity="0" style="animation:iv-fade .3s ease .5s both"/>
+<line x1="${cx}" y1="${cy}" x2="${mx}" y2="${my}" stroke="#22c55e" stroke-width="2" stroke-linecap="round" opacity="0" style="animation:iv-fade .3s ease .6s both"/>
+<circle cx="${cx}" cy="${cy}" r="3.5" fill="#f8fafc" class="iv-pop" style="animation-delay:.7s;transform-origin:${cx}px ${cy}px"/>
+<text x="${W/2}" y="${H-5}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(v.title||`${hour}시 ${minute>0?minute+'분':'정각'}`)}</text>`);
+}
+
+// ── 대칭 도형 (symmetry-shape) ───────────────────────────────
+function ivSymmetryShape(v, problem) {
+  const shape = v.shape || "rectangle";
+  const W = 400, H = 130, cx = W/2, cy = 60;
+  let shapeEl;
+  if (shape === "triangle") {
+    shapeEl = `<polygon points="${cx},${cy-38} ${cx-44},${cy+32} ${cx+44},${cy+32}" fill="rgba(139,92,246,.12)" stroke="#8b5cf6" stroke-width="2" opacity="0" style="animation:iv-fade .5s ease both"/>`;
+  } else if (shape === "square") {
+    shapeEl = `<rect x="${cx-36}" y="${cy-36}" width="72" height="72" rx="4" fill="rgba(56,189,248,.12)" stroke="#38bdf8" stroke-width="2" opacity="0" style="animation:iv-fade .5s ease both"/>`;
+  } else {
+    shapeEl = `<rect x="${cx-52}" y="${cy-28}" width="104" height="56" rx="4" fill="rgba(56,189,248,.12)" stroke="#38bdf8" stroke-width="2" opacity="0" style="animation:iv-fade .5s ease both"/>`;
+  }
+  return svgWrap(W, H, "대칭 도형",
+    `${shapeEl}
+<line x1="${cx}" y1="8" x2="${cx}" y2="${H-16}" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,4" opacity="0" style="animation:iv-fade .4s ease .5s both"/>
+<text x="${W/2}" y="${H-3}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(v.title||"대칭축 (노란 점선)")}</text>`);
+}
+
+// ── 도형 규칙 패턴 (shape-pattern) ──────────────────────────
+function ivShapePattern(v, problem) {
+  const items = (v.items || ["○","△","○","△","?"]).slice(0, 8);
+  const W = 400, H = 100;
+  const cw = Math.min(44, (W-40)/items.length);
+  const ox = (W - items.length*cw)/2;
+  const els = items.map((sym,i) => {
+    const x = (ox+i*cw+cw/2).toFixed(1);
+    const isQ = String(sym)==="?"||String(sym)==="□";
+    return `<text x="${x}" y="60" text-anchor="middle" font-size="${isQ?22:18}" fill="${isQ?'#38bdf8':'#94a3b8'}" opacity="0" style="animation:iv-fade .3s ease ${(0.1+i*.1).toFixed(2)}s both">${escapeHTML(String(sym))}</text>`;
+  });
+  return svgWrap(W, H, "도형 패턴",
+    `${els.join("")}
+<text x="${W/2}" y="85" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(v.title||"규칙을 찾아 ?를 채우세요")}</text>`);
+}
+
+// ── 원 무늬 패턴 (circle-pattern) ────────────────────────────
+function ivCirclePattern(v, problem) {
+  const circles = Math.min(v.circles||6, 10);
+  const dotR = Math.min(v.radius||5, 22);
+  const W = 400, H = 120, cx = W/2, cy = H/2;
+  const bigR = Math.min(38, (W-60)/3);
+  const els = [`<circle cx="${cx}" cy="${cy}" r="${bigR}" fill="none" stroke="#38bdf8" stroke-width="2" class="iv-pop" style="animation-delay:0s;transform-origin:${cx}px ${cy}px"/>`];
+  for (let i=0; i<circles; i++) {
+    const a = (i/circles)*2*Math.PI;
+    const ox = (cx+(bigR+dotR+4)*Math.cos(a)).toFixed(1);
+    const oy = (cy+(bigR+dotR+4)*Math.sin(a)).toFixed(1);
+    els.push(`<circle cx="${ox}" cy="${oy}" r="${dotR}" fill="rgba(56,189,248,.18)" stroke="#38bdf8" stroke-width="1.5" class="iv-pop" style="animation-delay:${(0.1+i*.08).toFixed(2)}s;transform-origin:${ox}px ${oy}px"/>`);
+  }
+  return svgWrap(W, H, "원 무늬",
+    `${els.join("")}
+<text x="${W/2}" y="${H-3}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(v.title||"원을 이용한 무늬")}</text>`);
+}
+
+// ── 원 (circle-diagram) ──────────────────────────────────────
+function ivCircleDiagram(v, problem) {
+  const radius = v.radius||5, unit = v.unit||"cm", mode = v.mode||"radius";
+  const W = 400, H = 140, cx = W/2, cy = 65, r = 44;
+  return svgWrap(W, H, "원",
+    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(56,189,248,.1)" stroke="#38bdf8" stroke-width="2" class="iv-pop" style="transform-origin:${cx}px ${cy}px"/>
+<line x1="${cx}" y1="${cy}" x2="${cx+r}" y2="${cy}" stroke="#f59e0b" stroke-width="2" stroke-dasharray="${r}" stroke-dashoffset="${r}" style="animation:iv-draw .5s ease .5s both"/>
+${mode==="diameter"?`<line x1="${cx-r}" y1="${cy}" x2="${cx+r}" y2="${cy}" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="${2*r}" stroke-dashoffset="${2*r}" style="animation:iv-draw .5s ease .7s both"/>`:''}
+<circle cx="${cx}" cy="${cy}" r="3.5" fill="#38bdf8" class="iv-pop" style="animation-delay:.4s;transform-origin:${cx}px ${cy}px"/>
+<text x="${cx+r/2}" y="${cy-8}" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .8s both">r=${radius}${unit}</text>
+${mode==="diameter"?`<text x="${cx}" y="${cy+22}" text-anchor="middle" fill="#86efac" font-size="10" opacity="0" style="animation:iv-fade .3s ease 1s both">지름=${radius*2}${unit}</text>`:''}
+<text x="${W/2}" y="${H-5}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(v.title||`반지름 ${radius}${unit}`)}</text>`);
+}
+
+// ── 각도 (angle-diagram) ─────────────────────────────────────
+function ivAngleDiagram(v, problem) {
+  const deg = Math.min(v.degrees||90, 340);
+  const W = 400, H = 140, cx = 80, cy = 110, armLen = 80;
+  const rad = deg*Math.PI/180;
+  const ex = (cx+armLen*Math.cos(-rad)).toFixed(1), ey = (cy+armLen*Math.sin(-rad)).toFixed(1);
+  const arcR = 32, largeArc = deg>180?1:0;
+  const arcEx = (cx+arcR*Math.cos(-rad)).toFixed(1), arcEy = (cy+arcR*Math.sin(-rad)).toFixed(1);
+  return svgWrap(W, H, "각도",
+    `<line x1="${cx}" y1="${cy}" x2="${cx+armLen}" y2="${cy}" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" opacity="0" style="animation:iv-fade .4s ease .1s both"/>
+<line x1="${cx}" y1="${cy}" x2="${ex}" y2="${ey}" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" opacity="0" style="animation:iv-fade .4s ease .4s both"/>
+<path d="M ${cx+arcR} ${cy} A ${arcR} ${arcR} 0 ${largeArc} 0 ${arcEx} ${arcEy}" fill="rgba(245,158,11,.15)" stroke="#f59e0b" stroke-width="1.5" opacity="0" style="animation:iv-fade .4s ease .6s both"/>
+<text x="${cx+54}" y="${cy-24}" fill="#fde68a" font-size="14" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .7s both">${deg}°</text>
+<text x="${W/2+30}" y="${H-5}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(v.title||`${deg}도 각도`)}</text>`);
+}
+
+// ── 평행/수직 (parallel-lines) ───────────────────────────────
+function ivParallelLines(v, problem) {
+  const mode = v.mode||"parallel";
+  const W = 400, H = 130;
+  const linesEl = mode==="parallel"
+    ? `<line x1="60" y1="45" x2="340" y2="45" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="280" stroke-dashoffset="280" style="animation:iv-draw .5s ease .1s both"/>
+<line x1="60" y1="88" x2="340" y2="88" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="280" stroke-dashoffset="280" style="animation:iv-draw .5s ease .4s both"/>
+<text x="${W/2}" y="72" text-anchor="middle" fill="#94a3b8" font-size="11" opacity="0" style="animation:iv-fade .3s ease .7s both">// 평행</text>`
+    : `<line x1="200" y1="22" x2="200" y2="108" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="86" stroke-dashoffset="86" style="animation:iv-draw .5s ease .1s both"/>
+<line x1="80" y1="65" x2="320" y2="65" stroke="#22c55e" stroke-width="2.5" stroke-dasharray="240" stroke-dashoffset="240" style="animation:iv-draw .5s ease .4s both"/>
+<rect x="200" y="65" width="8" height="8" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity="0" style="animation:iv-fade .3s ease .7s both"/>
+<text x="${W/2}" y="${H-10}" text-anchor="middle" fill="#94a3b8" font-size="10" opacity="0" style="animation:iv-fade .3s ease .8s both">⊥ 수직</text>`;
+  return svgWrap(W, H, mode==="parallel"?"평행":"수직",
+    `${linesEl}
+<text x="${W/2}" y="${H-3}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(v.title||"")}</text>`);
+}
+
+// ── 사각형 분류 (quadrilateral-diagram) ──────────────────────
+function ivQuadrilateralDiagram(v, problem) {
+  const kind = v.kind||"parallelogram";
+  const W = 400, H = 130, cx = W/2, cy = 62;
+  const ptsMap = {
+    parallelogram:`${cx-55},${cy+30} ${cx+35},${cy+30} ${cx+55},${cy-30} ${cx-35},${cy-30}`,
+    rhombus:`${cx},${cy-40} ${cx+45},${cy} ${cx},${cy+40} ${cx-45},${cy}`,
+    trapezoid:`${cx-30},${cy-28} ${cx+30},${cy-28} ${cx+55},${cy+28} ${cx-55},${cy+28}`,
+    rectangle:`${cx-55},${cy-28} ${cx+55},${cy-28} ${cx+55},${cy+28} ${cx-55},${cy+28}`,
+    square:`${cx-35},${cy-35} ${cx+35},${cy-35} ${cx+35},${cy+35} ${cx-35},${cy+35}`,
+  };
+  const lbl = {parallelogram:"평행사변형",rhombus:"마름모",trapezoid:"사다리꼴",rectangle:"직사각형",square:"정사각형"};
+  const pts = ptsMap[kind]||ptsMap.parallelogram;
+  return svgWrap(W, H, lbl[kind]||kind,
+    `<polygon points="${pts}" fill="rgba(139,92,246,.12)" stroke="#8b5cf6" stroke-width="2" style="stroke-dasharray:220;stroke-dashoffset:220;animation:iv-draw .7s ease both"/>
+<text x="${W/2}" y="${H-5}" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .8s both">${lbl[kind]||kind}</text>`);
+}
+
+// ── 다각형 (polygon-diagram) ─────────────────────────────────
+function ivPolygonDiagram(v, problem) {
+  const sides = Math.max(3, Math.min(v.sides||5, 10));
+  const W = 400, H = 130, cx = W/2, cy = 60, r = 46;
+  const pts = Array.from({length:sides}, (_,i) => {
+    const a = (i/sides)*2*Math.PI - Math.PI/2;
+    return `${(cx+r*Math.cos(a)).toFixed(1)},${(cy+r*Math.sin(a)).toFixed(1)}`;
+  }).join(" ");
+  const names = {3:"삼각형",4:"사각형",5:"오각형",6:"육각형",7:"칠각형",8:"팔각형",9:"구각형",10:"십각형"};
+  return svgWrap(W, H, names[sides]||`${sides}각형`,
+    `<polygon points="${pts}" fill="rgba(56,189,248,.1)" stroke="#38bdf8" stroke-width="2" style="stroke-dasharray:${(2*Math.PI*r).toFixed(0)};stroke-dashoffset:${(2*Math.PI*r).toFixed(0)};animation:iv-draw .8s ease both"/>
+<text x="${W/2}" y="${H-5}" text-anchor="middle" fill="#64748b" font-size="9">${sides}개 꼭짓점 · ${sides}개 변 · ${names[sides]||sides+'각형'}</text>`);
+}
+
+// ── 수의 범위 (range-line) ───────────────────────────────────
+function ivRangeLine(v, problem) {
+  const start = v.start||10, end = v.end||20;
+  const leftInc = v.leftInclusive!==false, rightInc = v.rightInclusive!==false;
+  const W = 400, H = 100, margin = 50;
+  const span = end - start;
+  const lo = start - Math.max(3, Math.round(span*0.3));
+  const hi = end + Math.max(3, Math.round(span*0.3));
+  const X = n => margin + (n-lo)/(hi-lo)*(W-margin*2);
+  const sx = X(start).toFixed(1), ex = X(end).toFixed(1);
+  const ticks = [];
+  for (let i=lo; i<=hi; i++) {
+    const x = X(i).toFixed(1), isMark = i===start||i===end, isMajor = isMark||i%5===0;
+    ticks.push(`<line x1="${x}" y1="${isMark?38:42}" x2="${x}" y2="${isMajor?50:48}" stroke="${isMark?'#f59e0b':'#475569'}" stroke-width="${isMark?2:1}"/>`);
+    if (isMajor) ticks.push(`<text x="${x}" y="63" text-anchor="middle" fill="${isMark?'#fde68a':'#64748b'}" font-size="9" font-weight="${isMark?700:400}">${i}</text>`);
+  }
+  return svgWrap(W, H, "수의 범위",
+    `<line x1="${margin-10}" y1="45" x2="${W-margin+10}" y2="45" stroke="#334155" stroke-width="1.5" stroke-dasharray="${W-margin*2+20}" stroke-dashoffset="${W-margin*2+20}" style="animation:iv-draw .5s ease both"/>
+${ticks.join("")}
+<rect x="${sx}" y="37" width="${(+ex-+sx).toFixed(1)}" height="17" rx="3" fill="rgba(245,158,11,.2)" stroke="#f59e0b" stroke-width="1.5" opacity="0" style="animation:iv-fade .4s ease .4s both"/>
+<circle cx="${sx}" cy="45" r="6" fill="${leftInc?'#f59e0b':'none'}" stroke="#f59e0b" stroke-width="2" class="iv-pop" style="animation-delay:.5s;transform-origin:${sx}px 45px"/>
+<circle cx="${ex}" cy="45" r="6" fill="${rightInc?'#f59e0b':'none'}" stroke="#f59e0b" stroke-width="2" class="iv-pop" style="animation-delay:.6s;transform-origin:${ex}px 45px"/>
+<text x="${W/2}" y="${H-3}" text-anchor="middle" fill="#64748b" font-size="9">${leftInc?'[':'('} ${start} ~ ${end} ${rightInc?']':')'} · ${escapeHTML(v.title||"수의 범위")}</text>`);
+}
+
+// ── 꺾은선 그래프 (line-chart) ───────────────────────────────
+function ivLineChart(v, problem) {
+  if (!v||!v.points) return ivExpressionBox(problem);
+  const pts = v.points.slice(0,8);
+  const maxVal = Math.max(...pts.map(p=>p.value||0),1);
+  const W = 400, H = 140, sx = 50, ex2 = W-30, sy = 20, ey2 = 105;
+  const pw = (ex2-sx)/Math.max(pts.length-1,1), ph = ey2-sy;
+  const cpts = pts.map((p,i) => ({
+    x:(sx+i*pw).toFixed(1), y:(ey2-(p.value||0)/maxVal*ph).toFixed(1), ...p
+  }));
+  const pathD = cpts.map((p,i)=>`${i===0?'M':'L'} ${p.x} ${p.y}`).join(" ");
+  const pathLen = cpts.reduce((s,p,i)=>i===0?0:s+Math.hypot(+p.x-+cpts[i-1].x,+p.y-+cpts[i-1].y),0);
+  return svgWrap(W, H, "꺾은선 그래프",
+    `<line x1="${sx}" y1="${sy}" x2="${sx}" y2="${ey2}" stroke="#334155" stroke-width="1.5"/>
+<line x1="${sx}" y1="${ey2}" x2="${ex2}" y2="${ey2}" stroke="#334155" stroke-width="1.5"/>
+<path d="${pathD}" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:${pathLen.toFixed(0)};stroke-dashoffset:${pathLen.toFixed(0)};animation:iv-draw .8s ease .2s both"/>
+${cpts.map((p,i)=>`<circle cx="${p.x}" cy="${p.y}" r="4" fill="#38bdf8" class="iv-pop" style="animation-delay:${(0.5+i*.1).toFixed(2)}s;transform-origin:${p.x}px ${p.y}px"/>
+<text x="${p.x}" y="118" text-anchor="middle" fill="#475569" font-size="7">${escapeHTML(String(p.label||i+1))}</text>`).join("")}
+<text x="${W/2}" y="${H-3}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(v.title||"꺾은선 그래프")}</text>`);
+}
+
+// ── 직육면체 (cuboid) ────────────────────────────────────────
+function ivCuboid(v, problem) {
+  const W = 400, H = 140, w = Math.min(v.width||8,20), d = Math.min(v.depth||5,15), h = Math.min(v.height||6,18);
+  const unit = v.unit||"cm", sc = 5;
+  const rw = w*sc, rd = d*sc*0.5, rh = h*sc;
+  const ox = W/2-rw/2-rd/2, oy = H/2+rh/2;
+  const front = `${ox.toFixed(1)},${oy.toFixed(1)} ${(ox+rw).toFixed(1)},${oy.toFixed(1)} ${(ox+rw).toFixed(1)},${(oy-rh).toFixed(1)} ${ox.toFixed(1)},${(oy-rh).toFixed(1)}`;
+  const top = `${ox.toFixed(1)},${(oy-rh).toFixed(1)} ${(ox+rw).toFixed(1)},${(oy-rh).toFixed(1)} ${(ox+rw+rd).toFixed(1)},${(oy-rh-rd*.8).toFixed(1)} ${(ox+rd).toFixed(1)},${(oy-rh-rd*.8).toFixed(1)}`;
+  const right = `${(ox+rw).toFixed(1)},${oy.toFixed(1)} ${(ox+rw+rd).toFixed(1)},${(oy-rd*.8).toFixed(1)} ${(ox+rw+rd).toFixed(1)},${(oy-rh-rd*.8).toFixed(1)} ${(ox+rw).toFixed(1)},${(oy-rh).toFixed(1)}`;
+  return svgWrap(W, H, "직육면체",
+    `<polygon points="${front}" fill="rgba(56,189,248,.15)" stroke="#38bdf8" stroke-width="1.5" opacity="0" style="animation:iv-fade .4s ease .1s both"/>
+<polygon points="${top}" fill="rgba(56,189,248,.25)" stroke="#38bdf8" stroke-width="1.5" opacity="0" style="animation:iv-fade .4s ease .3s both"/>
+<polygon points="${right}" fill="rgba(56,189,248,.1)" stroke="#38bdf8" stroke-width="1.5" opacity="0" style="animation:iv-fade .4s ease .5s both"/>
+<text x="${(ox+rw/2).toFixed(1)}" y="${(oy+14).toFixed(1)}" text-anchor="middle" fill="#bae6fd" font-size="10" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .6s both">${w}${unit}</text>
+<text x="${(ox+rw+rd/2+6).toFixed(1)}" y="${(oy-rd*.4+4).toFixed(1)}" fill="#bae6fd" font-size="10" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .7s both">${d}${unit}</text>
+<text x="${(ox-12).toFixed(1)}" y="${(oy-rh/2+4).toFixed(1)}" text-anchor="end" fill="#bae6fd" font-size="10" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .8s both">${h}${unit}</text>
+<text x="${W/2}" y="${H-3}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(v.title||"직육면체 (부피=가로×세로×높이)")}</text>`);
+}
+
+// ── 복합도형 (composite-rect) ────────────────────────────────
+function ivCompositeRect(v, problem) {
+  const W = 400, H = 140;
+  const width = v.width||10, height = v.height||8, cutW = v.cutWidth||4, cutH = v.cutHeight||3;
+  const unit = v.unit||"cm";
+  const sc = Math.min(10, 80/Math.max(width, height));
+  const rw = width*sc, rh = height*sc, cw = cutW*sc, ch = cutH*sc;
+  const ox = W/2-rw/2, oy = H/2-rh/2;
+  const pts = `${ox},${oy} ${ox+rw-cw},${oy} ${ox+rw-cw},${oy+ch} ${ox+rw},${oy+ch} ${ox+rw},${oy+rh} ${ox},${oy+rh}`;
+  return svgWrap(W, H, "복합도형",
+    `<polygon points="${pts}" fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="2" style="stroke-dasharray:${(2*(rw+rh)).toFixed(0)};stroke-dashoffset:${(2*(rw+rh)).toFixed(0)};animation:iv-draw .7s ease both"/>
+<text x="${(ox+rw/2).toFixed(1)}" y="${(oy-7).toFixed(1)}" text-anchor="middle" fill="#bbf7d0" font-size="10" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .8s both">${width}${unit}</text>
+<text x="${(ox-8).toFixed(1)}" y="${(oy+rh/2+4).toFixed(1)}" text-anchor="end" fill="#bbf7d0" font-size="10" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .9s both">${height}${unit}</text>
+<text x="${W/2}" y="${H-3}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(v.title||`복합 도형 (${width}×${height} - ${cutW}×${cutH}${unit})`)}</text>`);
+}
+
+// ── 합동 삼각형 (congruent-triangles) ───────────────────────
+function ivCongruentTriangles(v, problem) {
+  const sides = v.sides||[5,7,6], target = v.target||"", unit = v.unit||"cm";
+  const W = 400, H = 130;
+  const drawTri = (ox, col, delay) => {
+    const [a,b] = sides.map(s=>Math.min(s*7,55));
+    const pts = `${ox},${90} ${ox+b},${90} ${ox+b*.5},${90-a*.7}`;
+    return `<polygon points="${pts}" fill="rgba(${col},.12)" stroke="rgb(${col})" stroke-width="1.8" opacity="0" style="animation:iv-fade .4s ease ${delay}s both"/>`;
+  };
+  return svgWrap(W, H, "합동 삼각형",
+    `${drawTri(40,"56,189,248",.1)}${drawTri(220,"34,197,94",.4)}
+<text x="${W/2}" y="26" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .6s both">≅ (합동)</text>
+<text x="${W/2}" y="${H-3}" text-anchor="middle" fill="#64748b" font-size="9">${target?`대응변: ${escapeHTML(target)} = ? ${unit}`:'대응변과 대응각이 같은 합동 삼각형'}</text>`);
+}
+
+// ── 좌표평면 (coordinate-plane) ──────────────────────────────
+function ivCoordinatePlane(v, problem) {
+  const point = v.point||[3,4];
+  const W = 400, H = 140, ox = 70, oy = 110, unit = 18, gridMax = 8;
+  const px = (ox+point[0]*unit).toFixed(1), py = (oy-point[1]*unit).toFixed(1);
+  const grid = [];
+  for (let i=0; i<=gridMax; i++) {
+    const x = ox+i*unit, y = oy-i*unit;
+    grid.push(`<line x1="${x}" y1="${oy}" x2="${x}" y2="${oy-gridMax*unit}" stroke="rgba(71,85,105,.25)" stroke-width=".5"/>`,
+              `<line x1="${ox}" y1="${y}" x2="${ox+gridMax*unit}" y2="${y}" stroke="rgba(71,85,105,.25)" stroke-width=".5"/>`);
+    if (i>0) {
+      grid.push(`<text x="${x}" y="${oy+12}" text-anchor="middle" fill="#475569" font-size="8">${i}</text>`,
+                `<text x="${ox-7}" y="${y+3}" text-anchor="end" fill="#475569" font-size="8">${i}</text>`);
+    }
+  }
+  return svgWrap(W, H, "좌표평면",
+    `${grid.join("")}
+<line x1="${ox}" y1="${oy}" x2="${ox+gridMax*unit+16}" y2="${oy}" stroke="#334155" stroke-width="1.5" opacity="0" style="animation:iv-fade .3s ease both"/>
+<line x1="${ox}" y1="${oy}" x2="${ox}" y2="${oy-gridMax*unit-16}" stroke="#334155" stroke-width="1.5" opacity="0" style="animation:iv-fade .3s ease both"/>
+<text x="${ox+gridMax*unit+20}" y="${oy+4}" fill="#64748b" font-size="9">x</text>
+<text x="${ox+4}" y="${oy-gridMax*unit-14}" fill="#64748b" font-size="9">y</text>
+<line x1="${px}" y1="${oy}" x2="${px}" y2="${py}" stroke="rgba(56,189,248,.4)" stroke-width="1" stroke-dasharray="4,3" opacity="0" style="animation:iv-fade .3s ease .5s both"/>
+<line x1="${ox}" y1="${py}" x2="${px}" y2="${py}" stroke="rgba(56,189,248,.4)" stroke-width="1" stroke-dasharray="4,3" opacity="0" style="animation:iv-fade .3s ease .5s both"/>
+<circle cx="${px}" cy="${py}" r="6" fill="#f59e0b" class="iv-pop" style="animation-delay:.7s;transform-origin:${px}px ${py}px"/>
+<text x="${(+px+9).toFixed(1)}" y="${(+py-5).toFixed(1)}" fill="#fde68a" font-size="10" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .9s both">(${point[0]},${point[1]})</text>`);
+}
+
+// ── 쌓기 나무 (cube-stack) ───────────────────────────────────
+function ivCubeStack(v, problem) {
+  const cols = Math.min(v.cols||3,6), rows = Math.min(v.rows||3,5), layers = Math.min(v.layers||1,3);
+  const W = 400, H = 140, cs = 20;
+  const ox = W/2-(cols*cs)/2-(layers*cs*.4)/2, oy = H-20;
+  const cubes = [];
+  let delay = 0;
+  for (let l=0; l<layers; l++) {
+    for (let r=rows-1; r>=0; r--) {
+      for (let c=0; c<cols; c++) {
+        const x = ox+c*cs-l*cs*.4, y = oy-r*cs-l*cs*.4;
+        cubes.push(
+          `<polygon points="${x},${y} ${x+cs},${y} ${x+cs},${y-cs} ${x},${y-cs}" fill="rgba(56,189,248,.18)" stroke="#38bdf8" stroke-width="1" opacity="0" style="animation:iv-fade .2s ease ${delay.toFixed(2)}s both"/>`,
+          `<polygon points="${x},${y-cs} ${x+cs},${y-cs} ${x+cs-cs*.4},${y-cs-cs*.4} ${x-cs*.4},${y-cs-cs*.4}" fill="rgba(56,189,248,.28)" stroke="#38bdf8" stroke-width="1" opacity="0" style="animation:iv-fade .2s ease ${delay.toFixed(2)}s both"/>`,
+          `<polygon points="${x+cs},${y} ${x+cs-cs*.4},${y-cs*.4} ${x+cs-cs*.4},${y-cs-cs*.4} ${x+cs},${y-cs}" fill="rgba(56,189,248,.1)" stroke="#38bdf8" stroke-width="1" opacity="0" style="animation:iv-fade .2s ease ${delay.toFixed(2)}s both"/>`
+        );
+        delay += 0.04;
+      }
+    }
+  }
+  return svgWrap(W, H, "쌓기 나무",
+    `${cubes.join("")}
+<text x="${W/2}" y="${H-3}" text-anchor="middle" fill="#64748b" font-size="9">${cols}×${rows}×${layers} = ${cols*rows*layers}개 쌓기 나무</text>`);
+}
+
+// ── 동전 확률 (coin-chance) ─────────────────────────────────
+function ivCoinChance(v, problem) {
+  const W = 400, H = 110, cx = W/2, cy = 52;
+  return svgWrap(W, H, "동전 확률",
+    `<circle cx="${cx}" cy="${cy}" r="38" fill="rgba(245,158,11,.12)" stroke="#f59e0b" stroke-width="2.5" class="iv-pop" style="transform-origin:${cx}px ${cy}px"/>
+<line x1="${cx}" y1="${cy-38}" x2="${cx}" y2="${cy+38}" stroke="rgba(245,158,11,.35)" stroke-width="1.5" stroke-dasharray="4,3" opacity="0" style="animation:iv-fade .3s ease .5s both"/>
+<text x="${cx-18}" y="${cy+5}" text-anchor="middle" fill="#fde68a" font-size="13" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .5s both">앞</text>
+<text x="${cx+18}" y="${cy+5}" text-anchor="middle" fill="#fde68a" font-size="13" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .6s both">뒤</text>
+<text x="${cx-18}" y="${cy+19}" text-anchor="middle" fill="#94a3b8" font-size="9" opacity="0" style="animation:iv-fade .3s ease .7s both">1/2</text>
+<text x="${cx+18}" y="${cy+19}" text-anchor="middle" fill="#94a3b8" font-size="9" opacity="0" style="animation:iv-fade .3s ease .8s both">1/2</text>
+<text x="${W/2}" y="${H-3}" text-anchor="middle" fill="#64748b" font-size="9">동전 던지기 · 앞면 또는 뒷면 확률 각 1/2</text>`);
+}
+
+// ── 확률 주머니 (probability-bag) ────────────────────────────
+function ivProbabilityBag(v, problem) {
+  const red = Math.min(v.red||3,10), blue = Math.min(v.blue||5,10), total = red+blue;
+  const W = 400, H = 110;
+  const ballR = Math.min(14,(W-60)/(total*2.5));
+  const ox = (W-total*(ballR*2+3))/2+ballR;
+  const balls = [];
+  for (let i=0; i<red; i++) {
+    const x = (ox+i*(ballR*2+3)).toFixed(1);
+    balls.push(`<circle cx="${x}" cy="52" r="${ballR}" fill="rgba(251,113,133,.35)" stroke="#fb7185" stroke-width="1.5" class="iv-pop" style="animation-delay:${(i*.07).toFixed(2)}s;transform-origin:${x}px 52px"/>`);
+  }
+  for (let i=0; i<blue; i++) {
+    const x = (ox+(red+i)*(ballR*2+3)).toFixed(1);
+    balls.push(`<circle cx="${x}" cy="52" r="${ballR}" fill="rgba(56,189,248,.35)" stroke="#38bdf8" stroke-width="1.5" class="iv-pop" style="animation-delay:${((red+i)*.07).toFixed(2)}s;transform-origin:${x}px 52px"/>`);
+  }
+  return svgWrap(W, H, "확률 주머니",
+    `${balls.join("")}
+<text x="${W/2}" y="82" text-anchor="middle" fill="#64748b" font-size="9">빨간 ${red}개 (${red}/${total}) · 파란 ${blue}개 (${blue}/${total})</text>
+<text x="${W/2}" y="${H-3}" text-anchor="middle" fill="#64748b" font-size="8">${escapeHTML(v.title||"공 꺼낼 확률")}</text>`);
+}
+
+// ── 입체도형 (solid-shape) ──────────────────────────────────
+function ivSolidShape(v, problem) {
+  const kind = v.kind||"prism", label = v.label||"";
+  const W = 400, H = 130, cx = W/2, cy = 62;
+  let shapeEl;
+  if (kind==="pyramid") {
+    shapeEl = `<polygon points="${cx},${cy-42} ${cx-46},${cy+30} ${cx+46},${cy+30}" fill="rgba(139,92,246,.12)" stroke="#8b5cf6" stroke-width="2" opacity="0" style="animation:iv-fade .5s ease both"/>
+<line x1="${cx}" y1="${cy-42}" x2="${cx+22}" y2="${cy+6}" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="3,3" opacity="0" style="animation:iv-fade .3s ease .5s both"/>`;
+  } else {
+    const pts1 = `${cx-36},${cy+30} ${cx+36},${cy+30} ${cx+36},${cy-12} ${cx-36},${cy-12}`;
+    const pts2 = `${cx-36},${cy-12} ${cx-20},${cy-36} ${cx+52},${cy-36} ${cx+36},${cy-12}`;
+    shapeEl = `<polygon points="${pts1}" fill="rgba(139,92,246,.12)" stroke="#8b5cf6" stroke-width="2" opacity="0" style="animation:iv-fade .5s ease .1s both"/>
+<polygon points="${pts2}" fill="rgba(139,92,246,.22)" stroke="#8b5cf6" stroke-width="2" opacity="0" style="animation:iv-fade .5s ease .3s both"/>`;
+  }
+  return svgWrap(W, H, label||kind,
+    `${shapeEl}
+<text x="${W/2}" y="${H-5}" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .7s both">${escapeHTML(label)}</text>`);
+}
+
+// ── 전개도 (net-diagram) ────────────────────────────────────
+function ivNetDiagram(v, problem) {
+  const label = v.label||"", sides = v.sides||4;
+  const W = 400, H = 130, cx = W/2, cy = 60, fw = 40, fh = 34;
+  const face = (x, y, delay) =>
+    `<rect x="${x}" y="${y}" width="${fw}" height="${fh}" rx="2" fill="rgba(56,189,248,.12)" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="${delay===.1?'none':'4,3'}" opacity="0" style="animation:iv-fade .3s ease ${delay}s both"/>`;
+  const faces = [
+    face(cx-fw/2, cy-fh/2, .1),
+    face(cx-fw/2, cy-fh/2-fh-2, .2),
+    face(cx-fw/2, cy+fh/2+2, .3),
+    face(cx-fw/2-fw-2, cy-fh/2, .4),
+    face(cx+fw/2+2, cy-fh/2, .5),
+  ];
+  if (sides>=6) faces.push(face(cx+fw/2+fw+4, cy-fh/2, .6));
+  return svgWrap(W, H, label||"전개도",
+    `${faces.join("")}
+<text x="${W/2}" y="${H-3}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(label||v.kind+" 전개도")}</text>`);
+}
+
+// ── 비율 막대 (ratio-strip) ─────────────────────────────────
+function ivRatioStrip(v, problem) {
+  const left = v.left||3, right = v.right||2, total = left+right;
+  const lLbl = v.leftLabel||"A", rLbl = v.rightLabel||"B", unit = v.unit||"";
+  const W = 400, H = 110, barH = 28, barW = W-60, ox = 30, oy = 38;
+  const lw = (left/total*barW).toFixed(1), rw = (right/total*barW).toFixed(1);
+  return svgWrap(W, H, "비율 막대",
+    `<rect x="${ox}" y="${oy}" width="${lw}" height="${barH}" rx="4" fill="rgba(56,189,248,.28)" stroke="#38bdf8" stroke-width="1.5" opacity="0" style="animation:iv-fade .4s ease .1s both"/>
+<rect x="${(ox+Number(lw)).toFixed(1)}" y="${oy}" width="${rw}" height="${barH}" rx="4" fill="rgba(34,197,94,.28)" stroke="#22c55e" stroke-width="1.5" opacity="0" style="animation:iv-fade .4s ease .3s both"/>
+<text x="${(ox+Number(lw)/2).toFixed(1)}" y="${oy+18}" text-anchor="middle" fill="#bae6fd" font-size="11" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .5s both">${escapeHTML(lLbl)} ${left}</text>
+<text x="${(ox+Number(lw)+Number(rw)/2).toFixed(1)}" y="${oy+18}" text-anchor="middle" fill="#bbf7d0" font-size="11" font-weight="700" opacity="0" style="animation:iv-fade .3s ease .6s both">${escapeHTML(rLbl)} ${right}</text>
+<text x="${W/2}" y="${H-5}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(lLbl)} : ${escapeHTML(rLbl)} = ${left} : ${right}${unit?' ('+unit+')':''}</text>
+<text x="${W/2}" y="${H+5}" text-anchor="middle" fill="#64748b" font-size="8">${escapeHTML(v.title||"")}</text>`);
+}
+
+// ── 원 그래프 (circle-chart) ─────────────────────────────────
+function ivCircleChart(v, problem) {
+  if (!v||!v.items) return ivExpressionBox(problem);
+  const items = v.items.slice(0,5);
+  const total = items.reduce((s,it)=>s+(it.value||0),0)||1;
+  const W = 400, H = 140, cx = W/2-25, cy = 65, r = 46;
+  const pal = ["#38bdf8","#22c55e","#f59e0b","#fb7185","#8b5cf6"];
+  const sectors = [], legend = [];
+  let startA = -Math.PI/2;
+  items.forEach((item,i) => {
+    const frac = (item.value||0)/total;
+    const sweepA = frac*2*Math.PI, endA = startA+sweepA;
+    const x1 = (cx+r*Math.cos(startA)).toFixed(1), y1 = (cy+r*Math.sin(startA)).toFixed(1);
+    const x2 = (cx+r*Math.cos(endA)).toFixed(1), y2 = (cy+r*Math.sin(endA)).toFixed(1);
+    const midA = startA+sweepA/2;
+    const lx = (cx+(r+18)*Math.cos(midA)).toFixed(1), ly = (cy+(r+18)*Math.sin(midA)+4).toFixed(1);
+    const col = pal[i%pal.length];
+    sectors.push(`<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${sweepA>Math.PI?1:0} 1 ${x2} ${y2} Z" fill="${col}33" stroke="${col}" stroke-width="1.5" opacity="0" style="animation:iv-fade .35s ease ${(i*.1+.1).toFixed(2)}s both"/>
+<text x="${lx}" y="${ly}" text-anchor="middle" fill="${col}" font-size="9" font-weight="700" opacity="0" style="animation:iv-fade .3s ease ${(i*.1+.4).toFixed(2)}s both">${item.value}%</text>`);
+    const lly = 20+i*18;
+    legend.push(`<rect x="${W-70}" y="${lly}" width="10" height="10" rx="2" fill="${col}44" stroke="${col}" stroke-width="1" opacity="0" style="animation:iv-fade .3s ease ${(i*.1+.3).toFixed(2)}s both"/>
+<text x="${W-57}" y="${lly+9}" fill="${col}" font-size="9" opacity="0" style="animation:iv-fade .3s ease ${(i*.1+.4).toFixed(2)}s both">${escapeHTML(String(item.label||''))}</text>`);
+    startA = endA;
+  });
+  return svgWrap(W, H, "원 그래프",
+    `${sectors.join("")}${legend.join("")}
+<text x="${cx}" y="${H-5}" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(v.title||"원 그래프")}</text>`);
+}
+
 // ── 기본 식 박스 (fallback) ─────────────────────────────────
 function ivExpressionBox(problem) {
   const W = 400, H = 100;
@@ -434,20 +897,46 @@ function buildElementaryVisual(problem) {
   const v = problem.visual;
   if (v) {
     const map = {
-      "number-line":        ivNumberLine,
-      "ten-frame":          ivTenFrame,
-      "fraction-strip":     ivFractionStrip,
-      "rectangle":          ivRectangle,
-      "square":             ivSquare,
-      "triangle":           ivTriangle,
-      "parallelogram":      ivParallelogram,
-      "trapezoid":          ivTrapezoid,
-      "data-table":         ivDataTable,
-      "place-value-blocks": ivPlaceValueBlocks,
-      "bar-chart":          ivBarChartV,
-      "object-array":       ivObjectArrayV,
+      "number-line":          ivNumberLine,
+      "number-bond":          ivNumberBond,
+      "ten-frame":            ivTenFrame,
+      "fraction-strip":       ivFractionStrip,
+      "rectangle":            ivRectangle,
+      "square":               ivSquare,
+      "triangle":             ivTriangle,
+      "parallelogram":        ivParallelogram,
+      "trapezoid":            ivTrapezoid,
+      "data-table":           ivDataTable,
+      "place-value-blocks":   ivPlaceValueBlocks,
+      "base-ten-blocks":      ivPlaceValueBlocks,
+      "bar-chart":            ivBarChartV,
+      "object-array":         ivObjectArrayV,
+      "ruler":                ivRuler,
+      "clock":                ivClock,
+      "symmetry-shape":       ivSymmetryShape,
+      "shape-pattern":        ivShapePattern,
+      "circle-pattern":       ivCirclePattern,
+      "circle-diagram":       ivCircleDiagram,
+      "angle-diagram":        ivAngleDiagram,
+      "parallel-lines":       ivParallelLines,
+      "quadrilateral-diagram":ivQuadrilateralDiagram,
+      "polygon-diagram":      ivPolygonDiagram,
+      "range-line":           ivRangeLine,
+      "line-chart":           ivLineChart,
+      "cuboid":               ivCuboid,
+      "composite-rect":       ivCompositeRect,
+      "congruent-triangles":  ivCongruentTriangles,
+      "coordinate-plane":     ivCoordinatePlane,
+      "cube-stack":           ivCubeStack,
+      "coin-chance":          ivCoinChance,
+      "probability-bag":      ivProbabilityBag,
+      "solid-shape":          ivSolidShape,
+      "net-diagram":          ivNetDiagram,
+      "ratio-strip":          ivRatioStrip,
+      "circle-chart":         ivCircleChart,
     };
-    return (map[v.type] || ivExpressionBox)(v, problem);
+    if (map[v.type]) return map[v.type](v, problem);
+    return ivExpressionBox(problem);
   }
   return ivAutoArithmetic(problem);
 }
@@ -470,9 +959,10 @@ function buildCoachVisualSVG(mood) {
     ).join("");
     return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block" aria-hidden="true"><defs><style>${IV_CSS}</style></defs>${rings}</svg>`;
   }
-  // thinking
-  const wave = `<path d="M 10 ${H/2} Q 25 ${H/2-8} 40 ${H/2} Q 55 ${H/2+8} 70 ${H/2} Q 85 ${H/2-8} 100 ${H/2} Q 115 ${H/2+8} ${W} ${H/2}" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0" style="animation:iv-fade .5s ease forwards both"/>`;
-  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block" aria-hidden="true"><defs><style>${IV_CSS}</style></defs>${wave}</svg>`;
+  // thinking — 파란 뇌파 웨이브 (무한 반복 펄스)
+  const waveCSS = `@keyframes iv-wavepulse{0%,100%{stroke-dashoffset:0;opacity:.9}50%{stroke-dashoffset:-20;opacity:.4}}`;
+  const wave = `<path d="M 10 ${H/2} Q 25 ${H/2-8} 40 ${H/2} Q 55 ${H/2+8} 70 ${H/2} Q 85 ${H/2-8} 100 ${H/2} Q 115 ${H/2+8} ${W} ${H/2}" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="8,4" style="animation:iv-wavepulse 1.2s ease-in-out infinite"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block" aria-hidden="true"><defs><style>${IV_CSS}${waveCSS}</style></defs>${wave}</svg>`;
 }
 
 // ============================================================
@@ -645,7 +1135,10 @@ function renderMission() {
   const gradeMeta = GRADE_META[app.grade] || { label:`${app.grade}학년`, emoji:"" };
   $("mission-kicker").textContent = `${gradeMeta.label} · ${p.skillTitle}`;
   $("problem-title").textContent = p.question;
-  $("problem-visual").innerHTML = buildElementaryVisual(p);
+  const visualEl = $("problem-visual");
+  visualEl.innerHTML = "";
+  void visualEl.offsetHeight;
+  visualEl.innerHTML = buildElementaryVisual(p);
   renderChoices(true);
   renderRoad();
   updateStats();
