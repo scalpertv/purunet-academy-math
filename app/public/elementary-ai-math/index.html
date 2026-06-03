@@ -1,0 +1,285 @@
+<!-- 초등 AI 수학 코치 - 집중 연산 4지선다 Khanmigo 방식 AI 코치 -->
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI 수학 코치 · 초등 집중 연산</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="orb a" aria-hidden="true"></div>
+<div class="orb b" aria-hidden="true"></div>
+<div class="orb c" aria-hidden="true"></div>
+
+<div class="app">
+
+  <!-- ===== 탑바 ===== -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">🧮</div>
+      <div>
+        <h1>AI 수학 코치 · 초등 집중 연산</h1>
+        <p>1-6학년 연산 선택 + 4지선다 + AI 코치 실시간 반응 + 힌트 미터</p>
+      </div>
+    </div>
+    <div class="hud" aria-label="학습 상태">
+      <div class="hud-pill">🔥&nbsp;<strong id="streak-count">0</strong>일 연속</div>
+      <div class="hud-pill">⚡&nbsp;코치 콤보 <strong id="total-count">0</strong></div>
+      <div class="hud-pill">🧠&nbsp;설명력 <strong id="accuracy-rate">0%</strong></div>
+      <div class="hud-pill">✨&nbsp;<strong id="xp-count">0</strong>&nbsp;XP</div>
+      <div class="start-btn-wrap">
+        <button class="start-btn" id="new-mission" type="button">AI 코치 미션 시작</button>
+      </div>
+      <a class="home-btn" id="home-button" href="https://purunet-math-ebook.pages.dev/" aria-label="푸르넷 수학 홈으로 이동">🏠 홈</a>
+    </div>
+  </header>
+
+  <!-- ===== 3열 메인 레이아웃 ===== -->
+  <main class="layout">
+
+    <!-- ===== 왼쪽 패널 ===== -->
+    <aside class="left">
+
+      <!-- 나의 수학 캐릭터 -->
+      <section class="panel profile">
+        <div class="section-head">
+          <h2>나의 수학 캐릭터</h2>
+          <span id="level-badge">Lv.1</span>
+        </div>
+        <div class="avatar-box">
+          <div class="speech-bubble" id="mascot-speech">AI 코치 질문에 답하면 설명력 XP가 올라가요!</div>
+          <div class="avatar-emoji" id="mascot-character" aria-hidden="true">🦊</div>
+        </div>
+        <div class="xp-wrap">
+          <div class="xp-label"><span>설명력 레벨</span><span>XP</span></div>
+          <div class="xp-track"><span class="xp-bar-fill" id="xp-bar"></span></div>
+        </div>
+        <div class="reward-row">
+          <div><strong id="gem-count">0</strong><span>젬</span></div>
+          <div><strong id="chest-state">LOCK</strong><span>상자</span></div>
+          <div><strong id="badge-count">0</strong><span>배지</span></div>
+        </div>
+      </section>
+
+      <!-- 오늘의 코스 -->
+      <section class="panel course-settings">
+        <div class="section-head">
+          <h2>오늘의 코스</h2>
+          <span id="course-state">학년 선택</span>
+        </div>
+        <div class="grade-tabs" id="grade-tabs">
+          <button class="grade-tab active" data-grade="1" type="button">🌱 1학년</button>
+          <button class="grade-tab" data-grade="2" type="button">🌿 2학년</button>
+          <button class="grade-tab" data-grade="3" type="button">🍀 3학년</button>
+          <button class="grade-tab" data-grade="4" type="button">⭐ 4학년</button>
+          <button class="grade-tab" data-grade="5" type="button">🔷 5학년</button>
+          <button class="grade-tab" data-grade="6" type="button">🏆 6학년</button>
+        </div>
+        <div class="semester-row" id="semester-row">
+          <button class="semester-btn active" data-sem="1" type="button">1학기</button>
+          <button class="semester-btn" data-sem="2" type="button">2학기</button>
+        </div>
+        <label>주제<select id="topic-select"></select></label>
+        <label>문제 수
+          <select id="set-count-select">
+            <option value="5">5세트</option>
+            <option value="10" selected>10세트</option>
+            <option value="20">20세트</option>
+            <option value="30">30세트</option>
+            <option value="50">50세트</option>
+          </select>
+        </label>
+        <div class="course-actions">
+          <button class="new-mission-btn" id="new-mission-alt" type="button">AI 코치 미션 시작</button>
+          <button class="print-btn" id="print-btn" type="button">🖨️ 문제 프린터 출력</button>
+        </div>
+      </section>
+
+      <!-- AI 코치 태스크 -->
+      <section class="panel quest">
+        <div class="section-head">
+          <h2>AI 코치 태스크</h2>
+          <span>상호작용</span>
+        </div>
+        <div class="quest-list" id="mission-road">
+          <div class="qitem"><div class="qbadge">💬</div><div><b>질문 3개에 답하기</b><small>AI가 바로 반응합니다</small></div></div>
+          <div class="qitem"><div class="qbadge">✏️</div><div><b>단계별 풀이 보기</b><small>왜 그런지 확인합니다</small></div></div>
+          <div class="qitem"><div class="qbadge">🧠</div><div><b>힌트 적게 쓰기</b><small>힌트 미터가 보상에 반영</small></div></div>
+        </div>
+      </section>
+
+      <!-- 오답 몬스터 -->
+      <section class="panel boss-section">
+        <div class="section-head">
+          <h2>오답 몬스터</h2>
+          <span>보스전</span>
+        </div>
+        <div class="boss-card">
+          <div class="boss-monster" id="boss-face" aria-hidden="true">👾</div>
+          <div class="hp"><div class="hp-fill" id="boss-hp-bar" style="width:100%"></div></div>
+          <p>AI 코치 질문에 올바르게 답하면 몬스터 HP가 줄어듭니다. <strong id="boss-hp-text">100%</strong></p>
+        </div>
+      </section>
+
+    </aside>
+
+    <!-- ===== 가운데 패널 ===== -->
+    <section class="main">
+      <article class="panel game-stage">
+
+        <!-- 게임 헤드 -->
+        <div class="game-head">
+          <div>
+            <div class="live-tag">
+              <span class="live-dot" aria-hidden="true"></span>
+              <span id="mission-kicker">실시간 문제 미션</span>
+            </div>
+            <h2 id="problem-title">학년과 주제를 선택하고 미션을 시작하세요</h2>
+          </div>
+          <div class="combo-card">🤖 COACH<br><small id="ai-judgement">대기</small></div>
+        </div>
+
+        <!-- 문제 시각 영역 -->
+        <div class="problem-area">
+          <div class="problem-visual" id="problem-visual" aria-label="문제 시각 자료">
+            문제를 불러오는 중...
+          </div>
+        </div>
+
+        <!-- 4지선다 -->
+        <div class="choices-zone">
+          <h3 class="choices-title">4지선다 문제</h3>
+          <p class="stair-guide" id="choice-lock">즉시 선택 가능</p>
+          <div class="choice-grid-4 horizontal-choice is-unlocked" id="choice-grid"></div>
+          <div id="unlock-state" style="display:none"></div>
+          <div class="action-row">
+            <button class="act-btn" id="hint-button" type="button">AI 힌트 보기</button>
+            <button class="act-btn" id="explain-button" type="button">풀이 흐름 확인</button>
+            <button class="act-btn primary" id="next-button" type="button">다음 미션</button>
+          </div>
+          <div class="feedback-bar" id="mission-note" aria-live="polite">
+            <span class="live-dot" style="display:inline-block;margin-right:6px;vertical-align:middle" aria-hidden="true"></span>
+            <b>실시간 반응:</b> 보기를 선택하면 AI 코치가 즉시 정답 여부와 코칭을 제공합니다.
+          </div>
+        </div>
+
+        <!-- work-lab: JS 호환용 숨김 -->
+        <div style="display:none" aria-hidden="true">
+          <div id="step-stage"></div>
+          <div id="mission-token-row"></div>
+          <textarea id="work-input"></textarea>
+          <span id="work-state">입력 대기</span>
+          <button id="analyze-work" type="button">AI 분석</button>
+          <div id="process-lane"></div>
+        </div>
+
+      </article>
+    </section>
+
+    <!-- ===== 오른쪽 패널 ===== -->
+    <aside class="right">
+
+      <!-- 동적 AI 수학코치 -->
+      <section class="panel coach-arena">
+        <div class="coach-top">
+          <div class="section-head">
+            <h2>동적 AI 수학코치</h2>
+            <span>KHANMIGO 방식</span>
+          </div>
+          <div class="ai-stage" id="ai-stage">
+            <div class="scanline" aria-hidden="true"></div>
+            <div class="spark s1" aria-hidden="true"></div>
+            <div class="spark s2" aria-hidden="true"></div>
+            <div class="spark s3" aria-hidden="true"></div>
+            <div class="mood-ring" aria-hidden="true"></div>
+            <div class="mood-ring two" aria-hidden="true"></div>
+            <div class="ai-status-pill">
+              <span class="live-dot" aria-hidden="true"></span>
+              <span id="ai-status">학생 선택 대기 중</span>
+            </div>
+            <div class="ai-emotion-pill" id="ai-emotion">🎯 선택을 기다려요</div>
+            <div class="ai-orb" id="ai-orb" aria-hidden="true">🤖</div>
+            <div class="ai-speech-box">
+              <span id="ai-speech">정답을 선택하면 제가 바로 반응하고 이유를 설명해줄게요.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="coach-body">
+          <div class="coach-missions" id="coach-missions">
+            <div class="c-mission-card is-active">
+              <div class="c-mission-icon">🎯</div>
+              <div><strong>선택 대기</strong><small>왼쪽 문제에서 답을 클릭하면 AI 코치 반응이 바뀝니다.</small></div>
+            </div>
+            <div class="c-mission-card">
+              <div class="c-mission-icon">🧠</div>
+              <div><strong>분석 준비</strong><small>정답·오답을 즉시 분류합니다.</small></div>
+            </div>
+            <div class="c-mission-card">
+              <div class="c-mission-icon">🗣️</div>
+              <div><strong>다음 질문 생성</strong><small>학생의 선택에 맞춰 후속 질문이 달라집니다.</small></div>
+            </div>
+          </div>
+
+          <p class="coach-q-text" id="coach-question-text">다음 AI 질문: 왼쪽 문제 또는 아래 답변 버튼을 선택해보세요.</p>
+
+          <div class="answer-buttons" id="coach-options">
+            <button class="answer-btn is-good" type="button">계산 순서를 따라 풀어요</button>
+            <button class="answer-btn is-bad" type="button">그냥 찍었어요</button>
+            <button class="answer-btn" type="button">힌트가 필요해요</button>
+            <button class="answer-btn" type="button">다시 생각해볼게요</button>
+          </div>
+
+          <div class="micro-feedback" id="micro-feedback">
+            🎯 <b>AI 코치 피드백:</b><br>
+            답을 선택하면 학생의 선택 유형에 따라 칭찬, 교정 질문, 힌트, 새로운 문제가 즉시 바뀝니다.
+          </div>
+
+          <div class="hint-meter">
+            <div class="meter-top">
+              <span>힌트 의존도</span>
+              <span id="meter-text">선택 전 · 0%</span>
+            </div>
+            <div class="meter-track">
+              <div class="meter-fill low" id="meter-fill"></div>
+            </div>
+          </div>
+
+          <div class="prompt-box" id="next-prompt">
+            다음 AI 질문: 먼저 왼쪽 문제 또는 아래 답변 버튼을 선택해보세요.
+          </div>
+        </div>
+      </section>
+
+      <!-- AI 코치 리포트 -->
+      <section class="panel report-panel">
+        <div class="section-head">
+          <h2>AI 코치 리포트</h2>
+          <span id="weak-signal">자동 진단</span>
+        </div>
+        <div id="report-bars">
+          <div class="bar-row"><div class="bar-top"><span>정확도</span><strong>0%</strong></div><div class="bar-track-outer"><div class="bar-track-fill" style="width:0%"></div></div></div>
+          <div class="bar-row"><div class="bar-top"><span>미션 몰입도</span><strong>0%</strong></div><div class="bar-track-outer"><div class="bar-track-fill" style="width:0%"></div></div></div>
+          <div class="bar-row"><div class="bar-top"><span>힌트 독립성</span><strong>100%</strong></div><div class="bar-track-outer"><div class="bar-track-fill" style="width:100%"></div></div></div>
+          <div class="bar-row"><div class="bar-top"><span>오답 수정력</span><strong>0%</strong></div><div class="bar-track-outer"><div class="bar-track-fill" style="width:0%"></div></div></div>
+        </div>
+        <div class="weak-box">
+          <span id="weak-note">학생이 선택한 답에 따라 다음 복습 선택이 자동으로 바뀝니다.</span>
+        </div>
+      </section>
+
+    </aside>
+  </main>
+</div>
+
+<div class="game-toast" id="game-toast" role="status" aria-live="polite">🤖 답을 선택하면 AI 코치가 즉시 반응합니다.</div>
+
+<script src="app.js"></script>
+</body>
+</html>
