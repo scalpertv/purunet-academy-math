@@ -2127,9 +2127,6 @@ function renderConceptNote(skillId) {
   if (!el) return;
   const c = getConceptEntry(skillId);
   if (!c) { el.innerHTML = ''; return; }
-  const tipsHtml = c.tips.map(t =>
-    `<span class="concept-badge"><span class="concept-flag">${t.flag}</span><span class="concept-label">${escapeHTML(t.label)}</span><span class="concept-tip-text">${escapeHTML(t.text)}</span></span>`
-  ).join('');
   el.innerHTML =
     `<div class="concept-card">
   <div class="concept-head">
@@ -2141,7 +2138,6 @@ function renderConceptNote(skillId) {
     <p class="concept-core">${escapeHTML(c.core)}</p>
     <p class="concept-example">✏️ 예시: ${escapeHTML(c.example)}</p>
     <p class="concept-real">🌍 실생활: ${escapeHTML(c.real)}</p>
-    <div class="concept-tips-row">${tipsHtml}</div>
     <p class="concept-remember">💡 기억법: ${escapeHTML(c.remember)}</p>
   </div>
 </div>`;

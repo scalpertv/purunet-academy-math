@@ -616,37 +616,6 @@ h1,h2,h3,p { overflow-wrap: anywhere; }
   font-size: 12px;
   margin: 2px 0 0;
 }
-.concept-tips-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin: 4px 0 2px;
-}
-.concept-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(15, 23, 42, 0.5);
-  border: 1px solid rgba(99, 102, 241, 0.22);
-  border-radius: 20px;
-  padding: 3px 9px 3px 6px;
-  font-size: 11px;
-  line-height: 1.4;
-}
-.concept-flag {
-  font-size: 13px;
-  flex-shrink: 0;
-}
-.concept-label {
-  font-weight: 700;
-  color: #a5b4fc;
-  min-width: 18px;
-  font-size: 10px;
-}
-.concept-tip-text {
-  color: #94a3b8;
-  font-size: 11px;
-}
 
 /* ── 세션 완료 confetti 파티클 ── */
 @keyframes confetti-fall {
