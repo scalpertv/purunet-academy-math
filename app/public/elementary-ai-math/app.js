@@ -2104,6 +2104,88 @@ const CONCEPT_BANK = [
     ],
     remember: '대칭축에서의 거리가 같아야 진짜 대칭!',
   },
+  // ── 5학년 추가 ──────────────────────────────────────────────
+  {
+    match: ['average-basic','average-missing','average-total'],
+    title: '평균', emoji: '📊',
+    core: '평균 = 전체 합계 ÷ 개수  (모두 똑같이 나눈 값)',
+    example: '점수 80, 90, 70 → 합계 240 ÷ 3 = 평균 80점',
+    real: '우리 반 평균 키, 시험 평균 점수 모두 평균!',
+    remember: '(모든 값의 합) ÷ (개수) = 평균. 단위를 꼭 써요!',
+  },
+  {
+    match: ['rounding','round-ten','round-hundred','estimate-sum','estimate-product','range-exclusive','range-inclusive','range-statement'],
+    title: '반올림·어림', emoji: '🔢',
+    core: '구하는 자리 바로 아래 자릿수가 5 이상이면 올리고, 4 이하이면 버려요.',
+    example: '472를 십의 자리에서 반올림 → 500  /  437 → 400',
+    real: '마트 영수증 합계를 빠르게 어림잡을 때 사용!',
+    remember: '5 이상 → 올림, 4 이하 → 버림. 기준 자리를 먼저 확인!',
+  },
+  {
+    match: ['chance-compare','chance-statement','probability'],
+    title: '가능성·확률', emoji: '🎲',
+    core: '어떤 일이 일어날 가능성을 0~1 사이의 수로 나타내요.',
+    example: '동전 앞면이 나올 가능성 = 1/2 = 0.5',
+    real: '주사위 3이 나올 가능성 = 1/6 ≈ 0.167',
+    remember: '불가능 = 0, 확실 = 1. 그 사이가 확률!',
+  },
+  {
+    match: ['rate-value','rate-table','rate-table-reverse','rate-decimal','rate-fraction','op-m04-rate'],
+    title: '단위량·속도', emoji: '🚀',
+    core: '단위당 얼마인지 구해 비교해요. 속도 = 거리 ÷ 시간',
+    example: '100km를 2시간에 가면 → 속도 50km/h',
+    real: '두 가게 중 어디가 더 저렴한지 → 1개당 가격 비교!',
+    remember: '단위가 다르면 단위량(1당 값)으로 바꿔서 비교해요!',
+  },
+  // ── 6학년 추가 ──────────────────────────────────────────────
+  {
+    match: ['circle-area','circumference','circle-composite','pi-from','cylinder-surface'],
+    title: '원의 넓이·둘레', emoji: '⭕',
+    core: '원주(둘레) = 지름 × π ≈ 지름 × 3.14  /  넓이 = 반지름² × π',
+    example: '반지름 5cm → 원주 ≈ 31.4cm, 넓이 ≈ 78.5cm²',
+    real: '피자, 동전, 시계판 모두 원! 둘레와 넓이를 계산해요.',
+    remember: 'π ≈ 3.14  /  원주 = 2πr  /  넓이 = πr²',
+  },
+  {
+    match: ['percent-basic','percent-of-quantity','percent-to-angle','quantity-from-percent','percent'],
+    title: '백분율', emoji: '💯',
+    core: '전체를 100으로 봤을 때 얼마인지 나타내는 비율이에요.',
+    example: '20명 중 5명 → 5/20 = 0.25 = 25%',
+    real: '할인율 30%, 득표율 48% 모두 백분율!',
+    remember: '백분율(%) = (부분/전체) × 100. 소수로 바꾸면 ÷100!',
+  },
+  {
+    match: ['integer-addition','integer-subtraction','integer-number-line','signed-number','rational-number'],
+    title: '정수와 유리수', emoji: '➕➖',
+    core: '0보다 작은 음수(−)가 있어요. 수직선에서 0 오른쪽은 +, 왼쪽은 −',
+    example: '+3 + (−5) = −2  /  −4 − (−2) = −2',
+    real: '영하 기온, 해저, 지하층 번호 모두 음수!',
+    remember: '부호가 같으면 더하고, 다르면 빼고 — 큰 쪽 부호를 따요!',
+  },
+  {
+    match: ['linear-equation','equation-word','equation-check','equation-property','expression-value','simplify-like'],
+    title: '방정식', emoji: '🔤',
+    core: '□ 대신 x를 써서 등식의 성질로 x 값을 구해요.',
+    example: 'x + 5 = 12  →  x = 12 − 5 = 7',
+    real: '"사과 몇 개가 있어야 12개가 되지?" → x + 5 = 12!',
+    remember: '등식의 성질: 양쪽에 같은 수를 더하고 빼고 곱하고 나눠도 등식 성립!',
+  },
+  {
+    match: ['prime-factorization','factorization-word','prime-composite','prime-factors','divisor-count'],
+    title: '소인수분해', emoji: '🔢',
+    core: '모든 자연수는 소수들의 곱으로 나타낼 수 있어요.',
+    example: '12 = 2 × 2 × 3 = 2² × 3',
+    real: '12의 약수 개수: (2+1)×(1+1) = 6개 → 1,2,3,4,6,12!',
+    remember: '소수(Prime): 1과 자기 자신만으로 나누어지는 수 (2, 3, 5, 7, 11…)',
+  },
+  {
+    match: ['cylinder-volume','cylinder-height','prism-face','prism-edge','pyramid-face','pyramid-edge','solid-name','cone-sphere','prism-pyramid-net'],
+    title: '원기둥·각기둥·각뿔', emoji: '🏛️',
+    core: '기둥 부피 = 밑넓이 × 높이  /  원기둥 부피 = πr² × 높이',
+    example: '반지름 3, 높이 5인 원기둥 → 3.14×9×5 ≈ 141.3cm³',
+    real: '음료 캔, 연필통, 텐트 등 생활 속 입체도형!',
+    remember: '기둥: 위아래 면이 합동·평행  /  뿔: 꼭짓점 1개, 옆면 삼각형',
+  },
 ];
 
 function getConceptEntry(skillId) {
@@ -2111,14 +2193,25 @@ function getConceptEntry(skillId) {
   for (const entry of CONCEPT_BANK) {
     if (entry.match.some(kw => sid.includes(kw))) return entry;
   }
-  if (/add/.test(sid))          return CONCEPT_BANK[1];
-  if (/sub/.test(sid))          return CONCEPT_BANK[3];
-  if (/mul|times/.test(sid))    return CONCEPT_BANK[4];
-  if (/div/.test(sid))          return CONCEPT_BANK[6];
-  if (/frac/.test(sid))         return CONCEPT_BANK[7];
-  if (/decimal|dec/.test(sid))  return CONCEPT_BANK[11];
-  if (/place|digit/.test(sid))  return CONCEPT_BANK[13];
-  if (/ratio/.test(sid))        return CONCEPT_BANK[19];
+  // 광역 fallback
+  if (/add/.test(sid))                        return CONCEPT_BANK[1];
+  if (/sub/.test(sid))                        return CONCEPT_BANK[3];
+  if (/mul|times/.test(sid))                  return CONCEPT_BANK[4];
+  if (/div/.test(sid))                        return CONCEPT_BANK[6];
+  if (/frac/.test(sid))                       return CONCEPT_BANK[7];
+  if (/decimal|dec/.test(sid))               return CONCEPT_BANK[11];
+  if (/place|digit/.test(sid))               return CONCEPT_BANK[13];
+  if (/ratio/.test(sid))                      return CONCEPT_BANK[19];
+  if (/circle|circumference|pi/.test(sid))   return CONCEPT_BANK[30];
+  if (/percent/.test(sid))                   return CONCEPT_BANK[31];
+  if (/integer|signed/.test(sid))            return CONCEPT_BANK[32];
+  if (/equation|expression/.test(sid))       return CONCEPT_BANK[33];
+  if (/prime|factor/.test(sid))              return CONCEPT_BANK[34];
+  if (/cylinder|prism|pyramid|solid/.test(sid)) return CONCEPT_BANK[35];
+  if (/average/.test(sid))                   return CONCEPT_BANK[26];
+  if (/round|estimate|range/.test(sid))      return CONCEPT_BANK[27];
+  if (/chance|probability/.test(sid))        return CONCEPT_BANK[28];
+  if (/rate/.test(sid))                      return CONCEPT_BANK[29];
   return null;
 }
 
