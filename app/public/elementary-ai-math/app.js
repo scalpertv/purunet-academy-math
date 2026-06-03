@@ -8,7 +8,7 @@ const app = {
   grade: 1, semester: 1,
   unitIdx: 0,           // 현재 선택 단원 인덱스
   typeFilter: "",       // "" | "basic" | "concept" | "type" | "challenge"
-  difficulty: "standard", // "basic" | "standard" | "challenge"
+  difficulty: "challenge", // "basic" | "standard" | "challenge"
   problem: null, choices: [], answered: false,
   total: 0, correct: 0, wrong: 0, streak: 0,
   xp: 0, gems: 0, badges: 0, bossHp: 100,
@@ -1855,8 +1855,6 @@ function initGradeTabs() {
   if (unitSel) unitSel.addEventListener("change", e => { app.unitIdx = Number(e.target.value); });
   const typeSel = $("type-select");
   if (typeSel) typeSel.addEventListener("change", e => { app.typeFilter = e.target.value; });
-  const diffSel = $("diff-select");
-  if (diffSel) diffSel.addEventListener("change", e => { app.difficulty = e.target.value; });
 }
 
 // ============================================================
