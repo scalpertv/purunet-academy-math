@@ -113,6 +113,109 @@ ${ticks.join("")}
   );
 }
 
+// ── 받아올림·받아내림 세로셈 애니메이션 ──────────────────────────
+function ivColumnArithmetic(problem) {
+  const expr = problem.expression || "";
+  const m = expr.match(/(\d+)\s*([+\-−–])\s*(\d+)/);
+  if (!m) return null;
+  const a = parseInt(m[1]), b = parseInt(m[3]);
+  const isAdd = m[2] === "+";
+  if (!isAdd && a < b) return null;
+  const ans = isAdd ? a + b : a - b;
+  function dig(n, i) { return Math.floor(Math.abs(n) / Math.pow(10, i)) % 10; }
+  const numCols = Math.max(String(a).length, String(b).length, String(ans).length);
+  if (numCols > 3) return null;
+  // 받아올림/받아내림 여부 확인
+  let hasCarryBorrow = false;
+  if (isAdd) {
+    let c = 0;
+    for (let i = 0; i < numCols; i++) { const s = dig(a,i)+dig(b,i)+c; c=s>=10?1:0; if(c) hasCarryBorrow=true; }
+  } else {
+    let borrow = 0;
+    for (let i = 0; i < numCols; i++) { const t=dig(a,i)-borrow; if(t<dig(b,i)){hasCarryBorrow=true;borrow=1;}else borrow=0; }
+  }
+  if (!hasCarryBorrow) return null;
+  const W = 400, H = 210;
+  const colW = 52;
+  const onesX = W / 2 + (numCols - 1) * colW / 2;
+  const cx = i => onesX - i * colW;
+  const opX = cx(numCols - 1) - colW + 4;
+  const Y = { carry: 26, top: 72, bot: 112, line: 126, res: 165, lbl: 200 };
+  const els = [];
+  let d = 0.05;
+  const e = v => escapeHTML(String(v));
+  const ft = (x,y,txt,fill,fs,fw,delay) =>
+    `<text x="${x}" y="${y}" text-anchor="middle" fill="${fill}" font-size="${fs}" font-weight="${fw}" opacity="0" style="animation:iv-fade .3s ease forwards ${delay.toFixed(2)}s both">${e(txt)}</text>`;
+  const pt = (x,y,txt,fill,fs,fw,delay) =>
+    `<text x="${x}" y="${y}" text-anchor="middle" fill="${fill}" font-size="${fs}" font-weight="${fw}" style="transform-box:fill-box;transform-origin:center;animation:iv-pop .4s cubic-bezier(.34,1.56,.64,1) forwards ${delay.toFixed(2)}s both">${e(txt)}</text>`;
+  // 배경 + 제목
+  els.push(`<rect x="18" y="8" width="${W-36}" height="${H-16}" rx="14" fill="rgba(2,6,23,.55)" stroke="rgba(56,189,248,.15)" stroke-width="1.5" opacity="0" style="animation:iv-fade .3s ease both"/>`);
+  els.push(ft(W/2, 18, isAdd ? "▲ 받아올림 풀이" : "▼ 받아내림 풀이", "#64748b", 11, 700, d));
+  d += 0.1;
+  // 위 숫자 (왼쪽→오른쪽 = 높은 자리→낮은 자리)
+  for (let i = numCols-1; i >= 0; i--) {
+    if (String(a).length > i) { els.push(ft(cx(i), Y.top, dig(a,i), "#bfdbfe", 34, 900, d)); d += 0.1; }
+  }
+  // 연산자
+  els.push(ft(opX, Y.bot, isAdd ? "+" : "−", isAdd ? "#86efac" : "#fca5a5", 30, 900, d)); d += 0.06;
+  // 아래 숫자
+  for (let i = numCols-1; i >= 0; i--) {
+    if (String(b).length > i) { els.push(ft(cx(i), Y.bot, dig(b,i), "#bfdbfe", 34, 900, d)); d += 0.1; }
+  }
+  // 가로선
+  d += 0.05;
+  els.push(`<line x1="24" y1="${Y.line}" x2="${W-24}" y2="${Y.line}" stroke="#475569" stroke-width="2.5" stroke-dasharray="${W-48}" stroke-dashoffset="${W-48}" style="animation:iv-draw .4s ease forwards ${d.toFixed(2)}s"/>`);
+  d += 0.5;
+  if (isAdd) {
+    // 덧셈: 일의 자리부터 결과 표시, 받아올림 '1' 뱃지 + 위 화살표
+    let carry = 0;
+    for (let i = 0; i <= numCols; i++) {
+      if (i === numCols && carry === 0) break;
+      const ai = i < numCols ? dig(a,i) : 0;
+      const bi = i < numCols ? dig(b,i) : 0;
+      const sum = ai + bi + carry;
+      const newCarry = sum >= 10 ? 1 : 0;
+      // 해당 자리 결과 먼저 표시
+      els.push(pt(cx(i), Y.res, sum % 10, "#4ade80", 34, 900, d));
+      d += 0.25;
+      // 받아올림 있으면 '1' 뱃지 + 화살표 등장
+      if (newCarry > 0 && i < numCols) {
+        els.push(`<line x1="${cx(i+1)}" y1="${Y.top-14}" x2="${cx(i+1)}" y2="${Y.carry+12}" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="22" stroke-dashoffset="22" opacity="0" style="animation:iv-draw .25s ease forwards ${d.toFixed(2)}s,iv-fade .25s ease forwards ${d.toFixed(2)}s both"/>`);
+        els.push(pt(cx(i+1), Y.carry+8, "1", "#fbbf24", 16, 900, d+0.05));
+        d += 0.35;
+      }
+      carry = newCarry;
+    }
+  } else {
+    // 뺄셈: 일의 자리부터, 받아내림 필요시 호 화살표 + 뱃지
+    let borrow = 0;
+    for (let i = 0; i < numCols; i++) {
+      const topRaw = dig(a,i) - borrow;
+      const needsBorrow = i < numCols-1 && topRaw < dig(b,i);
+      if (needsBorrow) {
+        // 호 화살표: 높은 자리 → 낮은 자리
+        const x1 = cx(i+1), x2 = cx(i), mx = (x1+x2)/2;
+        els.push(`<path d="M${x1} ${Y.top-6} Q${mx} ${Y.top-28} ${x2} ${Y.top-6}" fill="none" stroke="#fbbf24" stroke-width="2" stroke-dasharray="65" stroke-dashoffset="65" opacity="0" style="animation:iv-draw .35s ease forwards ${d.toFixed(2)}s,iv-fade .35s ease forwards ${d.toFixed(2)}s both"/>`);
+        // −1 뱃지 (빌려주는 자리)
+        els.push(pt(cx(i+1), Y.carry+8, "−1", "#fb923c", 14, 900, d+0.1));
+        // +10 뱃지 (빌려오는 자리)
+        els.push(pt(cx(i), Y.carry+8, "+10", "#fbbf24", 14, 900, d+0.18));
+        d += 0.5;
+      }
+      const effTop = topRaw + (needsBorrow ? 10 : 0);
+      const res = effTop - dig(b,i);
+      if (res > 0 || i === 0 || String(ans).length > i) {
+        els.push(pt(cx(i), Y.res, res, "#4ade80", 34, 900, d));
+      }
+      d += 0.28;
+      borrow = needsBorrow ? 1 : 0;
+    }
+  }
+  // 정리 레이블
+  els.push(ft(W/2, Y.lbl, `${a} ${isAdd ? "+" : "−"} ${b} = ${ans}`, "#64748b", 10, 700, d+0.1));
+  return svgWrap(W, H, isAdd ? "받아올림 덧셈 풀이" : "받아내림 뺄셈 풀이", els.join(""));
+}
+
 // ── 곱셈 격자 ───────────────────────────────────────────────
 function ivMulGrid(problem) {
   const expr = problem.expression || "";
@@ -888,7 +991,11 @@ function ivObjectArrayV(v, problem) { return ivObjectArray(v, problem); }
 // ── 자동 산수 시각화 (visual 없는 문제) ─────────────────────
 function ivAutoArithmetic(problem) {
   const id = problem.skillId || "";
-  if (id.includes("add") || id.includes("sub"))   return ivNumberLineAnim(problem);
+  if (id.includes("add") || id.includes("sub")) {
+    const col = ivColumnArithmetic(problem);
+    if (col) return col;
+    return ivNumberLineAnim(problem);
+  }
   if (id.includes("times") || id.includes("mul")) return ivMulGrid(problem);
   if (id.includes("div"))                         return ivDivCircles(problem);
   if (id.includes("frac") || id.includes("fraction")) return ivFractionBars(null, problem);
