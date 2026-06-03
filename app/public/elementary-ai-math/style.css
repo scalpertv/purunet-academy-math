@@ -640,38 +640,6 @@ h1,h2,h3,p { overflow-wrap: anywhere; }
   max-height: 100px;
 }
 
-/* ── 국제 교수법 팁 그리드 ── */
-.concept-tips {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px 8px;
-  margin-top: 6px;
-}
-.concept-tip {
-  display: flex;
-  align-items: flex-start;
-  gap: 4px;
-  background: rgba(99, 102, 241, 0.06);
-  border: 1px solid rgba(99, 102, 241, 0.14);
-  border-radius: 6px;
-  padding: 4px 6px;
-  font-size: 11px;
-  line-height: 1.4;
-}
-.ctip-flag {
-  font-size: 14px;
-  flex-shrink: 0;
-  line-height: 1.2;
-}
-.ctip-label {
-  font-weight: 700;
-  color: #6366f1;
-  flex-shrink: 0;
-  margin-right: 2px;
-}
-.ctip-text {
-  color: #475569;
-}
 
 /* ── 세션 완료 confetti 파티클 ── */
 @keyframes confetti-fall {

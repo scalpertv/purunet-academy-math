@@ -2641,11 +2641,6 @@ function renderConceptNote(skillId) {
   if (!c) { el.innerHTML = ''; return; }
   const svgType = getConceptSVGType(c);
   const staticSVG = buildConceptStaticSVG(svgType);
-  const tipsHTML = (c.tips && c.tips.length)
-    ? `<div class="concept-tips">${c.tips.map(t =>
-        `<div class="concept-tip"><span class="ctip-flag">${t.flag}</span><span class="ctip-label">${escapeHTML(t.label)}</span><span class="ctip-text">${escapeHTML(t.text)}</span></div>`
-      ).join('')}</div>`
-    : '';
   el.innerHTML =
     `<div class="concept-card">
   <div class="concept-head">
@@ -2659,7 +2654,6 @@ function renderConceptNote(skillId) {
     <p class="concept-example">✏️ 예시: ${escapeHTML(c.example)}</p>
     <p class="concept-real">🌍 실생활: ${escapeHTML(c.real)}</p>
     <p class="concept-remember">💡 기억법: ${escapeHTML(c.remember)}</p>
-    ${tipsHTML}
   </div>
 </div>`;
   el.querySelector('.concept-toggle')?.addEventListener('click', function() {
