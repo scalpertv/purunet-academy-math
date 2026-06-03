@@ -181,9 +181,9 @@ function ivColumnArithmetic(problem) {
     `<text x="${x}" y="${y}" text-anchor="middle" fill="${fill}" font-size="${fs}" font-weight="${fw}" style="transform-box:fill-box;transform-origin:center;animation:iv-pop .4s cubic-bezier(.34,1.56,.64,1) forwards ${delay.toFixed(2)}s both">${e(txt)}</text>`;
   // 배경 + 제목
   els.push(`<rect x="18" y="8" width="${W-36}" height="${H-16}" rx="14" fill="rgba(2,6,23,.55)" stroke="rgba(56,189,248,.15)" stroke-width="1.5" opacity="0" style="animation:iv-fade .3s ease both"/>`);
-  els.push(ft(W/2, 18, isAdd ? "▲ 받아올림 풀이" : "▼ 받아내림 풀이", "#64748b", 11, 700, d));
+  els.push(ft(W/2, 18, isAdd ? "▲ 받아올림 풀이" : "▼ 받아내림 풀이", "#94a3b8", 11, 700, d));
   d += 0.1;
-  // 위 숫자 (왼쪽→오른쪽 = 높은 자리→낮은 자리)
+  // 위 숫자
   for (let i = numCols-1; i >= 0; i--) {
     if (String(a).length > i) { els.push(ft(cx(i), Y.top, dig(a,i), "#bfdbfe", 34, 900, d)); d += 0.1; }
   }
@@ -198,7 +198,7 @@ function ivColumnArithmetic(problem) {
   els.push(`<line x1="24" y1="${Y.line}" x2="${W-24}" y2="${Y.line}" stroke="#475569" stroke-width="2.5" stroke-dasharray="${W-48}" stroke-dashoffset="${W-48}" style="animation:iv-draw .4s ease forwards ${d.toFixed(2)}s"/>`);
   d += 0.5;
   if (isAdd) {
-    // 덧셈: 일의 자리부터 결과 표시, 받아올림 '1' 뱃지 + 위 화살표
+    // 덧셈: 받아올림 뱃지만 표시 — 결과 자리는 ? 로 숨김
     let carry = 0;
     for (let i = 0; i <= numCols; i++) {
       if (i === numCols && carry === 0) break;
@@ -206,10 +206,6 @@ function ivColumnArithmetic(problem) {
       const bi = i < numCols ? dig(b,i) : 0;
       const sum = ai + bi + carry;
       const newCarry = sum >= 10 ? 1 : 0;
-      // 해당 자리 결과 먼저 표시
-      els.push(pt(cx(i), Y.res, sum % 10, "#4ade80", 34, 900, d));
-      d += 0.25;
-      // 받아올림 있으면 '1' 뱃지 + 화살표 등장
       if (newCarry > 0 && i < numCols) {
         els.push(`<line x1="${cx(i+1)}" y1="${Y.top-14}" x2="${cx(i+1)}" y2="${Y.carry+12}" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="22" stroke-dashoffset="22" opacity="0" style="animation:iv-draw .25s ease forwards ${d.toFixed(2)}s,iv-fade .25s ease forwards ${d.toFixed(2)}s both"/>`);
         els.push(pt(cx(i+1), Y.carry+8, "1", "#fbbf24", 16, 900, d+0.05));
@@ -218,32 +214,28 @@ function ivColumnArithmetic(problem) {
       carry = newCarry;
     }
   } else {
-    // 뺄셈: 일의 자리부터, 받아내림 필요시 호 화살표 + 뱃지
+    // 뺄셈: 받아내림 화살표·뱃지만 표시 — 결과 자리는 ? 로 숨김
     let borrow = 0;
     for (let i = 0; i < numCols; i++) {
       const topRaw = dig(a,i) - borrow;
       const needsBorrow = i < numCols-1 && topRaw < dig(b,i);
       if (needsBorrow) {
-        // 호 화살표: 높은 자리 → 낮은 자리
         const x1 = cx(i+1), x2 = cx(i), mx = (x1+x2)/2;
         els.push(`<path d="M${x1} ${Y.top-6} Q${mx} ${Y.top-28} ${x2} ${Y.top-6}" fill="none" stroke="#fbbf24" stroke-width="2" stroke-dasharray="65" stroke-dashoffset="65" opacity="0" style="animation:iv-draw .35s ease forwards ${d.toFixed(2)}s,iv-fade .35s ease forwards ${d.toFixed(2)}s both"/>`);
-        // −1 뱃지 (빌려주는 자리)
         els.push(pt(cx(i+1), Y.carry+8, "−1", "#fb923c", 14, 900, d+0.1));
-        // +10 뱃지 (빌려오는 자리)
         els.push(pt(cx(i), Y.carry+8, "+10", "#fbbf24", 14, 900, d+0.18));
         d += 0.5;
       }
-      const effTop = topRaw + (needsBorrow ? 10 : 0);
-      const res = effTop - dig(b,i);
-      if (res > 0 || i === 0 || String(ans).length > i) {
-        els.push(pt(cx(i), Y.res, res, "#4ade80", 34, 900, d));
-      }
-      d += 0.28;
       borrow = needsBorrow ? 1 : 0;
     }
   }
-  // 정리 레이블
-  els.push(ft(W/2, Y.lbl, `${a} ${isAdd ? "+" : "−"} ${b} = ${ans}`, "#64748b", 10, 700, d+0.1));
+  // 결과 자리: ? 박스 (정답 숨김)
+  const resBoxL = cx(String(ans).length - 1) - colW/2;
+  const resBoxR = cx(0) + colW/2;
+  els.push(`<rect x="${resBoxL}" y="${Y.res-28}" width="${resBoxR-resBoxL}" height="36" rx="6" fill="rgba(74,222,128,.08)" stroke="rgba(74,222,128,.35)" stroke-width="1.5" stroke-dasharray="4,3" opacity="0" style="animation:iv-fade .3s ease forwards ${d.toFixed(2)}s both"/>`);
+  els.push(pt(W/2, Y.res, "?", "#4ade80", 28, 900, d)); d += 0.25;
+  // 정리 레이블 (정답 숨김)
+  els.push(ft(W/2, Y.lbl, `${a} ${isAdd ? "+" : "−"} ${b} = □`, "#94a3b8", 10, 700, d+0.1));
   return svgWrap(W, H, isAdd ? "받아올림 덧셈 풀이" : "받아내림 뺄셈 풀이", els.join(""));
 }
 
@@ -276,7 +268,7 @@ function ivColumnMul(problem) {
   const pt = (x,y,t,fill,fs,fw,dl) =>
     `<text x="${x}" y="${y}" text-anchor="middle" fill="${fill}" font-size="${fs}" font-weight="${fw}" style="transform-box:fill-box;transform-origin:center;animation:iv-pop .4s cubic-bezier(.34,1.56,.64,1) forwards ${dl.toFixed(2)}s both">${ev(t)}</text>`;
   els.push(`<rect x="18" y="8" width="${W-36}" height="${H-16}" rx="14" fill="rgba(2,6,23,.55)" stroke="rgba(56,189,248,.15)" stroke-width="1.5" opacity="0" style="animation:iv-fade .3s ease both"/>`);
-  els.push(ft(W/2, Y.title, "▲ 세로셈 곱셈 풀이", "#64748b", 11, 700, d)); d += 0.1;
+  els.push(ft(W/2, Y.title, "▲ 세로셈 곱셈", "#94a3b8", 11, 700, d)); d += 0.1;
   for (let i = aLen-1; i >= 0; i--) { els.push(ft(cx(i), Y.top, dig(a,i), "#bfdbfe", 34, 900, d)); d += 0.1; }
   els.push(ft(opX, Y.bot, "×", "#c4b5fd", 30, 900, d)); d += 0.06;
   for (let i = bLen-1; i >= 0; i--) { els.push(ft(cx(i), Y.bot, dig(b,i), "#bfdbfe", 34, 900, d)); d += 0.1; }
@@ -284,14 +276,13 @@ function ivColumnMul(problem) {
   els.push(`<line x1="24" y1="${Y.line1}" x2="${W-24}" y2="${Y.line1}" stroke="#475569" stroke-width="2.5" stroke-dasharray="${W-48}" stroke-dashoffset="${W-48}" style="animation:iv-draw .4s ease forwards ${d.toFixed(2)}s"/>`);
   d += 0.5;
   if (!twoDigMul) {
-    // 1자리 곱수: 오른쪽 자리부터 받아올림 포함 계산
+    // 1자리 곱수: 받아올림 뱃지만 표시 — 결과 자리는 ? 로 숨김
     let carry = 0;
     for (let i = 0; i <= aLen; i++) {
       if (i === aLen && carry === 0) break;
       const ai = i < aLen ? dig(a,i) : 0;
       const prod = ai * b + carry;
       const nc = Math.floor(prod / 10);
-      els.push(pt(cx(i), Y.res, prod % 10, "#4ade80", 34, 900, d)); d += 0.25;
       if (nc > 0 && i < aLen) {
         els.push(`<line x1="${cx(i+1)}" y1="${Y.top-14}" x2="${cx(i+1)}" y2="${Y.carry+12}" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="22" stroke-dashoffset="22" opacity="0" style="animation:iv-draw .25s ease forwards ${d.toFixed(2)}s,iv-fade .25s ease forwards ${d.toFixed(2)}s both"/>`);
         els.push(pt(cx(i+1), Y.carry+8, nc, "#fbbf24", 16, 900, d+0.05)); d += 0.35;
@@ -299,18 +290,23 @@ function ivColumnMul(problem) {
       carry = nc;
     }
   } else {
-    // 2자리 곱수: 부분곱 두 줄 표시
+    // 2자리 곱수: 부분곱 두 줄 표시 (교육적 스캐폴딩) — 최종 합계는 ? 로 숨김
     const p1 = a * dig(b,0), p2 = a * dig(b,1);
     const p1s = String(p1), p2s = String(p2);
     for (let i = p1s.length-1; i >= 0; i--) { els.push(pt(cx(i), Y.p1, dig(p1,i), "#86efac", 30, 900, d)); d += 0.12; }
     for (let i = p2s.length-1; i >= 0; i--) { els.push(pt(cx(i+1), Y.p2, dig(p2,i), "#fca5a5", 30, 900, d)); d += 0.12; }
-    els.push(ft(cx(0), Y.p2, "0", "#475569", 26, 700, d-0.12));
+    els.push(ft(cx(0), Y.p2, "0", "#64748b", 26, 700, d-0.12));
     d += 0.08;
     els.push(`<line x1="24" y1="${Y.line2}" x2="${W-24}" y2="${Y.line2}" stroke="#475569" stroke-width="2" stroke-dasharray="${W-48}" stroke-dashoffset="${W-48}" style="animation:iv-draw .35s ease forwards ${d.toFixed(2)}s"/>`);
     d += 0.45;
-    for (let i = ansCols-1; i >= 0; i--) { els.push(pt(cx(i), Y.res, dig(ans,i), "#4ade80", 34, 900, d)); d += 0.18; }
   }
-  els.push(ft(W/2, Y.lbl, `${m[1]} × ${m[2]} = ${ans}`, "#64748b", 10, 700, d+0.1));
+  // 결과 자리: ? 박스 (정답 숨김)
+  const resBoxL = cx(ansCols - 1) - colW/2;
+  const resBoxR = cx(0) + colW/2;
+  els.push(`<rect x="${resBoxL}" y="${Y.res-28}" width="${resBoxR-resBoxL}" height="36" rx="6" fill="rgba(74,222,128,.08)" stroke="rgba(74,222,128,.35)" stroke-width="1.5" stroke-dasharray="4,3" opacity="0" style="animation:iv-fade .3s ease forwards ${d.toFixed(2)}s both"/>`);
+  els.push(pt(W/2, Y.res, "?", "#4ade80", 28, 900, d)); d += 0.25;
+  // 정리 레이블 (정답 숨김)
+  els.push(ft(W/2, Y.lbl, `${m[1]} × ${m[2]} = □`, "#94a3b8", 10, 700, d+0.1));
   return svgWrap(W, H, "세로셈 곱셈 풀이", els.join(""));
 }
 
@@ -347,7 +343,7 @@ function ivColumnDiv(problem) {
   const pt = (x,y,t,fill,fs,fw,dl) =>
     `<text x="${x}" y="${y}" text-anchor="middle" fill="${fill}" font-size="${fs}" font-weight="${fw}" style="transform-box:fill-box;transform-origin:center;animation:iv-pop .4s cubic-bezier(.34,1.56,.64,1) forwards ${dl.toFixed(2)}s both">${ev(t)}</text>`;
   els.push(`<rect x="18" y="8" width="${W-36}" height="${H-16}" rx="14" fill="rgba(2,6,23,.55)" stroke="rgba(56,189,248,.15)" stroke-width="1.5" opacity="0" style="animation:iv-fade .3s ease both"/>`);
-  els.push(ft(W/2, 18, "▼ 세로셈 나눗셈 풀이", "#64748b", 11, 700, d)); d += 0.1;
+  els.push(ft(W/2, 18, "▼ 세로셈 나눗셈 풀이", "#94a3b8", 11, 700, d)); d += 0.1;
   // 제수
   els.push(ft(dvsW/2 + 14, dividY, dvs, "#fca5a5", 28, 900, d)); d += 0.1;
   // ⌐ 괄호 (가로선 + 세로선)
@@ -358,13 +354,13 @@ function ivColumnDiv(problem) {
   // 피제수 숫자
   for (let i = 0; i < dLen; i++) { els.push(ft(dColX(i), dividY, dvdStr[i], "#bfdbfe", 28, 900, d)); d += 0.1; }
   d += 0.1;
-  // 몫 숫자: 먼저 전체 표시 (bracket 위)
+  // 몫 자리: ? 박스 표시 (정답 숨김)
   const quotStr = String(quot);
-  // leading-zero steps 처리: quot 자릿수가 dvdLen보다 작은 경우
   const qOffset = dLen - quotStr.length;
-  for (let i = 0; i < quotStr.length; i++) {
-    els.push(pt(dColX(qOffset + i), brkTopY - 13, parseInt(quotStr[i]), "#4ade80", 28, 900, d)); d += 0.2;
-  }
+  const qBoxL = dColX(qOffset) - colW/2;
+  const qBoxR = dColX(qOffset + quotStr.length - 1) + colW/2;
+  els.push(`<rect x="${qBoxL}" y="${brkTopY-26}" width="${qBoxR-qBoxL}" height="30" rx="5" fill="rgba(74,222,128,.08)" stroke="rgba(74,222,128,.35)" stroke-width="1.3" stroke-dasharray="4,3" opacity="0" style="animation:iv-fade .25s ease forwards ${d.toFixed(2)}s both"/>`);
+  els.push(pt((qBoxL+qBoxR)/2, brkTopY-6, "?", "#4ade80", 22, 900, d)); d += 0.2;
   d += 0.15;
   // 스텝 애니메이션: 빼기 + 나머지 + bring-down
   let rowY = dividY + rowSp;
@@ -396,8 +392,7 @@ function ivColumnDiv(problem) {
       if (step.rem > 0) els.push(ft(dColX(step.didx) + 52, rowY, `나머지 ${step.rem}`, "#f59e0b", 11, 700, d));
     }
   }
-  const rLabel = rem > 0 ? ` 나머지 ${rem}` : "";
-  els.push(ft(W/2, H-13, `${dvd} ÷ ${dvs} = ${quot}${rLabel}`, "#64748b", 10, 700, d+0.1));
+  els.push(ft(W/2, H-13, `${dvd} ÷ ${dvs} = □`, "#94a3b8", 10, 700, d+0.1));
   return svgWrap(W, H, "세로셈 나눗셈 풀이", els.join(""));
 }
 
