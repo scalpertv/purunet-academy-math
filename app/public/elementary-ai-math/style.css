@@ -491,3 +491,87 @@ h1,h2,h3,p { overflow-wrap: anywhere; }
 /* 단원 select 글씨 (긴 텍스트 처리) */
 #unit-select option { font-size: 11px; }
 
+/* ============================================================
+   수학 전문 분수 표기 (분수선)
+   ============================================================ */
+
+/* 진분수 / 가분수: 분자 위, 분수선, 분모 아래 */
+.mf {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 3px;
+  font-size: 0.88em;
+  line-height: 1.15;
+}
+.mf-n {
+  border-bottom: 1.5px solid currentColor;
+  padding: 0 5px 1px;
+  text-align: center;
+  min-width: 1.4em;
+  font-weight: 600;
+}
+.mf-d {
+  padding: 1px 5px 0;
+  text-align: center;
+  min-width: 1.4em;
+  font-weight: 600;
+}
+
+/* 대분수: 정수 + 분수 나란히 */
+.mf-mixed {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  vertical-align: middle;
+}
+.mf-whole {
+  font-size: 1em;
+  font-weight: 700;
+}
+
+/* 선택지 버튼 안에서 분수가 세로 정렬되도록 */
+.option4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.option4-value {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 문제 식 표시 영역에서 분수 크기 보정 */
+.problem-expr-text .mf {
+  font-size: 1em;
+}
+.problem-expr-text .mf-n,
+.problem-expr-text .mf-d {
+  font-size: 1em;
+}
+
+/* ── 세션 완료 confetti 파티클 ── */
+@keyframes confetti-fall {
+  0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+.confetti-particle {
+  position: fixed;
+  top: -20px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  animation: confetti-fall linear forwards;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── problem-visual 최소 높이 보장 ── */
+.problem-visual {
+  min-height: 200px;
+}
+

@@ -35,6 +35,30 @@ function escapeHTML(v) {
     .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 }
 
+// 텍스트 분수(3/5, 2 3/5)를 수학 전문 분수 HTML로 변환
+function formatMathHTML(str) {
+  if (!str) return '';
+  const s = String(str);
+  const parts = [];
+  let last = 0;
+  // 대분수(2 3/5) → mixed, 분수(3/5) → fraction 순서로 처리
+  const re = /(-?\d+)\s+(\d+)\/(\d+)|(-?\d+)\/(\d+)/g;
+  let m;
+  while ((m = re.exec(s)) !== null) {
+    parts.push(escapeHTML(s.slice(last, m.index)));
+    if (m[1] !== undefined) {
+      // 대분수: 정수부 + 분수부
+      parts.push(`<span class="mf-mixed"><span class="mf-whole">${m[1]}</span><span class="mf"><span class="mf-n">${m[2]}</span><span class="mf-d">${m[3]}</span></span></span>`);
+    } else {
+      // 진분수 / 가분수
+      parts.push(`<span class="mf"><span class="mf-n">${m[4]}</span><span class="mf-d">${m[5]}</span></span>`);
+    }
+    last = m.index + m[0].length;
+  }
+  parts.push(escapeHTML(s.slice(last)));
+  return parts.join('');
+}
+
 function buildChoices4(answer, kind) {
   const ansStr = String(answer);
   const pool = new Set([ansStr]);
@@ -65,9 +89,15 @@ const IV_CSS = `
 @keyframes iv-fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @keyframes iv-spin{to{transform:rotate(360deg)}}
 @keyframes iv-wave{0%,100%{d:path("M10,24 Q25,16 40,24 Q55,32 70,24 Q85,16 100,24 Q115,32 120,24")}50%{d:path("M10,24 Q25,32 40,24 Q55,16 70,24 Q85,32 100,24 Q115,16 120,24")}}
+@keyframes iv-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes iv-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@keyframes iv-celebrate{0%{transform:scale(0) rotate(0deg);opacity:1}100%{transform:scale(1.4) rotate(540deg);opacity:0}}
 .iv-pop{transform-box:fill-box;transform-origin:center;animation:iv-pop .45s cubic-bezier(.34,1.56,.64,1) both}
 .iv-pulse{transform-box:fill-box;transform-origin:center;animation:iv-pulse 1.8s ease-in-out infinite}
 .iv-rise{transform-box:fill-box;transform-origin:50% 100%;animation:iv-rise .5s ease both}
+.iv-bounce{transform-box:fill-box;transform-origin:center;animation:iv-bounce .7s ease-in-out infinite}
+.iv-shake{transform-box:fill-box;transform-origin:center;animation:iv-shake .35s ease 3}
+.iv-celebrate{transform-box:fill-box;transform-origin:center;animation:iv-celebrate .8s ease forwards}
 `;
 
 function svgWrap(W, H, lbl, inner) {
@@ -1188,10 +1218,214 @@ function ivDecimalBlocks(problem) {
 <text x="${W/2}" y="103" text-anchor="middle" fill="#64748b" font-size="9">${escapeHTML(problem.expression||"")}</text>`);
 }
 
+// ============================================================
+// 국제 수학 교과서 시각 요소 (바 모델·분수 원·넓이 모델 등)
+// ============================================================
+
+// ── 바 모델 (Bar Model) — 영국·싱가포르 핵심 표현 ────────────
+function ivBarModel(v, problem) {
+  const W = 400, H = 150;
+  const mode = v.mode || 'part-whole';
+
+  if (mode === 'comparison') {
+    const items = v.items || v.parts || [];
+    const maxVal = Math.max(...items.map(i => i.value || 1), 1);
+    const barMaxW = 290, startX = 72, barH = 28, gap = 18;
+    const bars = items.map((item, i) => {
+      const w = Math.max(14, Math.round((item.value / maxVal) * barMaxW));
+      const y = 18 + i * (barH + gap);
+      const color = item.color || ['#6366f1','#0ea5e9','#22c55e','#f59e0b'][i % 4];
+      return `<text x="68" y="${y+barH/2+5}" text-anchor="end" fill="#94a3b8" font-size="11">${escapeHTML(item.label||'')}</text>
+<rect x="${startX}" y="${y}" width="${w}" height="${barH}" rx="4" fill="${color}33" stroke="${color}" stroke-width="1.5" class="iv-pop" style="animation-delay:${(i*.15).toFixed(2)}s"/>
+<text x="${startX+w+6}" y="${y+barH/2+5}" fill="${color}" font-size="12" font-weight="700" class="iv-pop" style="animation-delay:${(i*.15+.1).toFixed(2)}s">${escapeHTML(String(item.value))}</text>`;
+    });
+    return svgWrap(W, H, "바 모델 비교", bars.join(''));
+  }
+
+  // part-whole 모드
+  const whole = v.whole || { label:'전체', value:'?' };
+  const parts = v.parts || [];
+  const barW = 300, startX = 50, topY = 18, botY = 84;
+  const partsSum = parts.reduce((s, p) => s + (p.value || 0), 0) || 1;
+  const topSvg = `<rect x="${startX}" y="${topY}" width="${barW}" height="34" rx="5" fill="rgba(99,102,241,.18)" stroke="#6366f1" stroke-width="1.8" class="iv-pop" style="animation-delay:0s"/>
+<text x="${startX+barW/2}" y="${topY+22}" text-anchor="middle" fill="#a5b4fc" font-size="15" font-weight="700" class="iv-pop" style="animation-delay:.05s">${escapeHTML(String(whole.value!==undefined?whole.value:whole.label||'?'))}</text>`;
+  let curX = startX;
+  const partSvgs = parts.map((p, i) => {
+    const pw = Math.max(14, Math.round((p.value||0) / partsSum * barW));
+    const isQ = p.value===null || p.value===undefined;
+    const fill = isQ ? 'rgba(56,189,248,.1)' : ['rgba(34,197,94,.22)','rgba(251,146,60,.22)'][i%2];
+    const stroke = isQ ? '#38bdf8' : ['#22c55e','#fb923c'][i%2];
+    const textFill = isQ ? '#38bdf8' : ['#86efac','#fed7aa'][i%2];
+    const disp = isQ ? '?' : (p.label || String(p.value));
+    const x = curX; curX += pw;
+    return `<rect x="${x}" y="${botY}" width="${pw-2}" height="34" rx="5" fill="${fill}" stroke="${stroke}" stroke-width="1.8" class="iv-pop" style="animation-delay:${(.25+i*.15).toFixed(2)}s"/>
+<text x="${x+(pw-2)/2}" y="${botY+22}" text-anchor="middle" fill="${textFill}" font-size="14" font-weight="700" class="iv-pop" style="animation-delay:${(.3+i*.15).toFixed(2)}s">${escapeHTML(disp)}</text>`;
+  });
+  const connector = `<line x1="${W/2}" y1="${topY+34}" x2="${W/2}" y2="${botY}" stroke="#475569" stroke-width="1" stroke-dasharray="3,3" opacity="0" style="animation:iv-fade .3s .2s both"/>`;
+  return svgWrap(W, H, "바 모델", topSvg + connector + partSvgs.join(''));
+}
+
+// ── 분수 원 (Fraction Circle) — 미국·중국 핵심 ───────────────
+function ivFractionCircle(v, problem) {
+  const W = 300, H = 160;
+  const d = Math.max(2, Math.min(12, Number(v.denominator) || 4));
+  const n = Math.max(0, Math.min(d, Number(v.numerator) || 1));
+  const cx = 78, cy = 76, r = 58;
+  const sectors = Array.from({length: d}, (_, i) => {
+    const a1 = (i/d)*Math.PI*2 - Math.PI/2;
+    const a2 = ((i+1)/d)*Math.PI*2 - Math.PI/2;
+    const x1 = (cx + r*Math.cos(a1)).toFixed(1), y1 = (cy + r*Math.sin(a1)).toFixed(1);
+    const x2 = (cx + r*Math.cos(a2)).toFixed(1), y2 = (cy + r*Math.sin(a2)).toFixed(1);
+    const large = (1/d) > 0.5 ? 1 : 0;
+    const filled = i < n;
+    return `<path d="M${cx} ${cy} L${x1} ${y1} A${r} ${r} 0 ${large} 1 ${x2} ${y2}Z" fill="${filled?'rgba(99,102,241,.8)':'rgba(100,116,139,.18)'}" stroke="#1e293b" stroke-width="1.2" class="iv-pop" style="animation-delay:${(i*.07).toFixed(2)}s;transform-origin:${cx}px ${cy}px"/>`;
+  });
+  const label = `<text x="185" y="56" fill="#a5b4fc" font-size="28" font-weight="800" text-anchor="middle" class="iv-pop" style="animation-delay:${(d*.07).toFixed(2)}s">${n}</text>
+<line x1="165" y1="66" x2="205" y2="66" stroke="#6366f1" stroke-width="2" opacity="0" style="animation:iv-fade .25s ${(d*.07+.05).toFixed(2)}s both"/>
+<text x="185" y="88" fill="#a5b4fc" font-size="28" font-weight="800" text-anchor="middle" class="iv-pop" style="animation-delay:${(d*.07+.1).toFixed(2)}s">${d}</text>
+<text x="${cx}" y="${cy+r+18}" text-anchor="middle" fill="#64748b" font-size="10">${n}/${d} 만큼 색칠되어 있습니다</text>`;
+  return svgWrap(W, H, `분수 원 ${n}/${d}`, sectors.join('') + label);
+}
+
+// ── 넓이 모델 (Area Model) — 미국 Common Core ────────────────
+function ivAreaModel(v, problem) {
+  const a = Number(v.a || 0), b = Number(v.b || 0);
+  if (!a || !b || a < 10 || b < 10) return ivExpressionBox(problem);
+  const aT = Math.floor(a/10)*10, aO = a%10;
+  const bT = Math.floor(b/10)*10, bO = b%10;
+  const W = 360, H = 185;
+  const sX = 72, sY = 42;
+  const c1W = 140, c2W = aO ? 72 : 0;
+  const r1H = 70, r2H = bO ? 36 : 0;
+  const cells = [
+    [aT, bT, sX,     sY,     c1W, r1H, '#6366f1', '0.10'],
+    [aO, bT, sX+c1W, sY,     c2W, r1H, '#0ea5e9', '0.20'],
+    [aT, bO, sX,     sY+r1H, c1W, r2H, '#0ea5e9', '0.30'],
+    [aO, bO, sX+c1W, sY+r1H, c2W, r2H, '#f59e0b', '0.40'],
+  ];
+  const rects = cells.filter(([ca,cb,,,cw,ch])=>ca&&cb&&cw&&ch).map(([ca,cb,cx,cy,cw,ch,col,dl]) => {
+    const prod = ca*cb;
+    return `<rect x="${cx}" y="${cy}" width="${cw}" height="${ch}" rx="2" fill="${col}20" stroke="${col}" stroke-width="1.2" class="iv-pop" style="animation-delay:${dl}s"/>
+<text x="${cx+cw/2}" y="${cy+ch/2+5}" text-anchor="middle" fill="${col}" font-size="${prod>=1000?10:13}" font-weight="700" class="iv-pop" style="animation-delay:${(Number(dl)+.05).toFixed(2)}s">${prod}</text>`;
+  });
+  const axis = `<text x="${sX+c1W/2}" y="${sY-10}" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600">${aT}</text>
+${aO?`<text x="${sX+c1W+c2W/2}" y="${sY-10}" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600">${aO}</text>`:''}
+<text x="${sX-8}" y="${sY+r1H/2+4}" text-anchor="end" fill="#94a3b8" font-size="11" font-weight="600">${bT}</text>
+${bO?`<text x="${sX-8}" y="${sY+r1H+r2H/2+4}" text-anchor="end" fill="#94a3b8" font-size="11" font-weight="600">${bO}</text>`:''}
+<text x="${sX+(c1W+c2W)/2}" y="${sY+r1H+r2H+18}" text-anchor="middle" fill="#6366f1" font-size="12" font-weight="700">${a} × ${b} = ${a*b}</text>`;
+  return svgWrap(W, H, `넓이 모델 ${a}×${b}`, rects.join('') + axis);
+}
+
+// ── 전체-부분 상자 (Part-Whole Box) — 싱가포르·중국 ──────────
+function ivPartWholeBox(v, problem) {
+  const W = 360, H = 152;
+  const whole = v.whole !== undefined ? v.whole : '?';
+  const p1 = v.part1 !== undefined ? v.part1 : '?';
+  const p2 = v.part2 !== undefined ? v.part2 : '?';
+  const tcx = W/2, bw = 84, bh = 38;
+  const topY = 16, botY = 96, lx = W/2-95, rx = W/2+95;
+  const isQ2 = String(p2) === '?' || p2 === null;
+  return svgWrap(W, H, "전체-부분 상자", `
+<rect x="${tcx-bw/2}" y="${topY}" width="${bw}" height="${bh}" rx="6" fill="rgba(99,102,241,.18)" stroke="#6366f1" stroke-width="2" class="iv-pop" style="animation-delay:0s;transform-origin:${tcx}px ${topY+bh/2}px"/>
+<text x="${tcx}" y="${topY+bh/2+6}" text-anchor="middle" fill="#a5b4fc" font-size="16" font-weight="700" class="iv-pop" style="animation-delay:.05s;transform-origin:${tcx}px ${topY+bh/2}px">${escapeHTML(String(whole))}</text>
+<line x1="${tcx}" y1="${topY+bh}" x2="${lx}" y2="${botY}" stroke="#475569" stroke-width="1.8" opacity="0" style="animation:iv-fade .25s .22s both"/>
+<line x1="${tcx}" y1="${topY+bh}" x2="${rx}" y2="${botY}" stroke="#475569" stroke-width="1.8" opacity="0" style="animation:iv-fade .25s .22s both"/>
+<rect x="${lx-bw/2}" y="${botY}" width="${bw}" height="${bh}" rx="6" fill="rgba(34,197,94,.18)" stroke="#22c55e" stroke-width="2" class="iv-pop" style="animation-delay:.32s;transform-origin:${lx}px ${botY+bh/2}px"/>
+<text x="${lx}" y="${botY+bh/2+6}" text-anchor="middle" fill="#86efac" font-size="16" font-weight="700" class="iv-pop" style="animation-delay:.37s;transform-origin:${lx}px ${botY+bh/2}px">${escapeHTML(String(p1))}</text>
+<rect x="${rx-bw/2}" y="${botY}" width="${bw}" height="${bh}" rx="6" fill="${isQ2?'rgba(56,189,248,.1)':'rgba(251,146,60,.18)'}" stroke="${isQ2?'#38bdf8':'#fb923c'}" stroke-width="2" class="iv-pop" style="animation-delay:.46s;transform-origin:${rx}px ${botY+bh/2}px"/>
+<text x="${rx}" y="${botY+bh/2+6}" text-anchor="middle" fill="${isQ2?'#38bdf8':'#fed7aa'}" font-size="16" font-weight="700" class="iv-pop" style="animation-delay:.51s;transform-origin:${rx}px ${botY+bh/2}px">${escapeHTML(String(p2))}</text>`);
+}
+
+// ── 테이프 다이어그램 (Tape Diagram) — 미국·싱가포르 ─────────
+function ivTapeDiagram(v, problem) {
+  const W = 380, H = 140;
+  const items = (v.items || []).slice(0, 5);
+  if (!items.length) return ivExpressionBox(problem);
+  const maxVal = Math.max(...items.map(i => Number(i.value) || 1), 1);
+  const COLORS = ['#6366f1','#0ea5e9','#22c55e','#f59e0b','#ec4899'];
+  const bMaxW = 256, sX = 72, bH = 26, gap = 14;
+  const tapes = items.map((item, i) => {
+    const w = Math.max(16, Math.round((Number(item.value)||0) / maxVal * bMaxW));
+    const y = 14 + i*(bH+gap);
+    const c = COLORS[i % COLORS.length];
+    return `<text x="68" y="${y+bH/2+5}" text-anchor="end" fill="#94a3b8" font-size="11">${escapeHTML(item.label||'')}</text>
+<rect x="${sX}" y="${y}" width="${w}" height="${bH}" rx="4" fill="${c}28" stroke="${c}" stroke-width="1.5" class="iv-pop" style="animation-delay:${(i*.14).toFixed(2)}s"/>
+<text x="${sX+w+6}" y="${y+bH/2+5}" fill="${c}" font-size="12" font-weight="700" class="iv-pop" style="animation-delay:${(i*.14+.1).toFixed(2)}s">${escapeHTML(String(item.value))}${v.unit?escapeHTML(v.unit):''}</text>`;
+  });
+  let totalSvg = '';
+  if (v.showTotal && items.length > 1) {
+    const total = items.reduce((s, i) => s + (Number(i.value)||0), 0);
+    const ty = 14 + items.length*(bH+gap);
+    totalSvg = `<line x1="${sX}" y1="${ty}" x2="${sX+bMaxW}" y2="${ty}" stroke="#6366f1" stroke-width="1.5" opacity="0" style="animation:iv-fade .3s ${(items.length*.14).toFixed(2)}s both"/>
+<text x="${sX+bMaxW/2}" y="${ty+15}" text-anchor="middle" fill="#a5b4fc" font-size="11" font-weight="700" opacity="0" style="animation:iv-fade .3s ${(items.length*.14+.1).toFixed(2)}s both">합계: ${total}${v.unit?escapeHTML(v.unit):''}</text>`;
+  }
+  return svgWrap(W, H, "테이프 다이어그램", tapes.join('') + totalSvg);
+}
+
+// ── 쿠이즈네르 막대 (Cuisenaire Rods) — 영국 핵심 ───────────
+function ivCuisenaireRods(v, problem) {
+  const W = 360, H = 155;
+  const rods = (v.rods || []).slice(0, 6).map(r => Math.min(10, Math.max(1, Number(r)||1)));
+  if (!rods.length) return ivExpressionBox(problem);
+  const COLORS = {1:'#e2e8f0',2:'#ef4444',3:'#22c55e',4:'#a855f7',5:'#eab308',
+                  6:'#16a34a',7:'#334155',8:'#92400e',9:'#3b82f6',10:'#f97316'};
+  const TEXT_DARK = new Set([1,5,10]);
+  const UNIT = 26, sX = 20, sY = 16, bH = 22, gap = 10;
+  const rodSvgs = rods.map((len, i) => {
+    const w = len * UNIT;
+    const y = sY + i*(bH+gap);
+    const color = COLORS[len];
+    const tc = TEXT_DARK.has(len) ? '#1e293b' : '#f8fafc';
+    return `<rect x="${sX}" y="${y}" width="${w}" height="${bH}" rx="4" fill="${color}" class="iv-pop" style="animation-delay:${(i*.1).toFixed(2)}s"/>
+<text x="${sX+w/2}" y="${y+bH/2+5}" text-anchor="middle" fill="${tc}" font-size="11" font-weight="700" class="iv-pop" style="animation-delay:${(i*.1+.05).toFixed(2)}s">${len}</text>`;
+  });
+  let sumSvg = '';
+  if (v.showSum) {
+    const total = rods.reduce((s, r) => s+r, 0);
+    const sumY = sY + rods.length*(bH+gap) + 4;
+    sumSvg = `<text x="${sX}" y="${sumY+14}" fill="#94a3b8" font-size="11" opacity="0" style="animation:iv-fade .3s ${(rods.length*.1).toFixed(2)}s both">${rods.join(' + ')} = ${total}</text>`;
+  }
+  return svgWrap(W, H, "쿠이즈네르 막대", rodSvgs.join('') + sumSvg);
+}
+
+// ── 이중 수직선 (Double Number Line) — 미국·싱가포르 ─────────
+function ivDoubleNumberLine(v, problem) {
+  const W = 380, H = 118;
+  const top = v.top || { label:'', values:[0,1,2,3,4] };
+  const bot = v.bottom || { label:'', values:[0,2,4,6,8] };
+  const tVals = top.values || [], bVals = bot.values || [];
+  const steps = Math.max(tVals.length, bVals.length, 2);
+  const lsX = 60, leX = 345, topY = 38, botY = 76, lW = leX-lsX;
+  const tTicks = tVals.map((val, i) => {
+    const x = (lsX + i/(steps-1)*lW).toFixed(1);
+    return `<line x1="${x}" y1="${topY-9}" x2="${x}" y2="${topY+9}" stroke="#6366f1" stroke-width="1.5" opacity="0" style="animation:iv-fade .2s ${(i*.09).toFixed(2)}s both"/>
+<text x="${x}" y="${topY-14}" text-anchor="middle" fill="#a5b4fc" font-size="11" font-weight="700" opacity="0" style="animation:iv-fade .2s ${(i*.09+.05).toFixed(2)}s both">${escapeHTML(String(val))}</text>`;
+  });
+  const bTicks = bVals.map((val, i) => {
+    const x = (lsX + i/(steps-1)*lW).toFixed(1);
+    return `<line x1="${x}" y1="${botY-9}" x2="${x}" y2="${botY+9}" stroke="#0ea5e9" stroke-width="1.5" opacity="0" style="animation:iv-fade .2s ${(.18+i*.09).toFixed(2)}s both"/>
+<text x="${x}" y="${botY+23}" text-anchor="middle" fill="#7dd3fc" font-size="11" font-weight="700" opacity="0" style="animation:iv-fade .2s ${(.23+i*.09).toFixed(2)}s both">${escapeHTML(String(val))}</text>
+<line x1="${x}" y1="${topY+9}" x2="${x}" y2="${botY-9}" stroke="#475569" stroke-width="1" stroke-dasharray="3,2" opacity="0.35"/>`;
+  });
+  return svgWrap(W, H, "이중 수직선",
+    `<line x1="${lsX}" y1="${topY}" x2="${leX}" y2="${topY}" stroke="#6366f1" stroke-width="2.2"/>
+<line x1="${lsX}" y1="${botY}" x2="${leX}" y2="${botY}" stroke="#0ea5e9" stroke-width="2.2"/>
+<text x="${lsX-6}" y="${topY+5}" text-anchor="end" fill="#a5b4fc" font-size="10">${escapeHTML(top.label||'')}</text>
+<text x="${lsX-6}" y="${botY+5}" text-anchor="end" fill="#7dd3fc" font-size="10">${escapeHTML(bot.label||'')}</text>
+${tTicks.join('')}${bTicks.join('')}`);
+}
+
 // ── 메인 비주얼 라우터 ────────────────────────────────────
 function buildElementaryVisual(problem) {
   const v = problem.visual;
   if (v) {
+    // 곱셈 문제는 data-table/object-array 대신 세로셈 SVG 우선 표시
+    const id = problem.skillId || "";
+    if ((id.includes("mul") || id.includes("times")) &&
+        (v.type === "data-table" || v.type === "object-array")) {
+      const col = ivColumnMul(problem);
+      if (col) return col;
+    }
     const map = {
       "number-line":          ivNumberLine,
       "number-bond":          ivNumberBond,
@@ -1230,6 +1464,13 @@ function buildElementaryVisual(problem) {
       "net-diagram":          ivNetDiagram,
       "ratio-strip":          ivRatioStrip,
       "circle-chart":         ivCircleChart,
+      "bar-model":            ivBarModel,
+      "fraction-circle":      ivFractionCircle,
+      "area-model":           ivAreaModel,
+      "part-whole-box":       ivPartWholeBox,
+      "tape-diagram":         ivTapeDiagram,
+      "cuisenaire-rods":      ivCuisenaireRods,
+      "double-number-line":   ivDoubleNumberLine,
     };
     if (map[v.type]) return map[v.type](v, problem);
     return ivExpressionBox(problem);
@@ -1364,6 +1605,78 @@ function initGradeTabs() {
 }
 
 // ============================================================
+// skillId 기반 visual 자동 주입 (generators.js에 visual 없는 경우 보완)
+// ============================================================
+const NEW_VISUAL_TYPES = new Set(['bar-model','fraction-circle','area-model','part-whole-box','tape-diagram','cuisenaire-rods','double-number-line']);
+
+function injectVisualBySkill(raw, sid) {
+  if (!raw) return raw;
+  // 이미 새 visual 타입이면 유지
+  if (raw.visual && NEW_VISUAL_TYPES.has(raw.visual.type)) return raw;
+
+  const expr = String(raw.expression || raw.prompt || '');
+
+  // 두 자리 × 두 자리 곱셈 → 넓이 모델 (기존 visual 없을 때만)
+  if (!raw.visual && (sid.includes('two-digit-two-digit') || sid.includes('two-digit-times-two'))) {
+    const m = expr.match(/(\d{2,3})\s*[×x]\s*(\d{2,3})/);
+    if (m && m[1].length >= 2 && m[2].length >= 2) {
+      return { ...raw, visual: { type: 'area-model', a: Number(m[1]), b: Number(m[2]) } };
+    }
+  }
+
+  // 분수(fraction-strip 또는 visual 없음) → 분수 원 40% 확률 교체
+  if (/fraction/.test(sid)) {
+    const canReplace = !raw.visual || raw.visual.type === 'fraction-strip';
+    if (canReplace && Math.random() < 0.4) {
+      const m = expr.match(/(\d+)\/(\d+)/);
+      if (m && Number(m[2]) >= 2 && Number(m[2]) <= 12) {
+        return { ...raw, visual: { type: 'fraction-circle', numerator: Number(m[1]), denominator: Number(m[2]) } };
+      }
+    }
+  }
+
+  // 덧셈/뺄셈 문장제 → 바 모델 (visual 없을 때)
+  if (!raw.visual && /word/.test(sid) && /(add|sub)/.test(sid)) {
+    const nums = (expr.match(/\d+/g) || []).map(Number).filter(n => n > 0 && n < 500).slice(0, 2);
+    if (nums.length === 2) {
+      return { ...raw, visual: { type: 'bar-model', mode: 'part-whole',
+        whole: { label: String(nums[0]+nums[1]), value: nums[0]+nums[1] },
+        parts: [{ label: String(nums[0]), value: nums[0] }, { label: '?', value: null }] } };
+    }
+  }
+
+  // 비율 → 테이프 다이어그램 (visual 없을 때)
+  if (!raw.visual && /ratio/.test(sid)) {
+    const m = expr.match(/(\d+)\s*[:대]\s*(\d+)/);
+    if (m) {
+      return { ...raw, visual: { type: 'tape-diagram',
+        items: [{ label: 'A', value: Number(m[1]) }, { label: 'B', value: Number(m[2]) }],
+        showTotal: false } };
+    }
+  }
+
+  // 정비례 → 이중 수직선 (visual 없을 때)
+  if (!raw.visual && /direct.proportion|proportion.table/.test(sid)) {
+    const nums = (expr.match(/\d+/g) || []).map(Number).filter(n => n > 0 && n <= 200).slice(0, 4);
+    if (nums.length >= 4) {
+      return { ...raw, visual: { type: 'double-number-line',
+        top:    { label: '', values: [0, nums[0], nums[1]] },
+        bottom: { label: '', values: [0, nums[2], nums[3]] } } };
+    }
+  }
+
+  // 수 분해·number-bond (1~2학년 작은 수) → 쿠이즈네르 막대 (visual 없을 때, 30% 확률)
+  if (!raw.visual && /(number.bond|split.number|make.ten|decompose)/.test(sid) && Math.random() < 0.3) {
+    const nums = (expr.match(/\d+/g) || []).map(Number).filter(n => n >= 1 && n <= 10);
+    if (nums.length >= 2) {
+      return { ...raw, visual: { type: 'cuisenaire-rods', rods: nums.slice(0, 4), showSum: true } };
+    }
+  }
+
+  return raw;
+}
+
+// ============================================================
 // 문제 생성
 // ============================================================
 function generateProblem(topicEntry) {
@@ -1371,6 +1684,7 @@ function generateProblem(topicEntry) {
   let raw;
   try { raw = topicEntry.generate(); } catch(e) { return null; }
   if (!raw) return null;
+  raw = injectVisualBySkill(raw, topicEntry.id);
   const ansStr = String(raw.answer ?? "");
   const choices = (raw.kind === "choice" && Array.isArray(raw.choices) && raw.choices.length >= 2)
     ? shuffle(raw.choices.map(String))
@@ -1404,6 +1718,7 @@ function makeMission() {
        ["🔄","다시 도전","미션 시작 버튼을 눌러주세요."],["📊","리포트","우측 AI 코치 리포트 확인"]]
     );
     setMascot("win", `${app.setLimit}세트 완료! 수고했어요!`);
+    showConfetti();
     return;
   }
   const topicEntry = currentTopicEntry();
@@ -1438,7 +1753,7 @@ function renderMission() {
   if (p.expression && p.expression.trim()) {
     const exprDiv = document.createElement("div");
     exprDiv.className = "problem-expr-text";
-    exprDiv.textContent = p.expression;
+    exprDiv.innerHTML = formatMathHTML(p.expression);
     visualEl.appendChild(exprDiv);
   }
   renderChoices(true);
@@ -1470,7 +1785,7 @@ function renderChoices(unlocked) {
   grid.innerHTML = app.choices.map((ch, i) =>
     `<button class="option4" type="button" data-choice="${escapeHTML(ch.value)}">
       <span class="option4-label">${labels[i]}</span>
-      ${escapeHTML(ch.value)}
+      <span class="option4-value">${formatMathHTML(ch.value)}</span>
     </button>`
   ).join("");
   grid.querySelectorAll("[data-choice]").forEach(btn => {
@@ -1519,7 +1834,7 @@ function selectChoice(value, button) {
   $("ai-judgement").textContent = correct ? "정답" : "오답";
   const feedbackEl = $("micro-feedback");
   if (feedbackEl) feedbackEl.innerHTML = correct
-    ? `✅ <b>정답입니다!</b><br>${escapeHTML(app.problem.skillTitle)} 개념을 정확히 이해했습니다. 정답: <b>${escapeHTML(app.problem.answer)}</b>`
+    ? `✅ <b>정답입니다!</b><br>${escapeHTML(app.problem.skillTitle)} 개념을 정확히 이해했습니다. 정답: <b>${formatMathHTML(app.problem.answer)}</b>`
     : `⚠️ <b>오답 분석:</b><br>${escapeHTML(analysis.speech)}`;
   const meterFill=$("meter-fill"), meterText=$("meter-text");
   if (meterFill && meterText) { meterFill.className=`meter-fill ${correct?"low":"mid"}`; meterText.textContent=correct?"낮음 · 20%":"중간 · 55%"; }
@@ -1837,6 +2152,21 @@ function showToast(message) {
   const toast=$("game-toast"); app.toastId++;
   const id=app.toastId; toast.textContent=message; toast.classList.add("show");
   setTimeout(()=>{if(id===app.toastId)toast.classList.remove("show");},2200);
+}
+
+function showConfetti() {
+  const colors = ['#FF6B6B','#FFD93D','#6BCB77','#4D96FF','#FF6BFF','#FFB347','#87CEEB'];
+  for (let i = 0; i < 36; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-particle';
+    el.style.cssText = `left:${(Math.random()*100).toFixed(1)}%;` +
+      `background:${colors[i % colors.length]};` +
+      `animation-delay:${(Math.random()*0.6).toFixed(2)}s;` +
+      `animation-duration:${(0.9+Math.random()*0.7).toFixed(2)}s;` +
+      `transform:rotate(${Math.floor(Math.random()*360)}deg)`;
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove(), { once: true });
+  }
 }
 
 // ============================================================
