@@ -101,7 +101,8 @@ const IV_CSS = `
 `;
 
 function svgWrap(W, H, lbl, inner) {
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHTML(lbl)}" style="width:100%;height:auto;display:block;max-height:240px"><defs><style>${IV_CSS}</style></defs>${inner}</svg>`;
+  const bg = `<rect width="${W}" height="${H}" rx="16" fill="#0d1b2e"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHTML(lbl)}" style="width:100%;height:auto;display:block;max-height:240px"><defs><style>${IV_CSS}</style></defs>${bg}${inner}</svg>`;
 }
 
 // ── 수직선 애니메이션 (덧셈/뺄셈) ─────────────────────────────
@@ -1410,6 +1411,268 @@ function ivDoubleNumberLine(v, problem) {
 ${tTicks.join('')}${bTicks.join('')}`);
 }
 
+// ============================================================
+// 개념 카드 정적 SVG 일러스트레이션
+// ============================================================
+function buildConceptStaticSVG(type) {
+  const W = 320, H = 96;
+  const sw = (inner, lbl) =>
+    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHTML(lbl||type)}" style="width:100%;height:auto;display:block;border-radius:8px"><defs><style>text{font-family:inherit;user-select:none}</style></defs><rect width="${W}" height="${H}" rx="8" fill="#0f172a"/>${inner}</svg>`;
+
+  if (type === 'add') {
+    const d = [];
+    for (let i=0;i<3;i++) d.push(`<circle cx="${32+i*20}" cy="38" r="8" fill="rgba(56,189,248,.75)" stroke="#38bdf8" stroke-width="1.5"/>`);
+    d.push(`<text x="108" y="43" text-anchor="middle" fill="#94a3b8" font-size="20" font-weight="700">+</text>`);
+    for (let i=0;i<4;i++) d.push(`<circle cx="${128+i*20}" cy="38" r="8" fill="rgba(34,197,94,.75)" stroke="#22c55e" stroke-width="1.5"/>`);
+    d.push(`<text x="228" y="43" text-anchor="middle" fill="#94a3b8" font-size="20" font-weight="700">=</text>`);
+    for (let i=0;i<7;i++) d.push(`<circle cx="${248+i*9}" cy="38" r="${i<3?5:4}" fill="${i<3?'rgba(56,189,248,.55)':'rgba(34,197,94,.55)'}" stroke="${i<3?'#38bdf8':'#22c55e'}" stroke-width="1"/>`);
+    d.push(`<text x="${W/2}" y="76" text-anchor="middle" fill="#64748b" font-size="11">3개 + 4개 = 7개  |  수직선에서 오른쪽으로</text>`);
+    return sw(d.join(''), '덧셈 일러스트');
+  }
+
+  if (type === 'sub') {
+    const d = [`<line x1="18" y1="42" x2="${W-18}" y2="42" stroke="#334155" stroke-width="2"/>`,
+      `<polygon points="${W-18},42 ${W-26},37 ${W-26},47" fill="#334155"/>`];
+    for (let i=0;i<=7;i++) { const x=24+i*38; d.push(`<line x1="${x}" y1="37" x2="${x}" y2="47" stroke="#475569" stroke-width="${i%2===0?1.5:1}"/><text x="${x}" y="59" text-anchor="middle" fill="#64748b" font-size="9">${i}</text>`); }
+    d.push(`<circle cx="${24+7*38}" cy="42" r="8" fill="rgba(251,146,60,.6)" stroke="#fb923c" stroke-width="1.5"/>`);
+    d.push(`<circle cx="${24+5*38}" cy="42" r="8" fill="rgba(34,197,94,.6)" stroke="#22c55e" stroke-width="1.5"/>`);
+    d.push(`<path d="M ${24+7*38} 28 Q ${24+6*38} 16 ${24+5*38} 28" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>`);
+    d.push(`<polygon points="${24+5*38},28 ${24+5*38-5},21 ${24+5*38+5},21" fill="#f59e0b"/>`);
+    d.push(`<text x="${W/2}" y="80" text-anchor="middle" fill="#64748b" font-size="11">7 − 2 = 5  (수직선에서 왼쪽으로 2칸)</text>`);
+    return sw(d.join(''), '뺄셈 일러스트');
+  }
+
+  if (type === 'mul') {
+    const d = [];
+    for (let r=0;r<3;r++) for (let c=0;c<4;c++) d.push(`<circle cx="${50+c*28}" cy="${20+r*22}" r="8" fill="rgba(139,92,246,.7)" stroke="#8b5cf6" stroke-width="1.5"/>`);
+    d.push(`<text x="175" y="36" fill="#94a3b8" font-size="14" font-weight="700">→</text>`);
+    d.push(`<text x="220" y="48" fill="#a78bfa" font-size="28" font-weight="900">12</text>`);
+    d.push(`<text x="${W/2}" y="80" text-anchor="middle" fill="#64748b" font-size="11">3행 × 4열 = 12개  |  배열(Array) 모델</text>`);
+    return sw(d.join(''), '곱셈 배열 일러스트');
+  }
+
+  if (type === 'div') {
+    const d = [];
+    for (let g=0;g<3;g++) {
+      const gx=46+g*82;
+      d.push(`<ellipse cx="${gx}" cy="40" rx="28" ry="22" fill="none" stroke="rgba(139,92,246,.45)" stroke-width="1.5" stroke-dasharray="4,3"/>`);
+      for (let k=0;k<4;k++) { const a=k/4*Math.PI*2; d.push(`<circle cx="${(gx+13*Math.cos(a)).toFixed(1)}" cy="${(40+13*Math.sin(a)).toFixed(1)}" r="5" fill="rgba(139,92,246,.75)" stroke="#8b5cf6" stroke-width="1"/>`); }
+      d.push(`<text x="${gx}" y="74" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="700">4개</text>`);
+    }
+    d.push(`<text x="${W/2}" y="90" text-anchor="middle" fill="#64748b" font-size="11">12 ÷ 3 = 4  (3묶음, 각 4개)</text>`);
+    return sw(d.join(''), '나눗셈 그룹 일러스트');
+  }
+
+  if (type === 'fraction') {
+    const cx=58, cy=46, r=34, n=3, d_=4;
+    const sec = Array.from({length:d_}, (_,i) => {
+      const a1=i/d_*Math.PI*2-Math.PI/2, a2=(i+1)/d_*Math.PI*2-Math.PI/2;
+      const x1=(cx+r*Math.cos(a1)).toFixed(1),y1=(cy+r*Math.sin(a1)).toFixed(1);
+      const x2=(cx+r*Math.cos(a2)).toFixed(1),y2=(cy+r*Math.sin(a2)).toFixed(1);
+      return `<path d="M${cx} ${cy} L${x1} ${y1} A${r} ${r} 0 0 1 ${x2} ${y2}Z" fill="${i<n?'rgba(99,102,241,.82)':'rgba(100,116,139,.2)'}" stroke="#1e293b" stroke-width="1.2"/>`;
+    });
+    return sw(sec.join('') +
+      `<text x="130" y="32" fill="#a5b4fc" font-size="26" font-weight="900" text-anchor="middle">3</text>
+<line x1="112" y1="42" x2="148" y2="42" stroke="#6366f1" stroke-width="2"/>
+<text x="130" y="60" fill="#a5b4fc" font-size="26" font-weight="900" text-anchor="middle">4</text>
+<text x="200" y="38" fill="#64748b" font-size="11">분자 = 색칠 칸</text>
+<text x="200" y="56" fill="#64748b" font-size="11">분모 = 전체 칸</text>
+<text x="${W/2}" y="84" text-anchor="middle" fill="#64748b" font-size="11">3/4 = 0.75  |  분수 원(Fraction Circle)</text>`,
+      '분수 원 일러스트');
+  }
+
+  if (type === 'decimal') {
+    const d = [];
+    d.push(`<rect x="18" y="16" width="38" height="50" rx="4" fill="rgba(56,189,248,.25)" stroke="#38bdf8" stroke-width="2"/>`);
+    d.push(`<text x="37" y="44" text-anchor="middle" fill="#38bdf8" font-size="16" font-weight="700">1</text>`);
+    d.push(`<text x="37" y="76" text-anchor="middle" fill="#64748b" font-size="9">1</text>`);
+    d.push(`<circle cx="64" cy="62" r="3.5" fill="#94a3b8"/>`);
+    for (let i=0;i<3;i++) {
+      const x=72+i*22;
+      d.push(`<rect x="${x}" y="24" width="18" height="34" rx="3" fill="rgba(34,197,94,.28)" stroke="#22c55e" stroke-width="1.5"/>`);
+    }
+    d.push(`<text x="114" y="70" text-anchor="middle" fill="#64748b" font-size="9">0.1×3</text>`);
+    d.push(`<text x="195" y="44" fill="#94a3b8" font-size="13" font-weight="700">= 1.3</text>`);
+    d.push(`<text x="${W/2}" y="84" text-anchor="middle" fill="#64748b" font-size="11">1 + 0.3  |  소수점 자릿값 블록</text>`);
+    return sw(d.join(''), '소수 블록 일러스트');
+  }
+
+  if (type === 'place-value') {
+    const d = [];
+    for (let i=0;i<3;i++) d.push(`<rect x="${14+i*16}" y="12" width="14" height="14" rx="2" fill="rgba(245,158,11,.65)" stroke="#f59e0b" stroke-width="1"/>`);
+    d.push(`<text x="42" y="36" text-anchor="middle" fill="#94a3b8" font-size="9">백(100)</text>`);
+    for (let i=0;i<5;i++) d.push(`<rect x="${72+i*16}" y="10" width="12" height="24" rx="2" fill="rgba(56,189,248,.65)" stroke="#38bdf8" stroke-width="1"/>`);
+    d.push(`<text x="122" y="44" text-anchor="middle" fill="#94a3b8" font-size="9">십(10)</text>`);
+    for (let i=0;i<2;i++) d.push(`<circle cx="${158+i*18}" cy="22" r="7" fill="rgba(34,197,94,.65)" stroke="#22c55e" stroke-width="1"/>`);
+    d.push(`<text x="174" y="42" text-anchor="middle" fill="#94a3b8" font-size="9">일(1)</text>`);
+    d.push(`<text x="240" y="32" fill="#6366f1" font-size="18" font-weight="800" text-anchor="middle">352</text>`);
+    d.push(`<text x="${W/2}" y="76" text-anchor="middle" fill="#64748b" font-size="11">300 + 50 + 2 = 352  |  자릿값 블록</text>`);
+    return sw(d.join(''), '자릿값 블록 일러스트');
+  }
+
+  if (type === 'measurement') {
+    const d = [];
+    d.push(`<rect x="18" y="34" width="240" height="26" rx="4" fill="rgba(245,158,11,.1)" stroke="#f59e0b" stroke-width="1.8"/>`);
+    for (let i=0;i<=12;i++) { const x=18+i*20, maj=i%2===0; d.push(`<line x1="${x}" y1="34" x2="${x}" y2="${maj?24:28}" stroke="#f59e0b" stroke-width="${maj?1.8:1}"/>`); if (maj) d.push(`<text x="${x}" y="20" text-anchor="middle" fill="#92400e" font-size="8">${i*2}</text>`); }
+    d.push(`<rect x="18" y="34" width="80" height="26" rx="2" fill="rgba(245,158,11,.38)"/>`);
+    d.push(`<text x="58" y="51" text-anchor="middle" fill="#92400e" font-size="12" font-weight="700">8cm</text>`);
+    d.push(`<text x="275" y="48" fill="#64748b" font-size="9">1m=</text><text x="275" y="60" fill="#64748b" font-size="9">100cm</text>`);
+    d.push(`<text x="${W/2}" y="80" text-anchor="middle" fill="#64748b" font-size="11">1cm = 10mm  |  1m = 100cm  |  1km = 1000m</text>`);
+    return sw(d.join(''), '길이·측정 일러스트');
+  }
+
+  if (type === 'time') {
+    const cx=52, cy=46, r=34;
+    const hRad=(3.25*30-90)*Math.PI/180, mRad=(15*6-90)*Math.PI/180;
+    const nums=Array.from({length:12},(_,i)=>{const a=((i+1)*30-90)*Math.PI/180;return `<text x="${(cx+Math.cos(a)*(r-11)).toFixed(1)}" y="${(cy+Math.sin(a)*(r-11)+3).toFixed(1)}" text-anchor="middle" fill="#94a3b8" font-size="7" font-weight="700">${i+1}</text>`;});
+    return sw(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(30,41,59,.9)" stroke="#475569" stroke-width="2"/>` +
+      nums.join('') +
+      `<line x1="${cx}" y1="${cy}" x2="${(cx+r*.55*Math.cos(hRad)).toFixed(1)}" y2="${(cy+r*.55*Math.sin(hRad)).toFixed(1)}" stroke="#bae6fd" stroke-width="3.5" stroke-linecap="round"/>
+<line x1="${cx}" y1="${cy}" x2="${(cx+r*.75*Math.cos(mRad)).toFixed(1)}" y2="${(cy+r*.75*Math.sin(mRad)).toFixed(1)}" stroke="#22c55e" stroke-width="2" stroke-linecap="round"/>
+<circle cx="${cx}" cy="${cy}" r="3" fill="#f8fafc"/>
+<text x="120" y="24" fill="#bae6fd" font-size="14" font-weight="700">3시 15분</text>
+<text x="120" y="44" fill="#64748b" font-size="11">1시간 = 60분</text>
+<text x="120" y="60" fill="#64748b" font-size="11">1분 = 60초</text>
+<text x="${W/2}" y="88" text-anchor="middle" fill="#64748b" font-size="11">오전·오후  |  시·분·초 단위 변환</text>`,
+    '시계 일러스트');
+  }
+
+  if (type === 'area') {
+    const d = [];
+    for (let r=0;r<3;r++) for (let c=0;c<4;c++) d.push(`<rect x="${28+c*26}" y="${10+r*22}" width="24" height="20" rx="2" fill="rgba(34,197,94,.2)" stroke="#22c55e" stroke-width="1"/>`);
+    d.push(`<text x="138" y="80" text-anchor="middle" fill="#64748b" font-size="9">가로 4cm</text>`);
+    d.push(`<text x="14" y="42" text-anchor="middle" fill="#64748b" font-size="9" transform="rotate(-90 14 42)">세로 3cm</text>`);
+    d.push(`<text x="210" y="40" fill="#22c55e" font-size="20" font-weight="800" text-anchor="middle">12</text>`);
+    d.push(`<text x="210" y="58" text-anchor="middle" fill="#64748b" font-size="11">cm²</text>`);
+    d.push(`<text x="${W/2}" y="88" text-anchor="middle" fill="#64748b" font-size="11">4 × 3 = 12cm²  |  단위 넓이로 채우기</text>`);
+    return sw(d.join(''), '넓이 모델 일러스트');
+  }
+
+  if (type === 'angle') {
+    const cx=72, cy=66, r=44, deg=60, rad=deg*Math.PI/180;
+    const ex=(cx+r*Math.cos(-rad)).toFixed(1), ey=(cy+r*Math.sin(-rad)).toFixed(1);
+    const aR=22, axE=(cx+aR*Math.cos(-rad)).toFixed(1), ayE=(cy+aR*Math.sin(-rad)).toFixed(1);
+    return sw(`<line x1="${cx}" y1="${cy}" x2="${cx+r}" y2="${cy}" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="${cx}" y1="${cy}" x2="${ex}" y2="${ey}" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M ${cx+aR} ${cy} A ${aR} ${aR} 0 0 0 ${axE} ${ayE}" fill="rgba(245,158,11,.2)" stroke="#f59e0b" stroke-width="2"/>
+<text x="${cx+36}" y="${cy-14}" fill="#fde68a" font-size="16" font-weight="700">${deg}°</text>
+<text x="160" y="28" fill="#38bdf8" font-size="11">직각 = 90°</text>
+<text x="160" y="46" fill="#22c55e" font-size="11">직선 = 180°</text>
+<text x="160" y="64" fill="#f59e0b" font-size="11">한바퀴 = 360°</text>`,
+    '각도 일러스트');
+  }
+
+  if (type === 'ratio') {
+    return sw(`<rect x="18" y="16" width="156" height="26" rx="4" fill="rgba(56,189,248,.28)" stroke="#38bdf8" stroke-width="1.5"/>
+<text x="96" y="33" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="700">A — 3</text>
+<rect x="18" y="50" width="104" height="26" rx="4" fill="rgba(34,197,94,.28)" stroke="#22c55e" stroke-width="1.5"/>
+<text x="70" y="67" text-anchor="middle" fill="#22c55e" font-size="13" font-weight="700">B — 2</text>
+<text x="216" y="44" fill="#a5b4fc" font-size="22" font-weight="900" text-anchor="middle">3:2</text>
+<text x="${W/2}" y="88" text-anchor="middle" fill="#64748b" font-size="11">A:B = 3:2  |  전체 5 중 A=3, B=2</text>`,
+    '비율 바 일러스트');
+  }
+
+  if (type === 'number-bond') {
+    const cx=160, topY=22, botY=66, sx=62;
+    return sw(`<line x1="${cx}" y1="${topY+16}" x2="${cx-sx}" y2="${botY-14}" stroke="#94a3b8" stroke-width="1.8"/>
+<line x1="${cx}" y1="${topY+16}" x2="${cx+sx}" y2="${botY-14}" stroke="#94a3b8" stroke-width="1.8"/>
+<circle cx="${cx}" cy="${topY}" r="17" fill="rgba(56,189,248,.22)" stroke="#38bdf8" stroke-width="2"/>
+<text x="${cx}" y="${topY+6}" text-anchor="middle" fill="#bae6fd" font-size="16" font-weight="700">10</text>
+<circle cx="${cx-sx}" cy="${botY}" r="15" fill="rgba(34,197,94,.22)" stroke="#22c55e" stroke-width="2"/>
+<text x="${cx-sx}" y="${botY+6}" text-anchor="middle" fill="#86efac" font-size="15" font-weight="700">3</text>
+<circle cx="${cx+sx}" cy="${botY}" r="15" fill="rgba(251,146,60,.22)" stroke="#fb923c" stroke-width="2"/>
+<text x="${cx+sx}" y="${botY+6}" text-anchor="middle" fill="#fed7aa" font-size="15" font-weight="700">7</text>
+<text x="${cx}" y="88" text-anchor="middle" fill="#64748b" font-size="11">10 = 3 + 7  |  수 가르기 다이어그램</text>`,
+    '수 결합 다이어그램');
+  }
+
+  if (type === 'symmetry') {
+    const cx=100, cy=66;
+    return sw(`<polygon points="${cx},${cy-44} ${cx-40},${cy+24} ${cx+40},${cy+24}" fill="rgba(139,92,246,.15)" stroke="#8b5cf6" stroke-width="2"/>
+<line x1="${cx}" y1="6" x2="${cx}" y2="${H-8}" stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="5,4"/>
+<text x="165" y="30" fill="#f59e0b" font-size="12">대칭축</text>
+<text x="162" y="50" fill="#8b5cf6" font-size="11">접으면</text>
+<text x="162" y="66" fill="#8b5cf6" font-size="11">완전히 겹침</text>
+<text x="${W/2}" y="88" text-anchor="middle" fill="#64748b" font-size="11">선대칭  |  합동  |  이동·뒤집기·돌리기</text>`,
+    '대칭 일러스트');
+  }
+
+  if (type === 'pattern') {
+    const items=['○','△','○','△','?'];
+    const els=items.map((s,i)=>`<text x="${24+i*56}" y="54" text-anchor="middle" font-size="${s==='?'?28:22}" fill="${s==='?'?'#38bdf8':'#94a3b8'}">${s}</text>`);
+    return sw(els.join('') + `<text x="${W/2}" y="80" text-anchor="middle" fill="#64748b" font-size="11">규칙을 찾아 ?를 채우세요  |  반복·증가·감소 패턴</text>`, '패턴 일러스트');
+  }
+
+  if (type === 'statistics') {
+    const data=[4,7,5,8,3], max=8, pal=['#38bdf8','#22c55e','#f59e0b','#8b5cf6','#fb7185'];
+    const bW=30, gap=8, ox=22, oy=68;
+    const bars=data.map((v,i)=>{const x=ox+i*(bW+gap), h=(v/max*48).toFixed(1); return `<rect x="${x}" y="${(oy-h).toFixed(1)}" width="${bW}" height="${h}" rx="3" fill="${pal[i]}44" stroke="${pal[i]}" stroke-width="1.3"/><text x="${x+bW/2}" y="${(oy-h-4).toFixed(1)}" text-anchor="middle" fill="${pal[i]}" font-size="9">${v}</text>`;});
+    return sw(`<line x1="${ox-4}" y1="${oy}" x2="${ox+5*(bW+gap)}" y2="${oy}" stroke="#334155" stroke-width="1.5"/>` + bars.join('') +
+      `<text x="${W/2}" y="86" text-anchor="middle" fill="#64748b" font-size="11">막대 그래프  |  꺾은선·원 그래프도 있어요</text>`, '통계 그래프 일러스트');
+  }
+
+  if (type === 'volume') {
+    const ox=24, oy=72, rw=60, rd=28, rh=44;
+    const fr=`${ox},${oy} ${ox+rw},${oy} ${ox+rw},${oy-rh} ${ox},${oy-rh}`;
+    const tp=`${ox},${oy-rh} ${ox+rw},${oy-rh} ${ox+rw+rd*.55},${oy-rh-rd*.38} ${ox+rd*.55},${oy-rh-rd*.38}`;
+    const ri=`${ox+rw},${oy} ${ox+rw+rd*.55},${oy-rd*.38} ${ox+rw+rd*.55},${oy-rh-rd*.38} ${ox+rw},${oy-rh}`;
+    return sw(`<polygon points="${fr}" fill="rgba(56,189,248,.15)" stroke="#38bdf8" stroke-width="1.5"/>
+<polygon points="${tp}" fill="rgba(56,189,248,.28)" stroke="#38bdf8" stroke-width="1.5"/>
+<polygon points="${ri}" fill="rgba(56,189,248,.1)" stroke="#38bdf8" stroke-width="1.5"/>
+<text x="155" y="32" fill="#94a3b8" font-size="11">가로 × 세로 × 높이</text>
+<text x="155" y="52" fill="#6366f1" font-size="18" font-weight="700">= 부피</text>
+<text x="155" y="70" fill="#64748b" font-size="11">단위: cm³</text>
+<text x="${W/2}" y="88" text-anchor="middle" fill="#64748b" font-size="11">직육면체 부피  |  단위 cm³ = 세제곱센티미터</text>`, '부피 일러스트');
+  }
+
+  if (type === 'gcd-lcm') {
+    return sw(`<ellipse cx="110" cy="42" rx="35" ry="28" fill="rgba(56,189,248,.18)" stroke="#38bdf8" stroke-width="1.8"/>
+<ellipse cx="148" cy="42" rx="35" ry="28" fill="rgba(34,197,94,.18)" stroke="#22c55e" stroke-width="1.8"/>
+<text x="84" y="46" text-anchor="middle" fill="#38bdf8" font-size="11" font-weight="700">2  4</text>
+<text x="129" y="46" text-anchor="middle" fill="#a5b4fc" font-size="12" font-weight="800">6</text>
+<text x="172" y="46" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="700">9  18</text>
+<text x="84" y="80" text-anchor="middle" fill="#64748b" font-size="9">12의 약수</text>
+<text x="173" y="80" text-anchor="middle" fill="#64748b" font-size="9">18의 약수</text>
+<text x="244" y="36" fill="#6366f1" font-size="11" font-weight="700">GCD=6</text>
+<text x="244" y="56" fill="#22c55e" font-size="11" font-weight="700">LCM=36</text>
+<text x="${W/2}" y="88" text-anchor="middle" fill="#64748b" font-size="11">벤 다이어그램  |  공약수 ↔ 공배수</text>`, '최대공약수·최소공배수 일러스트');
+  }
+
+  if (type === 'equation') {
+    return sw(`<line x1="160" y1="16" x2="160" y2="48" stroke="#94a3b8" stroke-width="2"/>
+<line x1="72" y1="48" x2="248" y2="48" stroke="#94a3b8" stroke-width="2.5"/>
+<rect x="52" y="50" width="94" height="26" rx="5" fill="rgba(56,189,248,.22)" stroke="#38bdf8" stroke-width="1.8"/>
+<text x="99" y="67" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="700">x + 5</text>
+<rect x="174" y="50" width="60" height="26" rx="5" fill="rgba(34,197,94,.22)" stroke="#22c55e" stroke-width="1.8"/>
+<text x="204" y="67" text-anchor="middle" fill="#22c55e" font-size="13" font-weight="700">12</text>
+<text x="${W/2}" y="88" text-anchor="middle" fill="#64748b" font-size="11">x + 5 = 12 → x = 7  |  등식의 저울</text>`, '방정식 저울 일러스트');
+  }
+
+  if (type === 'percent') {
+    const cells=[];
+    for (let r=0;r<5;r++) for (let c=0;c<10;c++) { const idx=r*10+c, f=idx<30, x=14+c*22, y=6+r*14; cells.push(`<rect x="${x}" y="${y}" width="20" height="12" rx="1" fill="${f?'rgba(99,102,241,.72)':'rgba(100,116,139,.15)'}" stroke="${f?'#6366f1':'rgba(148,163,184,.2)'}" stroke-width="0.8"/>`); }
+    return sw(cells.join('') + `<text x="236" y="46" fill="#6366f1" font-size="22" font-weight="800" text-anchor="middle">30%</text><text x="236" y="64" text-anchor="middle" fill="#64748b" font-size="10">100칸 중 30칸</text><text x="${W/2}" y="88" text-anchor="middle" fill="#64748b" font-size="11">백분율 = (부분/전체) × 100</text>`, '백분율 일러스트');
+  }
+
+  if (type === 'proportion') {
+    const hd=['x','1','2','3','?'], vl=['y','3','6','9','?'];
+    const cw_=50, sx_=14, sy_=14, ch_=26;
+    const cells=[];
+    [hd,vl].forEach((row,ri)=>row.forEach((cell,ci)=>{
+      const rx=sx_+ci*cw_, ry=sy_+ri*ch_;
+      const isH=ri===0, isQ=cell==='?';
+      cells.push(`<rect x="${rx}" y="${ry}" width="${cw_-2}" height="${ch_-2}" fill="${isH?'rgba(99,102,241,.2)':isQ?'rgba(56,189,248,.1)':'rgba(255,255,255,.05)'}" stroke="rgba(148,163,184,.3)" stroke-width="1"/>
+<text x="${rx+cw_/2-1}" y="${ry+17}" text-anchor="middle" fill="${isH?'#a5b4fc':isQ?'#38bdf8':'#dbeafe'}" font-size="11" font-weight="${isH||isQ?700:400}">${escapeHTML(cell)}</text>`);
+    }));
+    return sw(cells.join('') + `<text x="${W/2}" y="80" text-anchor="middle" fill="#64748b" font-size="11">x가 2배 → y도 2배  |  정비례 관계표</text>`, '정비례 표 일러스트');
+  }
+
+  // 기본 fallback SVG
+  return sw(`<rect x="20" y="18" width="${W-40}" height="${H-36}" rx="8" fill="rgba(56,189,248,.08)" stroke="rgba(56,189,248,.2)" stroke-width="1.5"/>
+<text x="${W/2}" y="${H/2+4}" text-anchor="middle" fill="#94a3b8" font-size="14">수학 개념 학습</text>
+<text x="${W/2}" y="${H/2+22}" text-anchor="middle" fill="#64748b" font-size="11">문제를 풀며 개념을 익혀요!</text>`, '수학 개념');
+}
+
 // ── 메인 비주얼 라우터 ────────────────────────────────────
 function buildElementaryVisual(problem) {
   const v = problem.visual;
@@ -2185,34 +2448,190 @@ const CONCEPT_BANK = [
     example: '반지름 3, 높이 5인 원기둥 → 3.14×9×5 ≈ 141.3cm³',
     real: '음료 캔, 연필통, 텐트 등 생활 속 입체도형!',
     remember: '기둥: 위아래 면이 합동·평행  /  뿔: 꼭짓점 1개, 옆면 삼각형',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Prism: 2 congruent bases + rectangular lateral faces' },
+      { flag:'🇬🇧', label:'UK', text:'Pyramid: 1 base + triangular faces meeting at apex' },
+      { flag:'🇨🇳', label:'CN', text:'棱柱底面积×高=体积  / 棱锥=底面积×高÷3' },
+      { flag:'🇭🇰', label:'HK', text:'稜柱底面積×高=體積  / 稜錐=底面積×高÷3' },
+    ],
+  },
+  // ── 추가 개념 (누락 skillId 보완) ──────────────────────────────
+  {
+    match: ['mm-cm','length-km','length-convert','weight-add','weight','volume-add','seconds','mm','measurement','length-add'],
+    title: '측정·단위', emoji: '📏',
+    core: '1m = 100cm = 1000mm  /  1kg = 1000g  /  1L = 1000mL',
+    example: '3km 500m = 3500m  /  2kg 300g = 2300g',
+    real: '육상 100m 달리기, 물 500mL 생수병 — 모두 측정 단위!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Use metric prefix: kilo- (×1000), centi- (÷100), milli- (÷1000)' },
+      { flag:'🇬🇧', label:'UK', text:'Convert by multiplying or dividing by powers of 10' },
+      { flag:'🇨🇳', label:'CN', text:'进率：1km=1000m, 1m=100cm, 1cm=10mm' },
+      { flag:'🇭🇰', label:'HK', text:'換算：1km=1000m, 1m=100cm, 1cm=10mm' },
+    ],
+    remember: '큰 단위 → 작은 단위는 ×(곱하기), 작은 → 큰 단위는 ÷(나누기)!',
+  },
+  {
+    match: ['time-add','clock-add','calendar','seconds','time-sub','clock','schedule'],
+    title: '시간·달력', emoji: '⏰',
+    core: '1일 = 24시간  /  1시간 = 60분  /  1분 = 60초  /  1년 = 365일',
+    example: '2시간 30분 + 1시간 50분 = 4시간 20분',
+    real: '버스 출발까지 남은 시간, 방학 날짜 수 계산!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Use a number line for time: start → add/subtract minutes/hours' },
+      { flag:'🇬🇧', label:'UK', text:'Convert hours to minutes (×60) before adding/subtracting' },
+      { flag:'🇨🇳', label:'CN', text:'时间计算要注意进率60，分>60就化为时' },
+      { flag:'🇭🇰', label:'HK', text:'時間計算注意進率60，分>60就換算為小時' },
+    ],
+    remember: '60진법! 분이 60 이상이면 1시간으로 올려요 — 10진법과 달라요!',
+  },
+  {
+    match: ['compare-facts','missing-number','missing-operator','ten-pairs','zero-add','count-by-tens','skip-count','compare','order-number'],
+    title: '수 비교·순서', emoji: '🔢',
+    core: '두 수의 크기를 비교할 때는 자릿수부터 확인하고, 같으면 높은 자리부터 비교해요.',
+    example: '352 < 429  (백의 자리 3 < 4)',
+    real: '키 152cm와 148cm 비교, 점수 순위 정하기!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Compare from left (highest place value) to right' },
+      { flag:'🇬🇧', label:'UK', text:'Number line: further right = bigger number' },
+      { flag:'🇨🇳', label:'CN', text:'先比较位数，再从高位到低位依次比较' },
+      { flag:'🇭🇰', label:'HK', text:'先比較位數，再從高位到低位依次比較' },
+    ],
+    remember: '> 크다, < 작다, = 같다. 입이 큰 쪽이 더 큰 수!',
+  },
+  {
+    match: ['plane-flip','flip-turn','motion-flip','motion-turn','rotate','translate','reflection'],
+    title: '도형의 이동', emoji: '🔄',
+    core: '도형을 밀기(평행이동), 뒤집기(반사), 돌리기(회전)해도 모양과 크기는 변하지 않아요.',
+    example: '삼각형을 오른쪽으로 밀면 위치만 바뀌고 모양은 같아요.',
+    real: '도장 찍기 = 뒤집기, 풍차 = 돌리기, 퍼즐 맞추기 = 밀기!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Transformations: translation (slide), reflection (flip), rotation (turn)' },
+      { flag:'🇬🇧', label:'UK', text:'Rotation: specify centre, angle, and direction (clockwise/anticlockwise)' },
+      { flag:'🇨🇳', label:'CN', text:'图形的运动：平移、翻转、旋转 — 形状大小不变' },
+      { flag:'🇭🇰', label:'HK', text:'圖形的運動：平移、翻轉、旋轉 — 形狀大小不變' },
+    ],
+    remember: '밀기·뒤집기·돌리기 모두 합동 변환 — 모양과 크기 그대로!',
+  },
+  {
+    match: ['mixed-review','mixed-change','mixed-add-sub','mixed-mul-div','addsub','addsub-paren','muldiv','mixed'],
+    title: '혼합 계산', emoji: '🧮',
+    core: '괄호 → 곱셈·나눗셈 → 덧셈·뺄셈 순서로 계산해요.',
+    example: '3 + 4 × 2 = 3 + 8 = 11  /  (3+4) × 2 = 7 × 2 = 14',
+    real: '마트에서 과자 3봉지 × 500원 + 음료 1000원 계산!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'PEMDAS: Parentheses → Exponents → Multiply/Divide → Add/Subtract' },
+      { flag:'🇬🇧', label:'UK', text:'BODMAS: Brackets → Orders → Division/Multiplication → Addition/Subtraction' },
+      { flag:'🇨🇳', label:'CN', text:'先乘除后加减，有括号先算括号' },
+      { flag:'🇭🇰', label:'HK', text:'先乘除後加減，有括號先算括號' },
+    ],
+    remember: '곱셈·나눗셈이 덧셈·뺄셈보다 먼저! 괄호는 무조건 제일 먼저!',
+  },
+  {
+    match: ['table-missing','table-total','offset-value','rate-table','function-graph','direct-proportion-table','inverse-proportion-table'],
+    title: '표와 대응 관계', emoji: '📋',
+    core: '두 양의 대응 관계를 표로 나타내면 규칙을 쉽게 찾을 수 있어요.',
+    example: 'x: 1 2 3 4  /  y: 3 6 9 12  → y = x × 3',
+    real: '요금표, 단가표, 환율표 모두 대응 관계!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Input-output table: find the rule connecting x and y values' },
+      { flag:'🇬🇧', label:'UK', text:'Function machine: what operation turns input into output?' },
+      { flag:'🇨🇳', label:'CN', text:'找规律：看x增加时y如何变化，写出规律式' },
+      { flag:'🇭🇰', label:'HK', text:'找規律：看x增加時y如何變化，寫出規律式' },
+    ],
+    remember: '규칙을 식으로 쓸 수 있으면 어떤 값도 바로 구해요!',
+  },
+  {
+    match: [],
+    title: '수학 문제 풀이', emoji: '💡',
+    core: '문제를 잘 읽고 조건을 파악한 뒤, 알맞은 계산 방법을 선택하세요.',
+    example: '① 구하는 것 확인 → ② 조건 정리 → ③ 식 세우기 → ④ 계산 → ⑤ 검토',
+    real: '어떤 수학 문제든 이 5단계로 풀 수 있어요!',
+    tips: [
+      { flag:'🇺🇸', label:'US', text:'Read carefully, identify key information, choose a strategy' },
+      { flag:'🇬🇧', label:'UK', text:'Show working — marks are given for method, not just the answer' },
+      { flag:'🇨🇳', label:'CN', text:'审题→找条件→列式→计算→验算 — 五步解题法' },
+      { flag:'🇭🇰', label:'HK', text:'審題→找條件→列式→計算→驗算 — 五步解題法' },
+    ],
+    remember: '답만 쓰지 말고 풀이 과정을 보여주세요. 과정이 실력!',
   },
 ];
 
 function getConceptEntry(skillId) {
   const sid = String(skillId || '');
   for (const entry of CONCEPT_BANK) {
-    if (entry.match.some(kw => sid.includes(kw))) return entry;
+    if (entry.match.length > 0 && entry.match.some(kw => sid.includes(kw))) return entry;
   }
-  // 광역 fallback
-  if (/add/.test(sid))                        return CONCEPT_BANK[1];
-  if (/sub/.test(sid))                        return CONCEPT_BANK[3];
-  if (/mul|times/.test(sid))                  return CONCEPT_BANK[4];
-  if (/div/.test(sid))                        return CONCEPT_BANK[6];
-  if (/frac/.test(sid))                       return CONCEPT_BANK[7];
-  if (/decimal|dec/.test(sid))               return CONCEPT_BANK[11];
-  if (/place|digit/.test(sid))               return CONCEPT_BANK[13];
-  if (/ratio/.test(sid))                      return CONCEPT_BANK[19];
-  if (/circle|circumference|pi/.test(sid))   return CONCEPT_BANK[30];
-  if (/percent/.test(sid))                   return CONCEPT_BANK[31];
-  if (/integer|signed/.test(sid))            return CONCEPT_BANK[32];
-  if (/equation|expression/.test(sid))       return CONCEPT_BANK[33];
-  if (/prime|factor/.test(sid))              return CONCEPT_BANK[34];
-  if (/cylinder|prism|pyramid|solid/.test(sid)) return CONCEPT_BANK[35];
-  if (/average/.test(sid))                   return CONCEPT_BANK[26];
-  if (/round|estimate|range/.test(sid))      return CONCEPT_BANK[27];
-  if (/chance|probability/.test(sid))        return CONCEPT_BANK[28];
-  if (/rate/.test(sid))                      return CONCEPT_BANK[29];
-  return null;
+  // 광역 fallback — 패턴 순서 중요 (구체적인 것 먼저)
+  if (/add.carry|carry.add/.test(sid))                   return CONCEPT_BANK[0];
+  if (/sub.borrow|borrow.sub|bridge/.test(sid))          return CONCEPT_BANK[2];
+  if (/two.digit.two|three.digit.times|mul.2|mul2/.test(sid)) return CONCEPT_BANK[5];
+  if (/add/.test(sid))                                    return CONCEPT_BANK[1];
+  if (/sub/.test(sid))                                    return CONCEPT_BANK[3];
+  if (/mul|times|repeated|array|skip.count/.test(sid))   return CONCEPT_BANK[4];
+  if (/div/.test(sid))                                    return CONCEPT_BANK[6];
+  if (/fraction|frac|denominator|numerator|equivalent|common.denom/.test(sid)) return CONCEPT_BANK[7];
+  if (/decimal|dec\./.test(sid))                         return CONCEPT_BANK[11];
+  if (/place.value|place|digit|tens.ones|compose|decompose|big.number|three.digit|four.digit/.test(sid)) return CONCEPT_BANK[13];
+  if (/measurement|length|km|meter|mm|weight|mass|capacity|volume.add|seconds|second/.test(sid)) return CONCEPT_BANK[36];
+  if (/time|clock|calendar|schedule/.test(sid))          return CONCEPT_BANK[37];
+  if (/compare|order|missing|zero|operator|ten.pair|count.by/.test(sid)) return CONCEPT_BANK[38];
+  if (/flip|turn|rotate|motion|transform|reflect/.test(sid)) return CONCEPT_BANK[39];
+  if (/mixed|review|addsub|muldiv/.test(sid))            return CONCEPT_BANK[40];
+  if (/table|offset|function|graph.table/.test(sid))     return CONCEPT_BANK[41];
+  if (/ratio|rate/.test(sid))                            return CONCEPT_BANK[19];
+  if (/direct.proportion|proportion|inverse/.test(sid))  return CONCEPT_BANK[20];
+  if (/circle|circumference|pi/.test(sid))               return CONCEPT_BANK[30];
+  if (/percent/.test(sid))                               return CONCEPT_BANK[31];
+  if (/integer|signed/.test(sid))                        return CONCEPT_BANK[32];
+  if (/equation|expression|simplify.like/.test(sid))     return CONCEPT_BANK[33];
+  if (/prime|factor|gcd|lcm/.test(sid))                  return CONCEPT_BANK[34];
+  if (/cylinder|prism|pyramid|solid|cone|sphere|net/.test(sid)) return CONCEPT_BANK[35];
+  if (/average/.test(sid))                               return CONCEPT_BANK[26];
+  if (/round|estimate|range/.test(sid))                  return CONCEPT_BANK[27];
+  if (/chance|probability/.test(sid))                    return CONCEPT_BANK[28];
+  if (/area|perimeter/.test(sid))                        return CONCEPT_BANK[15];
+  if (/angle|shape/.test(sid))                           return CONCEPT_BANK[17];
+  if (/symmetry|congruent/.test(sid))                    return CONCEPT_BANK[25];
+  if (/pattern/.test(sid))                               return CONCEPT_BANK[24];
+  if (/bar.graph|bar.chart|line.graph|circle.graph|pictograph|band.graph/.test(sid)) return CONCEPT_BANK[23];
+  if (/coordinate/.test(sid))                            return CONCEPT_BANK[33];
+  if (/volume|cuboid|cube|view.count/.test(sid))         return CONCEPT_BANK[18];
+  if (/word/.test(sid))                                   return CONCEPT_BANK[1];
+  if (/equal.share|share/.test(sid))                     return CONCEPT_BANK[6];
+  if (/parentheses|four.mix|paren/.test(sid))            return CONCEPT_BANK[40];
+  if (/parallel|perpendicular|quadrilateral|polygon|rhombus|regular.polygon/.test(sid)) return CONCEPT_BANK[15];
+  if (/relation/.test(sid))                              return CONCEPT_BANK[41];
+  if (/graph.read|prep/.test(sid))                       return CONCEPT_BANK[23];
+  // 최종 catch-all — 항상 개념 카드를 표시
+  return CONCEPT_BANK[42];
+}
+
+// 개념 카드 정적 SVG 타입 결정
+function getConceptSVGType(c) {
+  if (!c) return 'default';
+  const t = c.title;
+  if (t.includes('덧셈')) return 'add';
+  if (t.includes('뺄셈')) return 'sub';
+  if (t.includes('곱셈') || t.includes('구구')) return 'mul';
+  if (t.includes('나눗셈')) return 'div';
+  if (t.includes('분수')) return 'fraction';
+  if (t.includes('소수')) return 'decimal';
+  if (t.includes('자릿값') || t.includes('자리')) return 'place-value';
+  if (t.includes('측정') || t.includes('길이') || t.includes('무게') || t.includes('단위')) return 'measurement';
+  if (t.includes('시간') || t.includes('달력') || t.includes('시각') || t.includes('시계')) return 'time';
+  if (t.includes('넓이') || t.includes('둘레') || t.includes('삼각형') || t.includes('평행사변형') || t.includes('사다리꼴')) return 'area';
+  if (t.includes('각도')) return 'angle';
+  if (t.includes('부피')) return 'volume';
+  if (t.includes('비와') || t.includes('비율') || t.includes('단위량')) return 'ratio';
+  if (t.includes('정비례') || t.includes('반비례') || t.includes('표와')) return 'proportion';
+  if (t.includes('수 가르기') || t.includes('모으기')) return 'number-bond';
+  if (t.includes('대칭') || t.includes('합동') || t.includes('이동')) return 'symmetry';
+  if (t.includes('규칙') || t.includes('패턴') || t.includes('비교') || t.includes('순서') || t.includes('혼합')) return 'pattern';
+  if (t.includes('통계') || t.includes('그래프') || t.includes('자료')) return 'statistics';
+  if (t.includes('최대공약') || t.includes('최소공배') || t.includes('소인수')) return 'gcd-lcm';
+  if (t.includes('방정식') || t.includes('유리수') || t.includes('정수')) return 'equation';
+  if (t.includes('백분율')) return 'percent';
+  return 'default';
 }
 
 function renderConceptNote(skillId) {
@@ -2220,6 +2639,13 @@ function renderConceptNote(skillId) {
   if (!el) return;
   const c = getConceptEntry(skillId);
   if (!c) { el.innerHTML = ''; return; }
+  const svgType = getConceptSVGType(c);
+  const staticSVG = buildConceptStaticSVG(svgType);
+  const tipsHTML = (c.tips && c.tips.length)
+    ? `<div class="concept-tips">${c.tips.map(t =>
+        `<div class="concept-tip"><span class="ctip-flag">${t.flag}</span><span class="ctip-label">${escapeHTML(t.label)}</span><span class="ctip-text">${escapeHTML(t.text)}</span></div>`
+      ).join('')}</div>`
+    : '';
   el.innerHTML =
     `<div class="concept-card">
   <div class="concept-head">
@@ -2228,10 +2654,12 @@ function renderConceptNote(skillId) {
     <button class="concept-toggle" type="button" aria-expanded="true" aria-controls="concept-body-inner">▲ 개념</button>
   </div>
   <div class="concept-body" id="concept-body-inner">
+    <div class="concept-svg-wrap" aria-hidden="true">${staticSVG}</div>
     <p class="concept-core">${escapeHTML(c.core)}</p>
     <p class="concept-example">✏️ 예시: ${escapeHTML(c.example)}</p>
     <p class="concept-real">🌍 실생활: ${escapeHTML(c.real)}</p>
     <p class="concept-remember">💡 기억법: ${escapeHTML(c.remember)}</p>
+    ${tipsHTML}
   </div>
 </div>`;
   el.querySelector('.concept-toggle')?.addEventListener('click', function() {
