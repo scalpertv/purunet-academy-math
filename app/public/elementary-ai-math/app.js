@@ -2642,160 +2642,201 @@ function getConceptSVGType(c) {
 }
 
 // ============================================================
-// 단계별 풀이 과정 파싱 및 렌더링
+// 벤다이어그램식 단계별 풀이 흐름 시스템 (전체 문제 커버)
 // ============================================================
 
-// solution 문자열에서 중간 계산 단계를 자동 추출
-// 패턴 A: "이므로" 분리 (단순/이중 모두)
-// 패턴 B: "먼저 A=B, C=D"
-// 패턴 C: "EXPR = MID = FINAL" 체인 (MID가 수식이어도 처리)
-// 패턴 D: solution 문자열 끝의 산술식 추출
-function parseSolutionToSteps(solution, finalAnswer) {
-  if (!solution) return null;
-  const finalStr = String(finalAnswer ?? '').trim();
-  const s = solution.replace(/입니다\.?\s*$/, '').trim();
-
-  // 패턴 A: "이므로" 분리
-  const imoreoIdx = s.indexOf('이므로');
-  if (imoreoIdx !== -1) {
-    const p1 = s.slice(0, imoreoIdx).trim();
-
-    // A1: p1이 "식 = 숫자" 형태 — "2 × 6 = 12이므로..."
-    const mA1 = p1.match(/^(.+?)\s*=\s*(-?[\d.]+)$/);
-    if (mA1 && mA1[2] !== finalStr) {
-      return [{ label: `① ${mA1[1].trim()} = □`, answer: mA1[2] }];
-    }
-
-    // A2: p1이 "A=B, C=D" 두 개 계산 — "N÷D=An, M÷D=Ad이므로..."
-    const mA2 = p1.match(/^(.+?)\s*=\s*(-?[\d/.]+),\s*(.+?)\s*=\s*(-?[\d/.]+)$/);
-    if (mA2) {
-      return [
-        { label: `① ${mA2[1].trim()} = □`, answer: mA2[2] },
-        { label: `② ${mA2[3].trim()} = □`, answer: mA2[4] },
-      ];
-    }
+// solution 텍스트에서 "산술식 = 결과" 쌍을 모두 추출
+function _pullArithEqs(text, skipSet) {
+  const results = [];
+  if (!text) return results;
+  // 숫자·연산자를 포함하는 좌변 = 숫자(단위포함) 우변
+  const re = /([\d][\d\s()\[\]×÷+\-−*/.,/]+(?:[×÷+\-−*/][\d\s()\[\].,×÷+\-−*/]+)+)\s*=\s*([-\d][\d,./ ]*(?:cm[²³]?|m[²³]?|g|kg|L|mL|°|%|명|개|칸|분|초|cm|mm|km|원|개)?)/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const expr = m[1].trim().replace(/^[,\s]+|[,\s]+$/g, '');
+    const result = m[2].trim().replace(/\s+/g, '');
+    if (!expr || !result || expr.length < 3) continue;
+    if (skipSet && skipSet.has(result)) continue;
+    results.push({ expr, result });
   }
+  return results;
+}
 
-  // 패턴 B: "먼저...A = B, C = FINAL"
-  const mB = s.match(/먼저[^,]*\s+(.+?)\s*=\s*(-?\d+),\s*(.+?)\s*=\s*(-?\d+)$/);
-  if (mB && mB[4] === finalStr) {
-    const label = s.includes('괄호') ? `① 괄호 안: ${mB[1]} = □` : `① ${mB[1]} = □`;
-    return [{ label, answer: mB[2] }];
+// 분수 형태 "N/N = N/N" 추출
+function _pullFracEqs(text, skipSet) {
+  const results = [];
+  if (!text) return results;
+  const re = /((?:\d+\s+)?\d+\/\d+(?:\s*[+\-−]\s*(?:\d+\s+)?\d+\/\d+)*)\s*=\s*((?:\d+\s+)?\d+\/\d+)/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const expr = m[1].trim();
+    const result = m[2].trim();
+    if (!expr || !result) continue;
+    if (skipSet && skipSet.has(result)) continue;
+    if (expr === result) continue;
+    results.push({ expr, result });
   }
+  return results;
+}
 
-  // 패턴 C: "EXPR = MID = FINAL" 체인 (등호가 2개 이상)
-  const parts = s.split(/\s*=\s*/);
-  if (parts.length >= 3) {
-    const orig = parts[0].trim();
-    const finalPart = parts[parts.length - 1].trim();
-    if (finalPart === finalStr) {
-      const mid = parts[1].trim();
-      // C1: 중간값이 순수 숫자
-      if (/^-?[\d.]+$/.test(mid) && mid !== finalStr) {
-        return [{ label: `① ${orig} = □`, answer: mid }];
+// solution 텍스트 → 시각 노드 배열 생성 (핵심 파서)
+function buildVennNodes(problem) {
+  const sol   = problem.solution   || '';
+  const expr  = (problem.expression || '').split('\n')[0].trim();
+  const finalStr = String(problem.answer ?? '').trim();
+  const nodes = [];
+
+  // ── 시작 노드: 항상 문제 표현식 ─────────────────────────
+  if (expr) nodes.push({ type: 'start', text: expr });
+
+  // ── 중간 노드 추출 ─────────────────────────────────────
+  const skipSet = new Set([finalStr]);
+  const mids = [];
+
+  const clean = sol.replace(/입니다\.?\s*$/, '').trim();
+
+  // 전략 1: "이므로" 또는 "이고" 분리 — 앞 부분에서 계산식 추출
+  const splitIdx = Math.max(clean.indexOf('이므로'), clean.indexOf('이고'));
+  if (splitIdx > 3) {
+    const before = clean.slice(0, splitIdx).trim();
+    // 산술식 추출
+    const arith = _pullArithEqs(before, skipSet);
+    const frac  = _pullFracEqs(before, skipSet);
+    const combined = [...arith, ...frac];
+    combined.slice(0, 2).forEach(eq => {
+      mids.push({ type: 'mid', text: `${eq.expr} = ${eq.result}` });
+      skipSet.add(eq.result);
+    });
+    // 뒤 부분(이므로 이후)에서 최종 계산 추출
+    const after = clean.slice(splitIdx).replace(/^이므로|이고/, '').trim();
+    const afterArith = _pullArithEqs(after, skipSet);
+    const afterFrac  = _pullFracEqs(after, skipSet);
+    [...afterArith, ...afterFrac].slice(0, 1).forEach(eq => {
+      if (eq.result !== finalStr) {
+        mids.push({ type: 'mid', text: `${eq.expr} = ${eq.result}` });
+        skipSet.add(eq.result);
       }
-      // C2: 중간값이 "숫자 op ..." 형태 — "51 − 23" → 앞 숫자가 첫 번째 중간값
-      const midLead = mid.match(/^(-?[\d.]+)\s*[×÷+\-−]/);
-      if (midLead && midLead[1] !== finalStr) {
-        // 원래 식에서 마지막 연산자+피연산자를 제거해 앞부분 추출
-        const origTrimmed = orig.replace(/\s*[×÷+\-−]\s*[\d.(]+\s*$/, '').trim();
-        if (origTrimmed && origTrimmed !== orig) {
-          return [{ label: `① ${origTrimmed} = □`, answer: midLead[1] }];
+    });
+  }
+
+  // 전략 2: 전체 텍스트에서 산술식 = 결과 패턴 (이미 찾은 것 제외)
+  if (mids.length === 0) {
+    const arith = _pullArithEqs(clean, skipSet);
+    const frac  = _pullFracEqs(clean, skipSet);
+    [...arith, ...frac].filter(eq => eq.result !== finalStr).slice(0, 3).forEach(eq => {
+      mids.push({ type: 'mid', text: `${eq.expr} = ${eq.result}` });
+      skipSet.add(eq.result);
+    });
+  }
+
+  // 전략 3: "X = Y = Z" 체인에서 중간값 추출
+  if (mids.length === 0) {
+    const chainParts = clean.split(/\s*=\s*/);
+    if (chainParts.length >= 3) {
+      const lastPart = chainParts[chainParts.length - 1].replace(/[입니다.\s]+$/, '').trim();
+      if (lastPart === finalStr || lastPart.replace(/\s/g,'') === finalStr.replace(/\s/g,'')) {
+        for (let i = 1; i < chainParts.length - 1; i++) {
+          const mid = chainParts[i].trim();
+          if (/^[-\d.,/ ]+$/.test(mid) && mid !== finalStr && !skipSet.has(mid)) {
+            const leftExpr = chainParts.slice(0, i).join(' = ').trim();
+            mids.push({ type: 'mid', text: `${leftExpr} = ${mid}` });
+            skipSet.add(mid);
+            break;
+          }
         }
       }
     }
   }
 
-  // 패턴 D: solution 끝의 산술식 "A op B = R" 추출 (R이 finalAnswer와 다를 때만)
-  const mD = s.match(/\b([\d][\d\s×÷+\-−*\/]*[\d])\s*=\s*(\d+)\s*$/);
-  if (mD) {
-    const expr = mD[1].trim();
-    const ans = mD[2];
-    if (ans !== finalStr && /[×÷+\-−*\/]/.test(expr)) {
-      return [{ label: `① ${expr} = □`, answer: ans }];
+  // 전략 4: 쉼표 분리 "A=B, C=D" 패턴
+  if (mids.length === 0) {
+    const commaArith = _pullArithEqs(clean.split('.')[0], skipSet);
+    commaArith.filter(eq => eq.result !== finalStr).slice(0, 2).forEach(eq => {
+      mids.push({ type: 'mid', text: `${eq.expr} = ${eq.result}` });
+      skipSet.add(eq.result);
+    });
+  }
+
+  // 전략 5: 설명문 — 핵심 키워드를 포함한 첫 절을 추출
+  if (mids.length === 0 && clean.length > 5) {
+    // 수식 없는 설명형 solution → 첫 의미 있는 절 사용
+    const clauses = clean
+      .split(/[,。]+/)
+      .map(s => s.trim())
+      .filter(s => s.length >= 5 && s.length <= 55 && s !== finalStr && s !== expr);
+    if (clauses.length > 0) {
+      mids.push({ type: 'explain', text: clauses[0] });
+      if (clauses.length > 1 && clauses[1].length <= 55) {
+        mids.push({ type: 'explain', text: clauses[1] });
+      }
     }
   }
 
-  return null;
+  // 중간 노드 추가 (최대 4개)
+  mids.slice(0, 4).forEach(n => nodes.push(n));
+
+  // ── 끝 노드: 항상 정답 ──────────────────────────────────
+  nodes.push({ type: 'end', text: finalStr });
+
+  return nodes;
 }
 
-function renderSolutionSteps() {
+// 벤다이어그램식 풀이 흐름 HTML 렌더링
+function renderVennFlow() {
   const el = $('step-note');
   if (!el) return;
   const p = app.problem;
   if (!p) { el.innerHTML = ''; return; }
 
-  let steps = parseSolutionToSteps(p.solution, p.answer);
+  const nodes = buildVennNodes(p);
 
-  // Fallback: integer 문제 + 연산자 포함 expression → 식 자체를 1단계로 표시
-  if (!steps && p.kind === 'integer' && p.expression && /[+\-×÷*\/]/.test(p.expression)) {
-    const expr = p.expression.split('\n')[0].trim();
-    if (expr) steps = [{ label: `① ${expr} = □`, answer: String(p.answer) }];
-  }
-
-  if (!steps || !steps.length) { el.innerHTML = ''; return; }
-
-  app.currentSteps = steps;
-  app.stepValues = steps.map(() => '');
-
-  const stepsHTML = steps.map((step, i) =>
-    `<div class="step-item" id="step-item-${i}">
-      <span class="step-label">${escapeHTML(step.label)}</span>
-      <div class="step-row">
-        <input
-          class="step-input" type="text" inputmode="numeric"
-          id="step-input-${i}" placeholder="중간 답 입력"
-          aria-label="단계 ${i+1} 풀이 입력"
-        />
-        <span class="step-feedback" id="step-fb-${i}"></span>
-      </div>
-    </div>`
-  ).join('');
-
-  el.innerHTML =
-    `<div class="step-card">
-  <div class="step-card-head">
-    <span class="step-card-emoji">📝</span>
-    <span class="step-card-title">풀이 과정 — 먼저 중간 계산을 써보세요</span>
-    <button class="step-card-toggle" type="button" id="step-toggle">▲ 풀이</button>
-  </div>
-  <div class="step-card-body" id="step-card-body">${stepsHTML}</div>
-</div>`;
-
-  el.querySelector('#step-toggle')?.addEventListener('click', function() {
-    const body = $('step-card-body');
-    if (!body) return;
-    const show = body.style.display === 'none';
-    body.style.display = show ? '' : 'none';
-    this.textContent = show ? '▲ 풀이' : '▼ 풀이';
+  // 노드가 시작+끝만 있으면 (=중간 없으면) 그래도 렌더
+  const nodeHTMLs = nodes.map((n, i) => {
+    const cls  = n.type === 'start'   ? 'vf-start'
+               : n.type === 'end'     ? 'vf-end'
+               : n.type === 'explain' ? 'vf-explain'
+               :                       'vf-mid';
+    const tag  = n.type === 'start'   ? '📌 문제'
+               : n.type === 'end'     ? '★ 정답'
+               : n.type === 'explain' ? '💡 풀이'
+               :                       `⓪①②③④⑤`[i] + ' 계산';
+    const displayText = n.type === 'end'
+      ? `<span class="vf-answer-text">${formatMathHTML(n.text)}</span>`
+      : `<span class="vf-body-text">${formatMathHTML(n.text)}</span>`;
+    return `<div class="vf-node ${cls}" data-idx="${i}">\
+<span class="vf-tag">${tag}</span>${displayText}</div>`;
   });
 
-  steps.forEach((_, i) => {
-    const input = $(`step-input-${i}`);
-    if (input) input.addEventListener('input', () => { app.stepValues[i] = input.value; });
+  // 노드 사이에 화살표 삽입
+  const rowHTML = nodeHTMLs.reduce((acc, h, i) =>
+    acc + h + (i < nodeHTMLs.length - 1 ? '<span class="vf-arrow" aria-hidden="true">→</span>' : ''),
+  '');
+
+  el.innerHTML = `\
+<div class="vflow-card">
+  <div class="vflow-head">
+    <span class="vflow-icon" aria-hidden="true">🔢</span>
+    <span class="vflow-title">단계별 풀이 흐름</span>
+    <button class="vflow-toggle" type="button" id="vflow-toggle-btn" aria-expanded="true">▲ 접기</button>
+  </div>
+  <div class="vflow-nodes" id="vflow-body" role="list">${rowHTML}</div>
+</div>`;
+
+  $('vflow-toggle-btn')?.addEventListener('click', function() {
+    const body = $('vflow-body');
+    if (!body) return;
+    const collapsed = body.style.display === 'none';
+    body.style.display = collapsed ? '' : 'none';
+    this.textContent = collapsed ? '▲ 접기' : '▼ 펼치기';
+    this.setAttribute('aria-expanded', String(collapsed));
   });
 }
 
+// 정답 선택 후 노드에 정오 색상 적용
 function gradeSteps() {
-  const steps = app.currentSteps;
-  if (!steps || !steps.length) return;
-  steps.forEach((step, i) => {
-    const item = $(`step-item-${i}`);
-    const fb = $(`step-fb-${i}`);
-    const input = $(`step-input-${i}`);
-    if (input) input.disabled = true;
-    const sv = (app.stepValues[i] || '').trim();
-    if (!item || !fb) return;
-    if (sv === '') {
-      fb.innerHTML = `<span class="step-answer-reveal">정답: <strong>${escapeHTML(step.answer)}</strong></span>`;
-    } else if (sv === step.answer.trim()) {
-      item.classList.add('step-ok');
-      fb.innerHTML = `<span class="step-ok-mark">✓</span>`;
-    } else {
-      item.classList.add('step-ng');
-      fb.innerHTML = `<span class="step-answer-reveal">→ 정답: <strong>${escapeHTML(step.answer)}</strong></span>`;
-    }
-  });
+  // venn flow는 read-only — 채점 시 end 노드 강조만
+  const endNode = document.querySelector('#vflow-body .vf-end');
+  if (endNode) endNode.classList.add('vf-end-revealed');
 }
 
 function renderConceptNote(skillId) {
@@ -2843,7 +2884,7 @@ function renderMission() {
   void visualEl.offsetHeight;
   visualEl.innerHTML = buildElementaryVisual(p);
   renderConceptNote(p.skillId);
-  renderSolutionSteps();
+  renderVennFlow();
   if (p.expression && p.expression.trim()) {
     const exprDiv = document.createElement("div");
     exprDiv.className = "problem-expr-text";
