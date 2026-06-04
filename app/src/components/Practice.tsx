@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isCorrect, formatAnswer } from "../lib/check";
-import type { Problem } from "../lib/types";
+import type { Problem, SolutionStep } from "../lib/types";
 import type { ReaderPrefs } from "../lib/readerPrefs";
 import MathText from "./MathText";
 import MathVisual from "./MathVisual";
@@ -125,6 +125,13 @@ export default function Practice({
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const [ttsSpeaking, setTtsSpeaking] = useState(false);
 
+  // 단계별 풀이 state
+  const [stepValues, setStepValues] = useState<string[]>([]);
+  const [stepResults, setStepResults] = useState<Array<boolean | null>>([]);
+
+  // 개념 카드 열림/닫힘 state
+  const [conceptOpen, setConceptOpen] = useState(true);
+
   const problem = (problems[index] ?? problems[0])!;
   const sessionTarget = problems.length;
   const isLastProblem = index >= sessionTarget - 1;
@@ -135,6 +142,16 @@ export default function Practice({
   useEffect(() => {
     if (!isChoice && !isCompare) inputRef.current?.focus();
   }, [problem, isChoice, isCompare]);
+
+  // 문제 바뀔 때 단계 state 초기화
+  useEffect(() => {
+    const count = problem.solutionSteps?.length ?? 0;
+    setStepValues(Array(count).fill(""));
+    setStepResults(Array(count).fill(null));
+    // 개념카드: 첫 문제는 열림, 이후는 닫힘
+    setConceptOpen(index === 0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index]);
 
   useEffect(() => {
     if ("speechSynthesis" in window) window.speechSynthesis.getVoices();
@@ -181,6 +198,17 @@ export default function Practice({
       streak: ok ? s.streak + 1 : 0,
     }));
     onAttempt(ok, problem, nextValue);
+
+    // 단계별 풀이 결과 채점
+    if (problem.solutionSteps) {
+      setStepResults(
+        problem.solutionSteps.map((step: SolutionStep, si: number) => {
+          const sv = stepValues[si]?.trim() ?? "";
+          if (sv === "") return null;
+          return sv === step.answer.trim();
+        }),
+      );
+    }
   }
 
   function next() {
@@ -189,6 +217,14 @@ export default function Practice({
     setValue("");
     setPhase("input");
     setSaved(false);
+  }
+
+  function updateStepValue(si: number, v: string) {
+    setStepValues((prev) => {
+      const next = [...prev];
+      next[si] = v;
+      return next;
+    });
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
@@ -347,6 +383,24 @@ export default function Practice({
           {/* 지시문 */}
           <p className="prac-prompt">{problem.prompt}</p>
 
+          {/* 개념 핵심 카드 (conceptNote가 있을 때만 표시) */}
+          {problem.conceptNote && (
+            <div className={`prac-concept-card ${conceptOpen ? "open" : ""}`}>
+              <button
+                className="prac-concept-toggle"
+                onClick={() => setConceptOpen((o) => !o)}
+                aria-expanded={conceptOpen}
+              >
+                <span className="prac-concept-icon">💡</span>
+                <span className="prac-concept-label">개념 핵심</span>
+                <span className="prac-concept-chevron">{conceptOpen ? "▲" : "▼"}</span>
+              </button>
+              {conceptOpen && (
+                <p className="prac-concept-body">{problem.conceptNote}</p>
+              )}
+            </div>
+          )}
+
           {/* 수식 표현 영역 */}
           <div className="prac-expr" aria-live="polite">
             {problem.visual && <MathVisual visual={problem.visual} />}
@@ -358,6 +412,54 @@ export default function Practice({
           </div>
 
           {problem.hint && <p className="prac-hint">{problem.hint}</p>}
+
+          {/* 단계별 풀이 과정 (solutionSteps가 있을 때만 표시) */}
+          {problem.solutionSteps && problem.solutionSteps.length > 0 && (
+            <div className="prac-steps">
+              <div className="prac-steps-header">
+                <span className="prac-steps-icon">📝</span>
+                <span className="prac-steps-title">풀이 과정 (먼저 중간 계산을 써보세요)</span>
+              </div>
+              {problem.solutionSteps.map((step: SolutionStep, si: number) => {
+                const res = stepResults[si];
+                const attempted = (stepValues[si]?.trim() ?? "") !== "";
+                return (
+                  <div
+                    key={si}
+                    className={[
+                      "prac-step",
+                      phase === "graded" && attempted && res === true ? "step-ok" : "",
+                      phase === "graded" && attempted && res === false ? "step-ng" : "",
+                    ].filter(Boolean).join(" ")}
+                  >
+                    <label className="prac-step-label">{step.label}</label>
+                    <div className="prac-step-row">
+                      <input
+                        className="prac-step-input"
+                        type="text"
+                        inputMode="numeric"
+                        value={stepValues[si] ?? ""}
+                        onChange={(e) => updateStepValue(si, e.target.value)}
+                        disabled={phase === "graded"}
+                        placeholder="중간 답"
+                        aria-label={`단계 ${si + 1} 중간 답 입력`}
+                      />
+                      {phase === "graded" && (
+                        <span className="prac-step-feedback">
+                          {res === true && <span className="step-ok-mark">✓</span>}
+                          {(res === false || (phase === "graded" && !attempted)) && (
+                            <span className="prac-step-answer">
+                              {res === false && "→ "}정답: <strong>{step.answer}</strong>
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* ── 입력 영역 ── */}
 

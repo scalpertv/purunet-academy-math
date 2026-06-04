@@ -7463,4 +7463,135 @@ button[disabled] {
 .auth-gate-form .primary-btn { margin-top: 6px; padding: 12px; font-size: 16px; font-weight: 900; border-radius: 10px; background: #1e40af; color: #fff; border: none; cursor: pointer; transition: background 0.15s; }
 .auth-gate-form .primary-btn:hover:not(:disabled) { background: #1d4ed8; }
 .auth-gate-form .primary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── 개념 핵심 카드 ── */
+.prac-concept-card {
+  margin: 0 0 14px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 200, 60, 0.45);
+  background: rgba(255, 248, 215, 0.85);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.reader-night .prac-concept-card {
+  background: rgba(60, 50, 10, 0.55);
+  border-color: rgba(220, 170, 40, 0.35);
+}
+.prac-concept-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 9px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+  color: #92600a;
+  text-align: left;
+}
+.reader-night .prac-concept-toggle { color: #ddb860; }
+.prac-concept-icon { font-size: 15px; }
+.prac-concept-label { flex: 1; }
+.prac-concept-chevron { font-size: 11px; opacity: 0.7; }
+.prac-concept-body {
+  margin: 0;
+  padding: 0 14px 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #5c3d00;
+  line-height: 1.65;
+}
+.reader-night .prac-concept-body { color: #e8cc85; }
+
+/* ── 단계별 풀이 과정 ── */
+.prac-steps {
+  margin: 14px 0 4px;
+  padding: 14px 16px 12px;
+  border-radius: 12px;
+  background: rgba(240, 246, 255, 0.88);
+  border: 2px solid rgba(80, 140, 220, 0.25);
+}
+.reader-night .prac-steps {
+  background: rgba(20, 34, 60, 0.6);
+  border-color: rgba(80, 140, 220, 0.2);
+}
+.prac-steps-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+.prac-steps-icon { font-size: 15px; }
+.prac-steps-title {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #3758a0;
+  letter-spacing: 0.01em;
+}
+.reader-night .prac-steps-title { color: #88aadf; }
+.prac-step {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1.5px solid rgba(100, 150, 220, 0.2);
+  transition: border-color 0.2s, background 0.2s;
+}
+.reader-night .prac-step {
+  background: rgba(30, 44, 70, 0.55);
+  border-color: rgba(100, 150, 220, 0.18);
+}
+.prac-step.step-ok {
+  background: rgba(220, 252, 231, 0.85);
+  border-color: rgba(34, 197, 94, 0.45);
+}
+.prac-step.step-ng {
+  background: rgba(254, 242, 242, 0.85);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+.reader-night .prac-step.step-ok { background: rgba(10, 40, 20, 0.55); }
+.reader-night .prac-step.step-ng { background: rgba(40, 10, 10, 0.55); }
+.prac-step-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #374151;
+}
+.reader-night .prac-step-label { color: #b8c8e8; }
+.prac-step-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.prac-step-input {
+  width: 100px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(100, 150, 220, 0.4);
+  font-size: 15px;
+  font-weight: 800;
+  text-align: center;
+  background: #fff;
+  color: #243044;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.prac-step-input:focus { border-color: #3b82f6; }
+.prac-step-input:disabled { background: rgba(240, 240, 240, 0.6); color: #6c7184; }
+.reader-night .prac-step-input { background: #1e2d48; color: #dce8ff; border-color: rgba(100,150,220,0.3); }
+.prac-step-feedback {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.step-ok-mark { color: #16a34a; font-size: 16px; font-weight: 900; }
+.prac-step-answer { color: #b94258; }
+.prac-step-answer strong { color: #c0392b; }
 .auth-gate-hint { font-size: 12px; color: #94a3b8; margin: 20px 0 0; line-height: 1.5; }

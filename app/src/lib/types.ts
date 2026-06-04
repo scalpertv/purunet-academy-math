@@ -64,6 +64,11 @@ export type MathVisual =
   | { type: "symmetry-shape"; shape: "square" | "rectangle" | "equilateral-triangle" | "isosceles-triangle" | "parallelogram" }
   | { type: "rotation-180" };
 
+export type SolutionStep = {
+  label: string;   // e.g. "① 괄호 안: 25 + 27 = □"
+  answer: string;  // 중간 계산 정답 문자열
+};
+
 export interface Problem {
   topicId: string;
   prompt: string; // 지시문 (예: "계산하세요.")
@@ -78,6 +83,8 @@ export interface Problem {
   requireDenominator?: number; // fraction: 분모를 이 값으로 강제 (크기가 같은 분수)
   commonDenominator?: number; // fractionPair: 두 분수의 분모를 이 값으로 강제 (통분)
   visual?: MathVisual; // 도형·그래프·표 문제용 경량 SVG 시각자료
+  conceptNote?: string;        // 개념 영역에서만 표시되는 핵심 원리 설명
+  solutionSteps?: SolutionStep[]; // 단계별 풀이 중간 계산 단계
 }
 
 export interface Topic {

@@ -1434,20 +1434,56 @@ function topicLearningContext(meta: TopicMeta | undefined, problem: Problem) {
   };
 }
 
+function buildTopicConceptNote(topicTitle: string, prompt: string, topicId: string): string {
+  const t = `${topicTitle} ${prompt} ${topicId}`.toLowerCase();
+  if (/혼합|사칙/.test(t)) return "계산 순서 원리: ① 괄호 먼저 ② 곱셈·나눗셈 ③ 덧셈·뺄셈 순서로 계산합니다. 앞에서부터가 아니라 순서가 먼저입니다.";
+  if (/괄호/.test(t)) return "괄호 원리: 괄호 안 식을 가장 먼저 계산합니다. 괄호가 없을 때와 결과가 달라지는지 비교해 보세요.";
+  if (/약수/.test(t)) return "약수 원리: 어떤 수를 나누어 떨어지게 하는 수입니다. 1과 자기 자신은 항상 약수이고, 1부터 차례로 나누어 확인합니다.";
+  if (/최대공약수/.test(t)) return "최대공약수(GCD): 두 수의 공통 약수 중 가장 큰 수입니다. 각 수의 약수를 모두 구한 뒤 공통인 것 중 최대를 고릅니다.";
+  if (/배수/.test(t)) return "배수 원리: 어떤 수에 자연수를 곱한 수입니다. 3의 배수는 3, 6, 9, 12…처럼 일정하게 커집니다.";
+  if (/최소공배수/.test(t)) return "최소공배수(LCM): 두 수의 공통 배수 중 가장 작은 수입니다. 두 수의 배수를 나열해 처음 겹치는 수를 찾으세요.";
+  if (/소수/.test(t) && /판별|약수/.test(t)) return "소수 원리: 약수가 1과 자기 자신뿐인 수입니다. 2, 3, 5, 7, 11…이 소수입니다. 1은 소수가 아닙니다.";
+  if (/통분/.test(t)) return "통분 원리: 분모가 다른 두 분수를 공통분모(LCM)로 바꿉니다. 분모와 분자에 같은 수를 곱해 크기를 유지합니다.";
+  if (/약분/.test(t)) return "약분 원리: 분모와 분자를 공약수로 나누어 더 간단하게 만듭니다. 최대공약수로 나누면 한 번에 기약분수가 됩니다.";
+  if (/분수.*덧셈|분수.*뺄셈|덧셈.*분수|뺄셈.*분수/.test(t)) return "분수 덧뺄셈: 분모를 같게 통분한 뒤 분자끼리 더하거나 뺍니다. 분모는 그대로, 분자만 계산합니다.";
+  if (/분수.*곱셈|곱셈.*분수/.test(t)) return "분수 곱셈: 분자끼리 곱하고 분모끼리 곱합니다. 계산 전에 약분하면 숫자가 작아져 편합니다.";
+  if (/분수.*나눗셈|나눗셈.*분수/.test(t)) return "분수 나눗셈: 나누는 분수를 뒤집어(역수) 곱하는 것과 같습니다. A ÷ B/C = A × C/B입니다.";
+  if (/분수.*비교|비교.*분수/.test(t)) return "분수 크기 비교: 분모가 다르면 통분한 뒤 분자를 비교합니다. 분모가 같으면 분자가 큰 쪽이 더 큽니다.";
+  if (/분수/.test(t)) return "분수 원리: 전체를 같은 크기로 나눈 것 중 일부입니다. 분모는 나눈 칸 수, 분자는 색칠된 칸 수입니다.";
+  if (/소수점|소수.*덧|소수.*뺄/.test(t)) return "소수 계산: 소수점끼리 자릿수를 맞춰 더하거나 뺍니다. 자릿수를 잘못 맞추면 오답이 납니다.";
+  if (/비.*비율|비율/.test(t)) return "비와 비율: a:b에서 비율 = a ÷ b입니다. 기준량을 1로 볼 때 비교하는 양이 얼마인지를 나타냅니다.";
+  if (/백분율/.test(t)) return "백분율: 기준을 100으로 할 때의 비율입니다. 비율 × 100 = 백분율(%)로 변환합니다.";
+  if (/비례|정비례/.test(t)) return "정비례: x가 2배, 3배…가 되면 y도 2배, 3배…가 됩니다. y = k × x 관계입니다.";
+  if (/반비례/.test(t)) return "반비례: x가 2배가 되면 y는 1/2배가 됩니다. x × y = 일정한 값입니다.";
+  if (/넓이|면적/.test(t)) return "넓이 공식: 직사각형 = 가로 × 세로, 삼각형 = 밑변 × 높이 ÷ 2, 평행사변형 = 밑변 × 높이, 사다리꼴 = (윗변 + 아랫변) × 높이 ÷ 2입니다.";
+  if (/부피/.test(t)) return "부피 공식: 직육면체 = 가로 × 세로 × 높이입니다. 쌓기나무 문제라면 층별 개수를 세어 더합니다.";
+  if (/각도|각/.test(t)) return "각도 원리: 직각 = 90°, 평각 = 180°, 한 바퀴 = 360°입니다. 삼각형 내각의 합 = 180°, 사각형 내각의 합 = 360°입니다.";
+  if (/평균/.test(t)) return "평균 공식: 평균 = 합계 ÷ 개수입니다. 자료 전체를 고르게 펼쳤을 때 각 값이 얼마인지를 나타냅니다.";
+  if (/덧셈|더하기|합/.test(t)) return "덧셈 원리: 두 수를 합칩니다. 일의 자리부터 계산하고, 10이 되면 윗자리로 받아올림합니다.";
+  if (/뺄셈|빼기|차/.test(t)) return "뺄셈 원리: 전체에서 일부를 제거합니다. 윗수가 작으면 윗자리에서 10을 받아내림해 계산합니다.";
+  if (/곱셈|곱하기|배/.test(t)) return "곱셈 원리: 같은 수를 여러 번 더하는 것과 같습니다. 곱셈구구를 외우면 빠르게 계산할 수 있습니다.";
+  if (/나눗셈|나누기/.test(t)) return "나눗셈 원리: 전체를 같은 크기로 나눕니다. 나누어지는 수 ÷ 나누는 수 = 몫, 남은 수 = 나머지입니다.";
+  if (/단위.*환산|환산/.test(t)) return "단위 환산: 큰 단위 → 작은 단위는 곱하고, 작은 단위 → 큰 단위는 나눕니다. 1km=1000m, 1m=100cm, 1kg=1000g, 1L=1000mL입니다.";
+  if (/시간|시계/.test(t)) return "시간 계산: 60초=1분, 60분=1시간, 24시간=1일입니다. 시·분·초를 각 단위로 따로 계산한 뒤 합칩니다.";
+  if (/길이|cm|mm|km/.test(t)) return "길이 단위: 10mm=1cm, 100cm=1m, 1000m=1km입니다. 큰 단위를 작은 단위로 바꿀 때는 곱합니다.";
+  if (/무게|kg|그램/.test(t)) return "무게 단위: 1000g=1kg, 1000kg=1t입니다. 저울 눈금을 읽을 때 작은 눈금 1칸이 얼마인지 먼저 확인합니다.";
+  if (/들이|mL|dL|리터/.test(t)) return "들이 단위: 10dL=1L, 1000mL=1L입니다. 그릇에 담긴 양을 읽을 때 눈금 단위를 먼저 확인합니다.";
+  if (/그래프|막대|꺾은선/.test(t)) return "그래프 읽기: 막대 높이(길이) = 값의 크기, 꺾은선 기울기 = 변화 방향과 속도입니다. 가로축(항목)과 세로축(값) 단위를 먼저 확인합니다.";
+  if (/비교.*크기|크기.*비교|수.*비교/.test(t)) return "수 비교: 자릿수가 다르면 자릿수가 많은 쪽이 큽니다. 자릿수가 같으면 높은 자리부터 차례로 비교합니다.";
+  if (/순서|배열|빈칸|규칙/.test(t)) return "수 배열 규칙: 수가 몇씩 커지거나 작아지는지 규칙을 먼저 찾습니다. 그 규칙을 빈칸에 적용합니다.";
+  if (/개수.*세기|세기|모으기|가르기/.test(t)) return "개수 세기: 빠뜨리거나 중복하지 않도록 하나씩 짚어가며 셉니다. 묶어 세기(5씩, 10씩)를 활용하면 빠릅니다.";
+  if (/모양|도형/.test(t)) return "도형 특징: 삼각형(변 3개, 꼭짓점 3개), 사각형(변 4개), 원(꼭짓점 없음, 반지름 일정)입니다. 변의 수와 곧은 선/굽은 선으로 구분합니다.";
+  if (/수.*읽기|쓰기|자리/.test(t)) return "수 읽기: 억·만·일 자리로 끊어 읽습니다. 0은 읽지 않고 자리만 표시합니다.";
+  return `${topicTitle} 핵심 개념을 떠올리며 문제를 해결하세요. 식을 세우기 전에 주어진 조건을 먼저 정리합니다.`;
+}
+
 function textbookConceptProblem(problem: Problem, meta?: TopicMeta): Problem {
   const context = topicLearningContext(meta, problem);
+  const conceptNote = buildTopicConceptNote(context.topicTitle, problem.prompt, problem.topicId);
+  // expression·prompt를 그대로 유지해 문제와 개념 설명이 일치하게 함
   return {
     ...problem,
-    prompt: "교과서식 개념 설명을 읽고 확인 문제를 해결하세요.",
-    expression: [
-      `[개념 설명] ${context.topicTitle}은 ${context.unitTitle}에서 꼭 알아야 할 핵심 원리입니다. 먼저 무엇을 기준으로 보고, 어떤 양이나 도형이 서로 어떻게 연결되는지 말로 설명합니다.`,
-      `[스토리텔링 수학] 학급 탐구팀이 ${context.topicTitle}을 활용해 생활 속 문제를 해결한다고 생각합니다. 문제 속 대상, 조건, 구해야 할 값을 차례대로 표시합니다.`,
-      `[STEM 연결] 자료를 관찰하고, 표·그림·식으로 모델링한 뒤, 계산 결과가 실제 상황에 맞는지 검증합니다. 이 과정은 과학의 관찰, 기술의 도구 사용, 공학의 설계, 수학의 식 세우기를 함께 쓰는 연습입니다.`,
-      `[교과서 예제] ${problem.prompt}`,
-      problem.expression,
-    ].join("\n"),
-    hint: `${problem.hint ?? "정답을 입력하세요."} 먼저 기준, 조건, 구해야 할 값을 표시하세요.`,
-    solution: `개념 정리: ${context.topicTitle}은 조건을 기준에 맞게 정리하고 식이나 그림으로 확인하는 학습입니다. 예제 풀이: ${problem.solution}`,
+    conceptNote,
   };
 }
 
@@ -1493,6 +1529,44 @@ function enhanceProblemForLearningArea(problem: Problem, area?: LearningArea, me
   return problem;
 }
 
+// solution 문자열에서 중간 계산 단계를 자동 파싱한다.
+// integer 타입 문제에서만 동작하며, 아래 세 가지 패턴을 지원한다.
+//   패턴 A: "X이므로 Y = FINAL"   → 중간단계: X = ?
+//   패턴 B: "먼저 A = B, C = FINAL" → 중간단계: A = ?
+//   패턴 C: "EXPR = MID = FINAL"  → 중간단계: EXPR = ?
+function parseSolutionToSteps(solution: string, finalAnswer: number): Array<{ label: string; answer: string }> | null {
+  const finalStr = String(finalAnswer);
+  const s = solution.replace(/입니다\.?\s*$/, "").trim();
+
+  // 패턴 A: "이므로" 분리
+  const imoreoIdx = s.indexOf("이므로");
+  if (imoreoIdx !== -1) {
+    const p1 = s.slice(0, imoreoIdx).trim();
+    const m = p1.match(/^(.+?)\s*=\s*(-?\d+(?:\.\d+)?)$/);
+    if (m && m[2] !== finalStr) {
+      return [{ label: `① ${m[1].trim()} = □`, answer: m[2] }];
+    }
+  }
+
+  // 패턴 B: "먼저...A = B, C = FINAL"
+  const meonjeoMatch = s.match(/먼저[^,]*\s+(.+?)\s*=\s*(-?\d+),\s*(.+?)\s*=\s*(-?\d+)$/);
+  if (meonjeoMatch && meonjeoMatch[4] === finalStr) {
+    const label = s.includes("괄호") ? `① 괄호 안: ${meonjeoMatch[1]} = □` : `① ${meonjeoMatch[1]} = □`;
+    return [{ label, answer: meonjeoMatch[2] }];
+  }
+
+  // 패턴 C: "EXPR = MID = FINAL" (등호 3개)
+  const parts = s.split(/\s*=\s*/);
+  if (parts.length === 3 && parts[2]!.trim() === finalStr) {
+    const mid = parts[1]!.trim();
+    if (/^-?\d+(?:\.\d+)?$/.test(mid) && mid !== finalStr) {
+      return [{ label: `① ${parts[0]!.trim()} = □`, answer: mid }];
+    }
+  }
+
+  return null;
+}
+
 function buildTopicProblemSet(
   generators: Array<() => Problem>,
   problemsPerTopic: ProblemSetSize = PROBLEMS_PER_TOPIC,
@@ -1502,9 +1576,15 @@ function buildTopicProblemSet(
   if (generators.length === 0) return [];
   return generators.flatMap((generate) =>
     Array.from({ length: problemsPerTopic }, () => {
-      const problem = generate();
+      let problem = generate();
       const meta = topicMeta?.get(problem.topicId);
-      return enhanceProblemForLearningArea(problem, meta?.learningArea ?? area, meta);
+      problem = enhanceProblemForLearningArea(problem, meta?.learningArea ?? area, meta);
+      // integer 타입이고 아직 steps가 없으면 자동 파싱
+      if (!problem.solutionSteps && problem.kind === "integer" && typeof problem.answer === "number") {
+        const steps = parseSolutionToSteps(problem.solution, problem.answer as number);
+        if (steps) problem = { ...problem, solutionSteps: steps };
+      }
+      return problem;
     }),
   );
 }
