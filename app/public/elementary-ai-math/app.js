@@ -1999,7 +1999,7 @@ function makeMission() {
 // ============================================================
 const CONCEPT_BANK = [
   {
-    match: ['add-carry','make-ten','bridge','add-under-20','op-m08-add','op-m11-add'],
+    match: ['add-carry','make-ten','add-bridge','add-under-20','op-m08-add','op-m11-add'],
     title: '받아올림 덧셈', emoji: '➕',
     core: '일의 자리 합이 10이 넘으면 10을 십의 자리로 올려요.',
     example: '7 + 8 = ?  →  7 + 3 = 10,  10 + 5 = 15',
@@ -2055,7 +2055,7 @@ const CONCEPT_BANK = [
     remember: '뺄셈과 덧셈은 거꾸로예요. 9−4=5 ↔ 5+4=9',
   },
   {
-    match: ['multiply-basic','times-table','times-missing','multiplication-array','repeated-addition','skip-count'],
+    match: ['multiply-basic','times-table','times-missing','multiplication-array','repeated-addition','missing-factor','missing-multiplier'],
     title: '곱셈구구', emoji: '✖️',
     core: '같은 수를 여러 번 더하는 것을 곱셈으로 나타내요.',
     example: '4 × 3 = 4 + 4 + 4 = 12',
@@ -2069,7 +2069,7 @@ const CONCEPT_BANK = [
     remember: '순서를 바꿔도 같아요! 4×3 = 3×4 = 12',
   },
   {
-    match: ['two-digit-two-digit','two-digit-times-two','three-digit-times','mul-3x2','mul-word'],
+    match: ['two-digit-two-digit','two-digit-times-two','three-digit-times','mul-3x2','mul-word','two-digit-times','tens-times','big-multiply'],
     title: '두 자리(세 자리) 곱셈', emoji: '✖️',
     core: '큰 수 곱셈은 자릿값으로 나눠서 더하면 쉬워요.',
     example: '23 × 14 = 20×14 + 3×14 = 280 + 42 = 322',
@@ -2097,7 +2097,7 @@ const CONCEPT_BANK = [
     remember: '나눗셈 ↔ 곱셈! 12÷3=4 ↔ 4×3=12',
   },
   {
-    match: ['fraction-add','fraction-sub','like-denom','mixed-like','proper-fraction-sub'],
+    match: ['fraction-add','fraction-sub','like-denom','mixed-like','proper-fraction-sub','mixed-fraction','common-denominator','fraction-add-sub'],
     title: '분수 덧셈·뺄셈', emoji: '🍕',
     core: '분모가 같으면 분자끼리만 더하거나 빼요.',
     example: '3/7 + 2/7 = 5/7  (분모 7은 그대로)',
@@ -2111,7 +2111,7 @@ const CONCEPT_BANK = [
     remember: '분모는 절대 더하지 않아요. 분자만!',
   },
   {
-    match: ['fraction-compare','fraction-order','unit-fraction-compare','like-denom-compare'],
+    match: ['fraction-compare','fraction-order','unit-fraction-compare','like-denom-compare','compare-fractions','order-fractions','equivalent-fraction','equivalent-choice','reduce-fraction','fraction-numberline','fraction-decimal'],
     title: '분수 비교', emoji: '⚖️',
     core: '분모가 같으면 분자가 클수록, 분자가 같으면 분모가 작을수록 커요.',
     example: '3/5 > 2/5  /  1/3 > 1/5',
@@ -2153,7 +2153,7 @@ const CONCEPT_BANK = [
     remember: '나누는 분수만 뒤집어요. 앞의 수는 그대로!',
   },
   {
-    match: ['decimal-add','decimal-sub','decimal-tenths','decimal-read'],
+    match: ['decimal-add','decimal-sub','decimal-tenths','decimal-read','decimal-two-add','decimal-two-sub','decimal-compare','decimal-place','decimal-relation','decimal-word'],
     title: '소수 덧셈·뺄셈', emoji: '🔢',
     core: '소수점을 맞추면 자릿값끼리 더하거나 빼요.',
     example: '1.4 + 0.8 = 2.2  (소수점 아래끼리 먼저)',
@@ -2167,7 +2167,7 @@ const CONCEPT_BANK = [
     remember: '소수점 위치가 어긋나면 틀려요 — 꼭 맞추세요!',
   },
   {
-    match: ['decimal-times','decimal-divide','decimal-missing-factor','decimal-area'],
+    match: ['decimal-times','decimal-divide','decimal-missing-factor','decimal-area','integer-times-decimal','decimal-times-integer'],
     title: '소수 곱셈·나눗셈', emoji: '🔢',
     core: '소수 곱셈은 정수처럼 계산 후 소수점을 이동해요.',
     example: '0.3 × 4 = 1.2  (3×4=12, 소수 한 자리 → 1.2)',
@@ -2195,7 +2195,7 @@ const CONCEPT_BANK = [
     remember: '자릿값 표로 쓰면 덧셈·뺄셈 실수가 줄어요!',
   },
   {
-    match: ['number-bond','split-number','missing-add','zero-add','fact-family'],
+    match: ['number-bond','split-number','missing-add','zero-add','fact-family','ten-pairs'],
     title: '수 가르기·모으기', emoji: '🔗',
     core: '하나의 수를 두 부분으로 나누거나, 두 부분을 하나로 합칠 수 있어요.',
     example: '10 = 3 + 7  /  4 + 6 = 10',
@@ -2209,7 +2209,7 @@ const CONCEPT_BANK = [
     remember: '3 + 7 = 10, 7 + 3 = 10, 10 − 3 = 7, 10 − 7 = 3 — 네 식이 한 가족!',
   },
   {
-    match: ['rectangle','square','area','perimeter','grid-area'],
+    match: ['rectangle','perimeter','grid-area','rectangle-area','rectangle-perimeter','area-unit','square-perimeter'],
     title: '직사각형·넓이·둘레', emoji: '📐',
     core: '둘레 = (가로 + 세로) × 2,  넓이 = 가로 × 세로',
     example: '가로 5cm, 세로 3cm → 둘레 16cm, 넓이 15cm²',
@@ -2223,7 +2223,7 @@ const CONCEPT_BANK = [
     remember: '넓이는 cm², 둘레는 cm — 단위가 달라요!',
   },
   {
-    match: ['triangle-area','parallelogram-area','trapezoid-area','composite-area'],
+    match: ['triangle-area','parallelogram-area','trapezoid-area','composite-area','parallelogram','trapezoid','rhombus'],
     title: '삼각형·평행사변형·사다리꼴 넓이', emoji: '📐',
     core: '삼각형 = 밑×높이÷2,  평행사변형 = 밑×높이,  사다리꼴 = (윗변+아랫변)×높이÷2',
     example: '밑 6cm, 높이 4cm인 삼각형 → 6×4÷2 = 12cm²',
@@ -2237,7 +2237,7 @@ const CONCEPT_BANK = [
     remember: '높이는 반드시 밑변에 수직! 기울어진 옆면이 아니에요.',
   },
   {
-    match: ['angle','angle-sum','angle-measure','angle-estimate','angle-in-shape'],
+    match: ['angle','angle-sum','angle-measure','angle-estimate','angle-in-shape','triangle-kind','quadrilateral-angle','triangle-angle','equilateral-angle','isosceles-angle','parallel-perpendicular','parallel-distance','polygon-diagonal','polygon-name','regular-polygon','quadrilateral-kind'],
     title: '각도', emoji: '📐',
     core: '각도는 두 선이 벌어진 크기예요. 직각 = 90°, 한 바퀴 = 360°.',
     example: '삼각형 세 각의 합 = 180°',
@@ -2251,7 +2251,7 @@ const CONCEPT_BANK = [
     remember: '삼각형 내각의 합 = 180°,  사각형 내각의 합 = 360°',
   },
   {
-    match: ['volume','cuboid-volume','stacked-cubes','cube-count'],
+    match: ['cuboid-volume','stacked-cubes','cube-count','volume-unit','prep-volume'],
     title: '부피', emoji: '📦',
     core: '직육면체 부피 = 가로 × 세로 × 높이',
     example: '2cm × 3cm × 4cm = 24cm³',
@@ -2265,7 +2265,7 @@ const CONCEPT_BANK = [
     remember: '단위가 cm³ (세제곱센티미터)예요 — cm²와 달라요!',
   },
   {
-    match: ['ratio','simplify-ratio','ratio-rate','ratio-write','ratio-equivalent'],
+    match: ['ratio','simplify-ratio','ratio-rate','ratio-write','ratio-equivalent','proportional-distribution'],
     title: '비와 비율', emoji: '⚖️',
     core: '두 수의 비교를 나타내요. A : B = A를 B로 나눈 값(비율)',
     example: '3 : 5 → 비율 = 3/5 = 0.6',
@@ -2279,7 +2279,7 @@ const CONCEPT_BANK = [
     remember: '비를 가장 간단하게! 6:4 → 3:2 (÷2)',
   },
   {
-    match: ['direct-proportion','proportion-table','proportion-check','proportion-missing'],
+    match: ['direct-proportion','direct-proportion-table','direct-proportion-graph','proportion-check','proportion-missing'],
     title: '정비례', emoji: '📈',
     core: 'x가 2배, 3배 되면 y도 2배, 3배 — 항상 x/y가 일정해요.',
     example: '속도 60km/h → 1시간:60km, 2시간:120km, 3시간:180km',
@@ -2307,7 +2307,7 @@ const CONCEPT_BANK = [
     remember: 'x × y = 항상 같은 수이면 반비례!',
   },
   {
-    match: ['gcd','lcm','common-factor','common-multiple','factor-basic','multiple-basic'],
+    match: ['gcd','lcm','common-factor','common-multiple','factor-basic','multiple-basic','factor-multiple','multiples','factors','factor-count','review-factor'],
     title: '최대공약수·최소공배수', emoji: '🔢',
     core: '약수: 나누어 떨어지는 수 / 배수: 곱해서 나오는 수',
     example: '12와 18의 GCD = 6,  LCM = 36',
@@ -2397,7 +2397,7 @@ const CONCEPT_BANK = [
   },
   // ── 6학년 추가 ──────────────────────────────────────────────
   {
-    match: ['circle-area','circumference','circle-composite','pi-from','cylinder-surface'],
+    match: ['circle-area','circumference-from','circle-composite','pi-from','circle-draw','circle-basic'],
     title: '원의 넓이·둘레', emoji: '⭕',
     core: '원주(둘레) = 지름 × π ≈ 지름 × 3.14  /  넓이 = 반지름² × π',
     example: '반지름 5cm → 원주 ≈ 31.4cm, 넓이 ≈ 78.5cm²',
@@ -2413,7 +2413,7 @@ const CONCEPT_BANK = [
     remember: '백분율(%) = (부분/전체) × 100. 소수로 바꾸면 ÷100!',
   },
   {
-    match: ['integer-addition','integer-subtraction','integer-number-line','signed-number','rational-number'],
+    match: ['integer-addition','integer-subtraction','integer-number-line','signed-number','rational-number','integer-multiplication','multi-integer-product','integer-division'],
     title: '정수와 유리수', emoji: '➕➖',
     core: '0보다 작은 음수(−)가 있어요. 수직선에서 0 오른쪽은 +, 왼쪽은 −',
     example: '+3 + (−5) = −2  /  −4 − (−2) = −2',
@@ -2437,7 +2437,7 @@ const CONCEPT_BANK = [
     remember: '소수(Prime): 1과 자기 자신만으로 나누어지는 수 (2, 3, 5, 7, 11…)',
   },
   {
-    match: ['cylinder-volume','cylinder-height','prism-face','prism-edge','pyramid-face','pyramid-edge','solid-name','cone-sphere','prism-pyramid-net'],
+    match: ['cylinder-volume','cylinder-height','prism-face','prism-edge','pyramid-face','pyramid-edge','solid-name','cone-sphere','prism-pyramid-net','cuboid-edge','cuboid-face','cuboid-parallel','cylinder-surface','cuboid-surface','cylinder-net','cuboid-counts','cuboid-edge-sum'],
     title: '원기둥·각기둥·각뿔', emoji: '🏛️',
     core: '기둥 부피 = 밑넓이 × 높이  /  원기둥 부피 = πr² × 높이',
     example: '반지름 3, 높이 5인 원기둥 → 3.14×9×5 ≈ 141.3cm³',
@@ -2452,7 +2452,7 @@ const CONCEPT_BANK = [
   },
   // ── 추가 개념 (누락 skillId 보완) ──────────────────────────────
   {
-    match: ['mm-cm','length-km','length-convert','weight-add','weight','volume-add','seconds','mm','measurement','length-add'],
+    match: ['mm-cm','length-km','length-convert','weight-add','weight','volume-add','measurement','length-add'],
     title: '측정·단위', emoji: '📏',
     core: '1m = 100cm = 1000mm  /  1kg = 1000g  /  1L = 1000mL',
     example: '3km 500m = 3500m  /  2kg 300g = 2300g',
@@ -2480,7 +2480,7 @@ const CONCEPT_BANK = [
     remember: '60진법! 분이 60 이상이면 1시간으로 올려요 — 10진법과 달라요!',
   },
   {
-    match: ['compare-facts','missing-number','missing-operator','ten-pairs','zero-add','count-by-tens','skip-count','compare','order-number'],
+    match: ['compare-facts','missing-number','missing-operator','count-by-tens','skip-count','order-number'],
     title: '수 비교·순서', emoji: '🔢',
     core: '두 수의 크기를 비교할 때는 자릿수부터 확인하고, 같으면 높은 자리부터 비교해요.',
     example: '352 < 429  (백의 자리 3 < 4)',
@@ -2522,7 +2522,7 @@ const CONCEPT_BANK = [
     remember: '곱셈·나눗셈이 덧셈·뺄셈보다 먼저! 괄호는 무조건 제일 먼저!',
   },
   {
-    match: ['table-missing','table-total','offset-value','rate-table','function-graph','direct-proportion-table','inverse-proportion-table'],
+    match: ['table-missing','table-total','offset-value','rate-table','function-graph','direct-proportion-table','inverse-proportion-table','relation-equation','formula-choice','function-graph-table','relation-table'],
     title: '표와 대응 관계', emoji: '📋',
     core: '두 양의 대응 관계를 표로 나타내면 규칙을 쉽게 찾을 수 있어요.',
     example: 'x: 1 2 3 4  /  y: 3 6 9 12  → y = x × 3',
@@ -2557,46 +2557,58 @@ function getConceptEntry(skillId) {
     if (entry.match.length > 0 && entry.match.some(kw => sid.includes(kw))) return entry;
   }
   // 광역 fallback — 패턴 순서 중요 (구체적인 것 먼저)
-  if (/add.carry|carry.add/.test(sid))                   return CONCEPT_BANK[0];
-  if (/sub.borrow|borrow.sub|bridge/.test(sid))          return CONCEPT_BANK[2];
-  if (/two.digit.two|three.digit.times|mul.2|mul2/.test(sid)) return CONCEPT_BANK[5];
-  if (/add/.test(sid))                                    return CONCEPT_BANK[1];
-  if (/sub/.test(sid))                                    return CONCEPT_BANK[3];
-  if (/mul|times|repeated|array|skip.count/.test(sid))   return CONCEPT_BANK[4];
-  if (/div/.test(sid))                                    return CONCEPT_BANK[6];
-  if (/fraction|frac|denominator|numerator|equivalent|common.denom/.test(sid)) return CONCEPT_BANK[7];
-  if (/decimal|dec\./.test(sid))                         return CONCEPT_BANK[11];
+  if (/add.carry|carry.add/.test(sid))                              return CONCEPT_BANK[0];
+  if (/sub.borrow|borrow.sub|sub.bridge/.test(sid))                return CONCEPT_BANK[2];
+  if (/two.digit.two|three.digit.times|two.digit.times|tens.times|big.multiply|mul.2|mul2/.test(sid)) return CONCEPT_BANK[5];
+  if (/integer.times.decimal|decimal.times.integer/.test(sid))     return CONCEPT_BANK[12];
+  if (/integer.multiplication|integer.division|multi.integer/.test(sid)) return CONCEPT_BANK[32];
+  if (/decimal/.test(sid))                                          return CONCEPT_BANK[11];
+  if (/add/.test(sid))                                              return CONCEPT_BANK[1];
+  if (/sub/.test(sid))                                              return CONCEPT_BANK[3];
+  if (/mixed.fraction|mixed.like|common.denominator/.test(sid))     return CONCEPT_BANK[7];
+  if (/compare.fractions|order.fractions|equivalent.fraction|reduce.fraction|fraction.numberline|fraction.decimal/.test(sid)) return CONCEPT_BANK[8];
+  if (/fraction.times|fraction.of.quantity/.test(sid))             return CONCEPT_BANK[9];
+  if (/fraction.divide|natural.divide.fraction|mixed.divide/.test(sid)) return CONCEPT_BANK[10];
+  if (/fraction|frac|denominator|numerator/.test(sid))             return CONCEPT_BANK[7];
+  if (/factor.multiple|multiples|review.factor/.test(sid))         return CONCEPT_BANK[22];
+  if (/mul|times|repeated|array|skip.count|missing.factor/.test(sid)) return CONCEPT_BANK[4];
+  if (/div/.test(sid))                                              return CONCEPT_BANK[6];
   if (/place.value|place|digit|tens.ones|compose|decompose|big.number|three.digit|four.digit/.test(sid)) return CONCEPT_BANK[13];
-  if (/measurement|length|km|meter|mm|weight|mass|capacity|volume.add|seconds|second/.test(sid)) return CONCEPT_BANK[36];
-  if (/time|clock|calendar|schedule/.test(sid))          return CONCEPT_BANK[37];
-  if (/compare|order|missing|zero|operator|ten.pair|count.by/.test(sid)) return CONCEPT_BANK[38];
-  if (/flip|turn|rotate|motion|transform|reflect/.test(sid)) return CONCEPT_BANK[39];
-  if (/mixed|review|addsub|muldiv/.test(sid))            return CONCEPT_BANK[40];
-  if (/table|offset|function|graph.table/.test(sid))     return CONCEPT_BANK[41];
-  if (/ratio|rate/.test(sid))                            return CONCEPT_BANK[19];
-  if (/direct.proportion|proportion|inverse/.test(sid))  return CONCEPT_BANK[20];
-  if (/circle|circumference|pi/.test(sid))               return CONCEPT_BANK[30];
-  if (/percent/.test(sid))                               return CONCEPT_BANK[31];
-  if (/integer|signed/.test(sid))                        return CONCEPT_BANK[32];
-  if (/equation|expression|simplify.like/.test(sid))     return CONCEPT_BANK[33];
-  if (/prime|factor|gcd|lcm/.test(sid))                  return CONCEPT_BANK[34];
-  if (/cylinder|prism|pyramid|solid|cone|sphere|net/.test(sid)) return CONCEPT_BANK[35];
-  if (/average/.test(sid))                               return CONCEPT_BANK[26];
-  if (/round|estimate|range/.test(sid))                  return CONCEPT_BANK[27];
-  if (/chance|probability/.test(sid))                    return CONCEPT_BANK[28];
-  if (/area|perimeter/.test(sid))                        return CONCEPT_BANK[15];
-  if (/angle|shape/.test(sid))                           return CONCEPT_BANK[17];
-  if (/symmetry|congruent/.test(sid))                    return CONCEPT_BANK[25];
-  if (/pattern/.test(sid))                               return CONCEPT_BANK[24];
+  if (/circle.area|circumference|circle.composite|pi.from|circle.draw|circle.basic/.test(sid)) return CONCEPT_BANK[30];
+  if (/cylinder|prism.edge|prism.face|pyramid.edge|pyramid.face|cone.sphere|cuboid.edge|cuboid.face|cuboid.parallel|cylinder.surface|cuboid.surface|cylinder.net|cuboid.counts/.test(sid)) return CONCEPT_BANK[35];
+  if (/triangle.area|parallelogram.area|trapezoid.area|composite.area|parallelogram|trapezoid|rhombus/.test(sid)) return CONCEPT_BANK[16];
+  if (/rectangle.area|rectangle.perimeter|area.unit|square.perimeter/.test(sid)) return CONCEPT_BANK[15];
+  if (/parallel.perpendicular|parallel.distance|polygon.diagonal|polygon.name|regular.polygon|quadrilateral.kind/.test(sid)) return CONCEPT_BANK[17];
+  if (/volume|cuboid.volume|stacked.cubes|cube.count/.test(sid))   return CONCEPT_BANK[18];
+  if (/measurement|length|km|meter|weight|mass|capacity|volume.add/.test(sid)) return CONCEPT_BANK[36];
+  if (/time|clock|calendar|schedule|seconds/.test(sid))            return CONCEPT_BANK[37];
+  if (/compare|order|missing|operator|count.by/.test(sid))         return CONCEPT_BANK[38];
+  if (/flip|turn|rotate|motion|transform|reflect/.test(sid))       return CONCEPT_BANK[39];
+  if (/mixed|review|addsub|muldiv/.test(sid))                      return CONCEPT_BANK[40];
+  if (/relation.equation|formula.choice|function.graph.table/.test(sid)) return CONCEPT_BANK[41];
+  if (/table|offset|function|graph.table/.test(sid))               return CONCEPT_BANK[41];
+  if (/ratio|rate/.test(sid))                                       return CONCEPT_BANK[19];
+  if (/direct.proportion|proportion|inverse/.test(sid))             return CONCEPT_BANK[20];
+  if (/percent/.test(sid))                                          return CONCEPT_BANK[31];
+  if (/integer|signed/.test(sid))                                   return CONCEPT_BANK[32];
+  if (/equation|expression|simplify.like/.test(sid))               return CONCEPT_BANK[33];
+  if (/prime|factor|gcd|lcm/.test(sid))                            return CONCEPT_BANK[34];
+  if (/average/.test(sid))                                          return CONCEPT_BANK[26];
+  if (/round|estimate|range/.test(sid))                             return CONCEPT_BANK[27];
+  if (/chance|probability/.test(sid))                               return CONCEPT_BANK[28];
+  if (/area|perimeter/.test(sid))                                   return CONCEPT_BANK[16];
+  if (/angle|shape/.test(sid))                                      return CONCEPT_BANK[17];
+  if (/symmetry|congruent/.test(sid))                               return CONCEPT_BANK[25];
+  if (/pattern/.test(sid))                                          return CONCEPT_BANK[24];
   if (/bar.graph|bar.chart|line.graph|circle.graph|pictograph|band.graph/.test(sid)) return CONCEPT_BANK[23];
-  if (/coordinate/.test(sid))                            return CONCEPT_BANK[33];
-  if (/volume|cuboid|cube|view.count/.test(sid))         return CONCEPT_BANK[18];
-  if (/word/.test(sid))                                   return CONCEPT_BANK[1];
-  if (/equal.share|share/.test(sid))                     return CONCEPT_BANK[6];
-  if (/parentheses|four.mix|paren/.test(sid))            return CONCEPT_BANK[40];
-  if (/parallel|perpendicular|quadrilateral|polygon|rhombus|regular.polygon/.test(sid)) return CONCEPT_BANK[15];
-  if (/relation/.test(sid))                              return CONCEPT_BANK[41];
-  if (/graph.read|prep/.test(sid))                       return CONCEPT_BANK[23];
+  if (/coordinate/.test(sid))                                       return CONCEPT_BANK[33];
+  if (/cube.top|view.count|view.from/.test(sid))                   return CONCEPT_BANK[18];
+  if (/zero/.test(sid))                                             return CONCEPT_BANK[14];
+  if (/word/.test(sid))                                             return CONCEPT_BANK[1];
+  if (/equal.share|share/.test(sid))                               return CONCEPT_BANK[6];
+  if (/parentheses|four.mix|paren/.test(sid))                      return CONCEPT_BANK[40];
+  if (/relation/.test(sid))                                         return CONCEPT_BANK[41];
+  if (/graph.read|prep/.test(sid))                                  return CONCEPT_BANK[23];
   // 최종 catch-all — 항상 개념 카드를 표시
   return CONCEPT_BANK[42];
 }
