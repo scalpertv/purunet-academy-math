@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>푸르넷 AI 수학 전자북 · 중1 수와 연산</title>
+  <title>푸르넷 AI 수학 전자북 · 중1 수학 (수와연산·정수유리수·문자와식)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -55,6 +55,10 @@
     .chip.cat-gcd.active{background:rgba(251,113,133,.16);border-color:rgba(251,113,133,.4);color:#fecdd3}
     .chip.cat-lcm.active{background:rgba(96,165,250,.16);border-color:rgba(96,165,250,.4);color:#bfdbfe}
     .chip.cat-integer.active{background:rgba(56,189,248,.16);border-color:rgba(56,189,248,.4);color:#bae6fd}
+    .chip.cat-ratnum.active{background:rgba(20,184,166,.16);border-color:rgba(20,184,166,.4);color:#99f6e4}
+    .chip.cat-intops.active{background:rgba(234,179,8,.16);border-color:rgba(234,179,8,.4);color:#fef08a}
+    .chip.cat-algebra.active{background:rgba(168,85,247,.16);border-color:rgba(168,85,247,.4);color:#e9d5ff}
+    .chip.cat-equation.active{background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.4);color:#fecaca}
     .start{width:100%;margin-top:14px;border:0;padding:13px 18px;border-radius:18px;background:linear-gradient(135deg,var(--green),#a3e635);color:#052e16;font-weight:950;font-size:14px;box-shadow:0 16px 34px rgba(34,197,94,.22);cursor:pointer;transition:.15s}
     .start:hover{transform:translateY(-2px);box-shadow:0 20px 38px rgba(34,197,94,.3)}
     .progress-bar-wrap{margin-top:12px}
@@ -75,6 +79,10 @@
     .tag.tag-gcd{background:rgba(251,113,133,.12);border-color:rgba(251,113,133,.25);color:#fecdd3}
     .tag.tag-lcm{background:rgba(96,165,250,.12);border-color:rgba(96,165,250,.25);color:#bfdbfe}
     .tag.tag-integer{background:rgba(56,189,248,.12);border-color:rgba(56,189,248,.25);color:#bae6fd}
+    .tag.tag-ratnum{background:rgba(20,184,166,.12);border-color:rgba(20,184,166,.25);color:#99f6e4}
+    .tag.tag-intops{background:rgba(234,179,8,.12);border-color:rgba(234,179,8,.25);color:#fef08a}
+    .tag.tag-algebra{background:rgba(168,85,247,.12);border-color:rgba(168,85,247,.25);color:#e9d5ff}
+    .tag.tag-equation{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.25);color:#fecaca}
     .game-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}
     .question-box{flex:1}
     .q-title{font-size:20px;font-weight:900;letter-spacing:-.03em;line-height:1.4;margin:12px 0 0}
@@ -196,7 +204,7 @@
       <div class="logo">📚</div>
       <div>
         <h1>푸르넷 AI 수학 전자북 · 낙안중 1학년</h1>
-        <p>천재교육·비상 수학1 | 수와 연산 전 단원 · 소인수분해~정수 사칙연산 · AI 코치</p>
+        <p>천재교육(이준열·류희찬)·비상 수학1 | Ⅰ수와연산 · Ⅱ정수유리수 · Ⅲ문자와식 · AI 코치</p>
       </div>
     </div>
     <div class="hud">
@@ -225,7 +233,11 @@
             <button class="chip cat-factor active" onclick="toggleCat(this,'factor')">🔍 소인수분해</button>
             <button class="chip cat-gcd active" onclick="toggleCat(this,'gcd')">🔗 최대공약수</button>
             <button class="chip cat-lcm active" onclick="toggleCat(this,'lcm')">🔄 최소공배수</button>
-            <button class="chip cat-integer active" onclick="toggleCat(this,'integer')">↔️ 정수 연산</button>
+            <button class="chip cat-integer active" onclick="toggleCat(this,'integer')">↔️ 정수 덧셈</button>
+            <button class="chip cat-ratnum active" onclick="toggleCat(this,'ratnum')">🔵 정수·유리수</button>
+            <button class="chip cat-intops active" onclick="toggleCat(this,'intops')">✖️ 정수 사칙연산</button>
+            <button class="chip cat-algebra active" onclick="toggleCat(this,'algebra')">📐 문자와 식</button>
+            <button class="chip cat-equation active" onclick="toggleCat(this,'equation')">⚖️ 일차방정식</button>
           </div>
         </div>
         <div>
@@ -246,9 +258,10 @@
       </div>
 
       <div class="world">
-        <div class="world-item"><div class="world-icon">📖</div><div><b>Ⅰ. 수와 연산</b><small>천재교육·비상 중1 수학 기반</small></div></div>
+        <div class="world-item"><div class="world-icon">📖</div><div><b>Ⅰ. 수와 연산</b><small>소수·거듭제곱·소인수분해·GCD·LCM</small></div></div>
+        <div class="world-item"><div class="world-icon">📗</div><div><b>Ⅱ. 정수와 유리수</b><small>천재 류희찬 — 절댓값·사칙연산</small></div></div>
+        <div class="world-item"><div class="world-icon">📘</div><div><b>Ⅲ. 문자와 식</b><small>천재 이준열 — 식·일차방정식</small></div></div>
         <div class="world-item"><div class="world-icon">🌍</div><div><b>국제 교과서 참고</b><small>미국·영국·중국·홍콩 중1 수학</small></div></div>
-        <div class="world-item"><div class="world-icon">🔒</div><div><b>정답 선노출 방지</b><small>직접 풀이 후 AI 피드백</small></div></div>
       </div>
     </aside>
 
@@ -328,7 +341,7 @@
 
       <div class="feedback" id="aiFeedback">💡 <b>AI 피드백:</b><br>단원을 선택하고 세트를 시작하세요.</div>
       <div class="cards" id="aiCards">
-        <div class="card"><div class="cicon">📚</div><div><b>학습 준비 완료</b><small>6개 단원, 30개 문제 준비됨</small></div></div>
+        <div class="card"><div class="cicon">📚</div><div><b>학습 준비 완료</b><small>10개 단원, 52개 문제 준비됨</small></div></div>
       </div>
 
       <div class="meter-top"><span>이해도</span><span id="meterText">0%</span></div>
@@ -676,6 +689,247 @@ const BANK = [
       '도착점: <b>+4 ✓</b>'],
     hint:'+6은 오른쪽으로 6칸! 0을 지나가는 점에 주의하세요.',
     wrong:['-8: 왼쪽으로 6칸이에요.','-4: 방향이 반대예요.','','+8: 2+6=8이지만 출발점이 -2예요.']
+  },
+
+  // ================================================================
+  // Ⅱ. 정수와 유리수 — 개념 (천재 류희찬)
+  // 절댓값, 수직선, 대소관계
+  // ================================================================
+  {id:'rn1',cat:'ratnum',catName:'정수·유리수 개념',catIcon:'🔵',diff:1,type:'mcq',
+    q:'영하 5℃를 양의 부호·음의 부호를 사용하여 나타내면?',
+    ch:['+5℃','-5℃','0℃','(-5)²℃'], correct:1,
+    steps:['0℃를 기준으로 영상 = (+), 영하 = (-)',
+      '영상 5℃ → +5℃',
+      '영하 5℃ → <b>-5℃ ✓</b>'],
+    hint:'영하는 0보다 작으니 음수 부호(-)를 붙여요!',
+    wrong:['영상 5℃예요. 영하는 방향이 반대예요.','','0℃는 영상도 영하도 아닌 기준점이에요.','거듭제곱은 관계없어요.']
+  },
+  {id:'rn2',cat:'ratnum',catName:'정수·유리수 개념',catIcon:'🔵',diff:1,type:'mcq',
+    q:'다음 중 <b>정수</b>인 것을 모두 고른 것은?<br><small style="color:#9fb0c7">+5, -3, 0, +1.5, -<span class="frac"><span class="num">1</span><span class="den">2</span></span></small>',
+    ch:['+5, -3만','0만','<b>+5, -3, 0</b>','+5, -3, 0, +1.5, -½'], correct:2,
+    steps:['정수: 양의 정수(자연수), 0, 음의 정수',
+      '+5 → 양의 정수 ✓',
+      '-3 → 음의 정수 ✓',
+      '0 → 정수 ✓',
+      '+1.5, -½ → 소수·분수이므로 정수가 아닌 유리수',
+      '∴ 정수: <b>+5, -3, 0 ✓</b>'],
+    hint:'소수·분수는 유리수이지만 정수는 아니에요!',
+    wrong:['+5와 -3은 맞는데 0도 정수예요.','0은 맞지만 +5, -3도 정수예요.','','+1.5와 -½은 정수가 아닌 유리수예요.']
+  },
+  {id:'rn3',cat:'ratnum',catName:'정수·유리수 개념',catIcon:'🔵',diff:1,type:'mcq',
+    q:'|-7|의 값은?',
+    ch:['-7','+7','7','0'], correct:2,
+    steps:['절댓값: 수직선에서 <b>원점(0)까지의 거리</b>',
+      '거리는 항상 0 이상의 수',
+      '|-7| = 7 (음수의 절댓값도 양수) ✓',
+      '참고: |+7| = 7, |-7| = 7 (같은 값)'],
+    hint:'절댓값은 항상 0 이상! 부호는 없애요.',
+    wrong:['절댓값은 항상 양수예요.','+7과 7은 같아요. 정답이지만 ③이 더 정확해요.','','0의 절댓값이 0이에요.']
+  },
+  {id:'rn4',cat:'ratnum',catName:'정수·유리수 개념',catIcon:'🔵',diff:2,type:'mcq',
+    q:'다음 수를 <b>작은 것부터 차례로</b> 나열한 것은?<br><small style="color:#9fb0c7">-3, +1, 0, -1, +4</small>',
+    ch:['+4 > +1 > 0 > -1 > -3','-3 < -1 < 0 < +1 < +4','-1 < -3 < 0 < +1 < +4','0 < -1 < -3 < +1 < +4'], correct:1,
+    steps:['수직선: 오른쪽 = 크다, 왼쪽 = 작다',
+      '음수 비교: 절댓값이 클수록 더 작다',
+      '|-3| = 3 > |-1| = 1 → -3 < -1',
+      '순서: <b>-3 < -1 < 0 < +1 < +4 ✓</b>'],
+    hint:'음수끼리는 절댓값이 클수록 더 작아요!',
+    wrong:['이건 큰 것부터예요. 반대예요.',''  ,'-1과 -3의 순서가 바뀌었어요.','음수가 0보다 작아야 해요.']
+  },
+  {id:'rn5',cat:'ratnum',catName:'정수·유리수 개념',catIcon:'🔵',diff:2,type:'mcq',
+    q:'절댓값이 <b>3</b>인 수를 모두 고른 것은?',
+    ch:['+3만','-3만','+3과 -3','0'],correct:2,
+    steps:['절댓값이 a인 수: 수직선에서 원점에서 a만큼 떨어진 수',
+      'a = 3인 수 → 오른쪽으로 3 = +3 ✓',
+      '왼쪽으로 3 = -3 ✓',
+      '∴ <b>+3과 -3 두 개 ✓</b>'],
+    hint:'원점에서 3만큼 떨어진 수는 오른쪽(+3)과 왼쪽(-3) 두 개예요!',
+    wrong:['+3만이 아니라 -3도 있어요.','-3만이 아니라 +3도 있어요.','','0의 절댓값은 0이에요.']
+  },
+
+  // ================================================================
+  // Ⅱ. 정수와 유리수 — 사칙연산 (천재 류희찬)
+  // ================================================================
+  {id:'io1',cat:'intops',catName:'정수 사칙연산',catIcon:'✖️',diff:1,type:'mcq',
+    q:'(-3) - (-7)을 계산하면?',
+    ch:['-10','-4','+4','+10'], correct:2,
+    steps:['뺄셈 → 빼는 수의 부호를 바꿔 덧셈으로',
+      '(-3) - (-7) = (-3) + (+7)',
+      '= +(7 - 3) = <b>+4 ✓</b>'],
+    hint:'빼는 수의 부호를 바꾸면 덧셈으로 바꿀 수 있어요!',
+    wrong:['-10 = -3 + (-7)이에요. 부호를 바꾸세요.','-4 = -3 - 1이에요.','','+10은 두 절댓값의 합이에요.']
+  },
+  {id:'io2',cat:'intops',catName:'정수 사칙연산',catIcon:'✖️',diff:1,type:'mcq',
+    q:'(+4) × (-3)의 값은?',
+    ch:['+12','-12','+7','-7'], correct:1,
+    steps:['부호 규칙: (+) × (-) = (-)',
+      '|+4| × |-3| = 4 × 3 = 12',
+      '부호: 다른 부호 → 음수',
+      '∴ <b>-12 ✓</b>'],
+    hint:'부호가 다른 두 수를 곱하면 음수가 돼요!',
+    wrong:['+12는 두 수가 같은 부호일 때예요.',''  ,'+7 = 4+3 덧셈이에요.','-7 = 4-3 뺄셈이에요.']
+  },
+  {id:'io3',cat:'intops',catName:'정수 사칙연산',catIcon:'✖️',diff:1,type:'mcq',
+    q:'(-12) ÷ (-4)의 값은?',
+    ch:['-3','+3','-48','+48'], correct:1,
+    steps:['부호 규칙: (-) ÷ (-) = (+)',
+      '|-12| ÷ |-4| = 12 ÷ 4 = 3',
+      '부호: 같은 부호 → 양수',
+      '∴ <b>+3 ✓</b>'],
+    hint:'같은 부호끼리 나누면 양수가 돼요!',
+    wrong:['-3은 부호가 다를 때예요.','','곱셈이 아니라 나눗셈이에요.','']
+  },
+  {id:'io4',cat:'intops',catName:'정수 사칙연산',catIcon:'✖️',diff:2,type:'mcq',
+    q:'(-2)<sup>3</sup>의 값은?',
+    ch:['+8','-8','+6','-6'], correct:1,
+    steps:['(-2)<sup>3</sup> = (-2) × (-2) × (-2)',
+      '(-2) × (-2) = +4 (음수 × 음수 = 양수)',
+      '+4 × (-2) = <b>-8</b> (양수 × 음수 = 음수) ✓',
+      '핵심: 음수를 홀수번 곱하면 음수!'],
+    hint:'음수를 홀수번(1, 3, 5...) 곱하면 음수, 짝수번(2, 4...) 곱하면 양수예요!',
+    wrong:['+8은 (-2)를 짝수번(4번) 곱할 때예요.',''  ,'+6 = -2 × 3 덧셈이에요.','-6 = -2 × 3 뺄셈이에요.']
+  },
+  {id:'io5',cat:'intops',catName:'정수 사칙연산',catIcon:'✖️',diff:2,type:'mcq',
+    q:'(-3) + (-5) × 2를 계산하면?<br><small style="color:#9fb0c7">사칙연산의 순서에 주의!</small>',
+    ch:['-16','-13','+7','+13'], correct:1,
+    steps:['사칙연산 순서: <b>곱셈·나눗셈 먼저, 덧셈·뺄셈 나중</b>',
+      '① 곱셈: (-5) × 2 = -10',
+      '② 덧셈: (-3) + (-10) = -(3+10) = <b>-13 ✓</b>'],
+    hint:'곱셈을 먼저 계산하고 덧셈을 나중에 해요!',
+    wrong:['-16 = (-3+(-5)) × 2 = -8×2이에요. 순서가 틀렸어요.',''  ,'+7 = -3+(-5+2)이에요.','+13 = 3+5×2이에요.']
+  },
+  {id:'io6',cat:'intops',catName:'정수 사칙연산',catIcon:'✖️',diff:3,type:'mcq',
+    q:'<span class="frac"><span class="num">-3</span><span class="den">4</span></span> ÷ <span class="frac"><span class="num">9</span><span class="den">8</span></span>를 계산하면?',
+    ch:['<span class="frac"><span class="num">-1</span><span class="den">6</span></span>','<span class="frac"><span class="num">-27</span><span class="den">32</span></span>','<span class="frac"><span class="num">-2</span><span class="den">3</span></span>','<span class="frac"><span class="num">2</span><span class="den">3</span></span>'], correct:2,
+    steps:['나눗셈 → 역수를 곱하기',
+      '<span class="frac"><span class="num">-3</span><span class="den">4</span></span> ÷ <span class="frac"><span class="num">9</span><span class="den">8</span></span> = <span class="frac"><span class="num">-3</span><span class="den">4</span></span> × <span class="frac"><span class="num">8</span><span class="den">9</span></span>',
+      '= <span class="frac"><span class="num">-3 × 8</span><span class="den">4 × 9</span></span> = <span class="frac"><span class="num">-24</span><span class="den">36</span></span>',
+      '= <b>-<span class="frac"><span class="num">2</span><span class="den">3</span></span> ✓</b>'],
+    hint:'분수 나눗셈: 나누는 수의 분자·분모를 뒤집어서 곱해요!',
+    wrong:['약분을 다시 확인해봐요.','약분이 안 됐어요.','','부호를 확인하세요. (-)÷(+) = (-)예요.']
+  },
+
+  // ================================================================
+  // Ⅲ. 문자와 식 — 문자를 사용한 식·식의 값 (천재 이준열)
+  // ================================================================
+  {id:'al1',cat:'algebra',catName:'문자와 식',catIcon:'📐',diff:1,type:'mcq',
+    q:'한 자루에 <b>a</b>원인 연필 3자루의 가격을 식으로 나타내면?',
+    ch:['a + 3','a - 3','3a','a ÷ 3'], correct:2,
+    steps:['(가격) = (한 자루 가격) × (자루 수)',
+      'a원 × 3자루',
+      '곱셈 기호 ×는 생략 → <b>3a</b>원 ✓',
+      '수는 문자 앞에 씁니다.'],
+    hint:'곱셈에서 × 기호를 생략하고 수를 문자 앞에 써요!',
+    wrong:['a+3은 덧셈이에요.','a-3은 뺄셈이에요.','','a÷3은 나눗셈이에요.']
+  },
+  {id:'al2',cat:'algebra',catName:'문자와 식',catIcon:'📐',diff:1,type:'mcq',
+    q:'x = 3일 때, 식 <b>2x + 1</b>의 값은?',
+    ch:['5','6','7','8'], correct:2,
+    steps:['식의 값: 문자에 수를 대입하여 계산',
+      'x = 3을 2x + 1에 대입',
+      '= 2 × 3 + 1',
+      '= 6 + 1 = <b>7 ✓</b>'],
+    hint:'x에 3을 넣어서 계산해봐요!',
+    wrong:['5 = 2×2+1이에요. x=2일 때예요.','6 = 2×3이에요. +1을 잊었어요!','','8 = 2×4이에요.']
+  },
+  {id:'al3',cat:'algebra',catName:'문자와 식',catIcon:'📐',diff:1,type:'mcq',
+    q:'다음을 기호 ×, ÷를 생략하여 나타낸 것으로 <b>옳은 것</b>은?',
+    ch:['a × b = ab ✓','a × 1 = 1a','a ÷ 3 = 3a','(a+b) × 2 = 2 + ab'], correct:0,
+    steps:['① a × b = <b>ab ✓</b> (문자 사이 × 생략)',
+      '② a × 1 = a (계수 1은 생략)',
+      '③ a ÷ 3 = <span class="frac"><span class="num">a</span><span class="den">3</span></span> (÷는 분수로)',
+      '④ (a+b) × 2 = 2(a+b) (수를 괄호 앞에)'],
+    hint:'수×문자 → 수를 앞에, ÷ → 분수로, 계수 1은 생략해요!',
+    wrong:['','계수가 1이면 생략해요. 1a가 아니라 a예요.','÷3은 분수 형태로 써요.','괄호가 있으면 수를 괄호 앞에 써요.']
+  },
+  {id:'al4',cat:'algebra',catName:'문자와 식',catIcon:'📐',diff:2,type:'mcq',
+    q:'x = 2, y = -1일 때, <b>3x - 2y</b>의 값은?',
+    ch:['4','6','8','10'], correct:2,
+    steps:['x = 2, y = -1을 대입',
+      '3 × 2 - 2 × (-1)',
+      '= 6 - (-2)',
+      '= 6 + 2 = <b>8 ✓</b>'],
+    hint:'음수를 대입할 때 부호에 주의해요! -2×(-1) = +2예요.',
+    wrong:['4 = 3×2-2×1이에요. y=-1이에요.','6 = 3×2이에요. -2y를 빠뜨렸어요.','','10 = 3×2+2×2이에요.']
+  },
+  {id:'al5',cat:'algebra',catName:'문자와 식',catIcon:'📐',diff:2,type:'mcq',
+    q:'다항식 <b>5a - 3</b>에서 a의 계수와 상수항을 차례로 구하면?',
+    ch:['계수: 5, 상수항: 3','계수: 5, 상수항: -3','계수: -3, 상수항: 5','계수: 3, 상수항: 5'], correct:1,
+    steps:['다항식 5a - 3 = 5a + (-3)',
+      '<b>계수</b>: 문자에 곱해진 수 → a의 계수 = <b>5</b>',
+      '<b>상수항</b>: 수만으로 이루어진 항 → <b>-3</b> (부호 포함!) ✓'],
+    hint:'상수항은 부호까지 포함해서 써요. 5a - 3에서 상수항은 -3이에요!',
+    wrong:['상수항은 -3이에요. 부호 포함!','','계수와 상수항의 순서가 바뀌었어요.','계수가 틀렸어요.']
+  },
+  {id:'al6',cat:'algebra',catName:'문자와 식',catIcon:'📐',diff:3,type:'mcq',
+    q:'(3x + 5) + (-x + 9)를 간단히 하면?',
+    ch:['2x + 14','4x + 14','2x + 4','4x + 4'], correct:0,
+    steps:['괄호 풀기: 3x + 5 - x + 9',
+      '동류항끼리 모으기:',
+      'x 항: 3x - x = (3-1)x = <b>2x</b>',
+      '상수항: 5 + 9 = <b>14</b>',
+      '∴ <b>2x + 14 ✓</b>'],
+    hint:'같은 문자가 있는 항끼리 계수를 더하고 상수항끼리 더해요!',
+    wrong:['','4x는 3x+x예요. 3x-x=2x이에요.','5+9=14예요.','']
+  },
+
+  // ================================================================
+  // Ⅲ. 문자와 식 — 일차방정식 (천재 이준열)
+  // ================================================================
+  {id:'eq1',cat:'equation',catName:'일차방정식',catIcon:'⚖️',diff:1,type:'mcq',
+    q:'방정식 <b>3x - 1 = 5</b>의 해는?',
+    ch:['x = 1','x = 2','x = 3','x = 4'], correct:1,
+    steps:['방정식의 해: 대입했을 때 등식이 참이 되는 값',
+      'x = 2 대입: 3×2 - 1 = 6 - 1 = 5 ✓',
+      '좌변 = 우변 이므로 <b>x = 2가 해 ✓</b>'],
+    hint:'각 선택지를 직접 대입해서 좌변=우변인지 확인해봐요!',
+    wrong:['x=1: 3×1-1=2≠5','','x=3: 3×3-1=8≠5','x=4: 3×4-1=11≠5']
+  },
+  {id:'eq2',cat:'equation',catName:'일차방정식',catIcon:'⚖️',diff:1,type:'mcq',
+    q:'일차방정식 <b>2x + 3 = 7</b>을 풀면?',
+    ch:['x = -2','x = 1','x = 2','x = 5'], correct:2,
+    steps:['상수항 이항: 2x = 7 - 3',
+      '동류항 정리: 2x = 4',
+      '양변을 2로 나누기: x = 4 ÷ 2',
+      '∴ <b>x = 2 ✓</b>',
+      '검산: 2×2 + 3 = 7 ✓'],
+    hint:'상수항(3)을 우변으로 이항하면 부호가 바뀌어요!',
+    wrong:['2x=7+3이면 x=-2예요. 이항 시 부호가 바뀌어요.','x=1: 2×1+3=5≠7','','x=5: 2×5+3=13≠7']
+  },
+  {id:'eq3',cat:'equation',catName:'일차방정식',catIcon:'⚖️',diff:2,type:'mcq',
+    q:'일차방정식 <b>5x - 3 = 2x + 9</b>를 풀면?',
+    ch:['x = 2','x = 3','x = 4','x = 6'], correct:2,
+    steps:['x 항을 좌변으로, 상수항을 우변으로 이항',
+      '5x - 2x = 9 + 3',
+      '동류항 정리: 3x = 12',
+      '양변을 3으로 나누기: <b>x = 4 ✓</b>',
+      '검산: 5×4-3 = 17, 2×4+9 = 17 ✓'],
+    hint:'미지수 항은 좌변으로, 상수항은 우변으로 이항해요!',
+    wrong:['x=2: 5×2-3=7, 2×2+9=13 (불일치)','x=3: 5×3-3=12, 2×3+9=15 (불일치)','','x=6: 5×6-3=27, 2×6+9=21 (불일치)']
+  },
+  {id:'eq4',cat:'equation',catName:'일차방정식',catIcon:'⚖️',diff:2,type:'mcq',
+    q:'괄호가 있는 방정식 <b>2(x - 3) = x + 1</b>을 풀면?',
+    ch:['x = 5','x = 6','x = 7','x = 8'], correct:2,
+    steps:['분배법칙으로 괄호 먼저 풀기: 2x - 6 = x + 1',
+      'x 항을 좌변으로 이항: 2x - x = 1 + 6',
+      '동류항 정리: x = 7',
+      '∴ <b>x = 7 ✓</b>',
+      '검산: 2×(7-3) = 2×4 = 8, 7+1 = 8 ✓'],
+    hint:'괄호는 분배법칙으로 먼저 풀고 이항해요!',
+    wrong:['x=5: 2×(5-3)=4, 5+1=6 (불일치)','x=6: 2×(6-3)=6, 6+1=7 (불일치)','','x=8: 2×(8-3)=10, 8+1=9 (불일치)']
+  },
+  {id:'eq5',cat:'equation',catName:'일차방정식',catIcon:'⚖️',diff:3,type:'mcq',
+    q:'연속하는 두 정수의 합이 <b>27</b>일 때, 두 수 중 작은 수는?<br><small style="color:#9fb0c7">일차방정식을 세워서 풀어보세요.</small>',
+    ch:['12','13','14','15'], correct:1,
+    steps:['연속하는 두 정수: 작은 수를 x라 하면 큰 수는 (x+1)',
+      '방정식 세우기: x + (x+1) = 27',
+      '정리: 2x + 1 = 27',
+      '이항: 2x = 26',
+      '풀기: x = 13',
+      '∴ 두 정수: <b>13</b>과 14, 작은 수 = <b>13 ✓</b>',
+      '검산: 13 + 14 = 27 ✓'],
+    hint:'작은 수를 x로 놓으면 연속하는 두 정수는 x와 x+1이에요!',
+    wrong:['12+13=25이에요.','','14+15=29이에요.','15+16=31이에요.']
   }
 ];
 
@@ -689,7 +943,7 @@ let G = {
   answered: false,
   selectedChoice: -1,
   hintUsed: false,
-  activeCats: new Set(['prime','powers','factor','gcd','lcm','integer']),
+  activeCats: new Set(['prime','powers','factor','gcd','lcm','integer','ratnum','intops','algebra','equation']),
   activeDiffs: new Set([1,2,3]),
   stats: {total:0, correct:0, wrong:0},
   scores: [0,0,0,0],       // 개념이해, 계산정확도, 응용력, 힌트독립성
