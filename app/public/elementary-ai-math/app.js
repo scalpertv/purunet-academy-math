@@ -2633,35 +2633,74 @@ function getConceptSVGType(c) {
 // 단계별 풀이 과정 파싱 및 렌더링
 // ============================================================
 
-// solution 문자열에서 중간 계산 단계를 자동 추출 (3가지 패턴)
+// solution 문자열에서 중간 계산 단계를 자동 추출
+// 패턴 A: "이므로" 분리 (단순/이중 모두)
+// 패턴 B: "먼저 A=B, C=D"
+// 패턴 C: "EXPR = MID = FINAL" 체인 (MID가 수식이어도 처리)
+// 패턴 D: solution 문자열 끝의 산술식 추출
 function parseSolutionToSteps(solution, finalAnswer) {
   if (!solution) return null;
-  const finalStr = String(finalAnswer ?? "").trim();
-  const s = solution.replace(/입니다\.?\s*$/, "").trim();
+  const finalStr = String(finalAnswer ?? '').trim();
+  const s = solution.replace(/입니다\.?\s*$/, '').trim();
 
-  // 패턴 A: "이므로" 분리 — "2 × 6 = 12이므로 37 − 12 + 27 = 52"
-  const imoreoIdx = s.indexOf("이므로");
+  // 패턴 A: "이므로" 분리
+  const imoreoIdx = s.indexOf('이므로');
   if (imoreoIdx !== -1) {
     const p1 = s.slice(0, imoreoIdx).trim();
-    const m = p1.match(/^(.+?)\s*=\s*(-?\d+(?:\.\d+)?)$/);
-    if (m && m[2] !== finalStr) {
-      return [{ label: `① ${m[1].trim()} = □`, answer: m[2] }];
+
+    // A1: p1이 "식 = 숫자" 형태 — "2 × 6 = 12이므로..."
+    const mA1 = p1.match(/^(.+?)\s*=\s*(-?[\d.]+)$/);
+    if (mA1 && mA1[2] !== finalStr) {
+      return [{ label: `① ${mA1[1].trim()} = □`, answer: mA1[2] }];
+    }
+
+    // A2: p1이 "A=B, C=D" 두 개 계산 — "N÷D=An, M÷D=Ad이므로..."
+    const mA2 = p1.match(/^(.+?)\s*=\s*(-?[\d/.]+),\s*(.+?)\s*=\s*(-?[\d/.]+)$/);
+    if (mA2) {
+      return [
+        { label: `① ${mA2[1].trim()} = □`, answer: mA2[2] },
+        { label: `② ${mA2[3].trim()} = □`, answer: mA2[4] },
+      ];
     }
   }
 
-  // 패턴 B: "먼저...A = B, C = FINAL" — "괄호 안을 먼저 계산하면 25 + 27 = 52, 68 − 52 = 16"
-  const meonjeoMatch = s.match(/먼저[^,]*\s+(.+?)\s*=\s*(-?\d+),\s*(.+?)\s*=\s*(-?\d+)$/);
-  if (meonjeoMatch && meonjeoMatch[4] === finalStr) {
-    const label = s.includes("괄호") ? `① 괄호 안: ${meonjeoMatch[1]} = □` : `① ${meonjeoMatch[1]} = □`;
-    return [{ label, answer: meonjeoMatch[2] }];
+  // 패턴 B: "먼저...A = B, C = FINAL"
+  const mB = s.match(/먼저[^,]*\s+(.+?)\s*=\s*(-?\d+),\s*(.+?)\s*=\s*(-?\d+)$/);
+  if (mB && mB[4] === finalStr) {
+    const label = s.includes('괄호') ? `① 괄호 안: ${mB[1]} = □` : `① ${mB[1]} = □`;
+    return [{ label, answer: mB[2] }];
   }
 
-  // 패턴 C: "EXPR = MID = FINAL" (등호 3개 체인) — "14 + 37 − 23 = 51 − 23 = 28"
+  // 패턴 C: "EXPR = MID = FINAL" 체인 (등호가 2개 이상)
   const parts = s.split(/\s*=\s*/);
-  if (parts.length === 3 && parts[2].trim() === finalStr) {
-    const mid = parts[1].trim();
-    if (/^-?\d+(?:\.\d+)?$/.test(mid) && mid !== finalStr) {
-      return [{ label: `① ${parts[0].trim()} = □`, answer: mid }];
+  if (parts.length >= 3) {
+    const orig = parts[0].trim();
+    const finalPart = parts[parts.length - 1].trim();
+    if (finalPart === finalStr) {
+      const mid = parts[1].trim();
+      // C1: 중간값이 순수 숫자
+      if (/^-?[\d.]+$/.test(mid) && mid !== finalStr) {
+        return [{ label: `① ${orig} = □`, answer: mid }];
+      }
+      // C2: 중간값이 "숫자 op ..." 형태 — "51 − 23" → 앞 숫자가 첫 번째 중간값
+      const midLead = mid.match(/^(-?[\d.]+)\s*[×÷+\-−]/);
+      if (midLead && midLead[1] !== finalStr) {
+        // 원래 식에서 마지막 연산자+피연산자를 제거해 앞부분 추출
+        const origTrimmed = orig.replace(/\s*[×÷+\-−]\s*[\d.(]+\s*$/, '').trim();
+        if (origTrimmed && origTrimmed !== orig) {
+          return [{ label: `① ${origTrimmed} = □`, answer: midLead[1] }];
+        }
+      }
+    }
+  }
+
+  // 패턴 D: solution 끝의 산술식 "A op B = R" 추출 (R이 finalAnswer와 다를 때만)
+  const mD = s.match(/\b([\d][\d\s×÷+\-−*\/]*[\d])\s*=\s*(\d+)\s*$/);
+  if (mD) {
+    const expr = mD[1].trim();
+    const ans = mD[2];
+    if (ans !== finalStr && /[×÷+\-−*\/]/.test(expr)) {
+      return [{ label: `① ${expr} = □`, answer: ans }];
     }
   }
 
@@ -2674,12 +2713,18 @@ function renderSolutionSteps() {
   const p = app.problem;
   if (!p) { el.innerHTML = ''; return; }
 
-  const steps = parseSolutionToSteps(p.solution, p.answer);
-  if (!steps || steps.length === 0) { el.innerHTML = ''; return; }
+  let steps = parseSolutionToSteps(p.solution, p.answer);
+
+  // Fallback: integer 문제 + 연산자 포함 expression → 식 자체를 1단계로 표시
+  if (!steps && p.kind === 'integer' && p.expression && /[+\-×÷*\/]/.test(p.expression)) {
+    const expr = p.expression.split('\n')[0].trim();
+    if (expr) steps = [{ label: `① ${expr} = □`, answer: String(p.answer) }];
+  }
+
+  if (!steps || !steps.length) { el.innerHTML = ''; return; }
 
   app.currentSteps = steps;
   app.stepValues = steps.map(() => '');
-  app.stepResults = steps.map(() => null);
 
   const stepsHTML = steps.map((step, i) =>
     `<div class="step-item" id="step-item-${i}">
@@ -2687,9 +2732,8 @@ function renderSolutionSteps() {
       <div class="step-row">
         <input
           class="step-input" type="text" inputmode="numeric"
-          id="step-input-${i}" placeholder="중간 답"
-          aria-label="단계 ${i+1} 중간 계산 값 입력"
-          value=""
+          id="step-input-${i}" placeholder="중간 답 입력"
+          aria-label="단계 ${i+1} 풀이 입력"
         />
         <span class="step-feedback" id="step-fb-${i}"></span>
       </div>
@@ -2706,7 +2750,6 @@ function renderSolutionSteps() {
   <div class="step-card-body" id="step-card-body">${stepsHTML}</div>
 </div>`;
 
-  // 접기/펼치기
   el.querySelector('#step-toggle')?.addEventListener('click', function() {
     const body = $('step-card-body');
     if (!body) return;
@@ -2715,12 +2758,9 @@ function renderSolutionSteps() {
     this.textContent = show ? '▲ 풀이' : '▼ 풀이';
   });
 
-  // 입력값 실시간 저장
   steps.forEach((_, i) => {
     const input = $(`step-input-${i}`);
-    if (input) input.addEventListener('input', () => {
-      app.stepValues[i] = input.value;
-    });
+    if (input) input.addEventListener('input', () => { app.stepValues[i] = input.value; });
   });
 }
 
@@ -2735,7 +2775,6 @@ function gradeSteps() {
     const sv = (app.stepValues[i] || '').trim();
     if (!item || !fb) return;
     if (sv === '') {
-      // 입력 안 함 → 정답만 표시
       fb.innerHTML = `<span class="step-answer-reveal">정답: <strong>${escapeHTML(step.answer)}</strong></span>`;
     } else if (sv === step.answer.trim()) {
       item.classList.add('step-ok');
