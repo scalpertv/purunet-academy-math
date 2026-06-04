@@ -2629,6 +2629,124 @@ function getConceptSVGType(c) {
   return 'default';
 }
 
+// ============================================================
+// 단계별 풀이 과정 파싱 및 렌더링
+// ============================================================
+
+// solution 문자열에서 중간 계산 단계를 자동 추출 (3가지 패턴)
+function parseSolutionToSteps(solution, finalAnswer) {
+  if (!solution) return null;
+  const finalStr = String(finalAnswer ?? "").trim();
+  const s = solution.replace(/입니다\.?\s*$/, "").trim();
+
+  // 패턴 A: "이므로" 분리 — "2 × 6 = 12이므로 37 − 12 + 27 = 52"
+  const imoreoIdx = s.indexOf("이므로");
+  if (imoreoIdx !== -1) {
+    const p1 = s.slice(0, imoreoIdx).trim();
+    const m = p1.match(/^(.+?)\s*=\s*(-?\d+(?:\.\d+)?)$/);
+    if (m && m[2] !== finalStr) {
+      return [{ label: `① ${m[1].trim()} = □`, answer: m[2] }];
+    }
+  }
+
+  // 패턴 B: "먼저...A = B, C = FINAL" — "괄호 안을 먼저 계산하면 25 + 27 = 52, 68 − 52 = 16"
+  const meonjeoMatch = s.match(/먼저[^,]*\s+(.+?)\s*=\s*(-?\d+),\s*(.+?)\s*=\s*(-?\d+)$/);
+  if (meonjeoMatch && meonjeoMatch[4] === finalStr) {
+    const label = s.includes("괄호") ? `① 괄호 안: ${meonjeoMatch[1]} = □` : `① ${meonjeoMatch[1]} = □`;
+    return [{ label, answer: meonjeoMatch[2] }];
+  }
+
+  // 패턴 C: "EXPR = MID = FINAL" (등호 3개 체인) — "14 + 37 − 23 = 51 − 23 = 28"
+  const parts = s.split(/\s*=\s*/);
+  if (parts.length === 3 && parts[2].trim() === finalStr) {
+    const mid = parts[1].trim();
+    if (/^-?\d+(?:\.\d+)?$/.test(mid) && mid !== finalStr) {
+      return [{ label: `① ${parts[0].trim()} = □`, answer: mid }];
+    }
+  }
+
+  return null;
+}
+
+function renderSolutionSteps() {
+  const el = $('step-note');
+  if (!el) return;
+  const p = app.problem;
+  if (!p) { el.innerHTML = ''; return; }
+
+  const steps = parseSolutionToSteps(p.solution, p.answer);
+  if (!steps || steps.length === 0) { el.innerHTML = ''; return; }
+
+  app.currentSteps = steps;
+  app.stepValues = steps.map(() => '');
+  app.stepResults = steps.map(() => null);
+
+  const stepsHTML = steps.map((step, i) =>
+    `<div class="step-item" id="step-item-${i}">
+      <span class="step-label">${escapeHTML(step.label)}</span>
+      <div class="step-row">
+        <input
+          class="step-input" type="text" inputmode="numeric"
+          id="step-input-${i}" placeholder="중간 답"
+          aria-label="단계 ${i+1} 중간 계산 값 입력"
+          value=""
+        />
+        <span class="step-feedback" id="step-fb-${i}"></span>
+      </div>
+    </div>`
+  ).join('');
+
+  el.innerHTML =
+    `<div class="step-card">
+  <div class="step-card-head">
+    <span class="step-card-emoji">📝</span>
+    <span class="step-card-title">풀이 과정 — 먼저 중간 계산을 써보세요</span>
+    <button class="step-card-toggle" type="button" id="step-toggle">▲ 풀이</button>
+  </div>
+  <div class="step-card-body" id="step-card-body">${stepsHTML}</div>
+</div>`;
+
+  // 접기/펼치기
+  el.querySelector('#step-toggle')?.addEventListener('click', function() {
+    const body = $('step-card-body');
+    if (!body) return;
+    const show = body.style.display === 'none';
+    body.style.display = show ? '' : 'none';
+    this.textContent = show ? '▲ 풀이' : '▼ 풀이';
+  });
+
+  // 입력값 실시간 저장
+  steps.forEach((_, i) => {
+    const input = $(`step-input-${i}`);
+    if (input) input.addEventListener('input', () => {
+      app.stepValues[i] = input.value;
+    });
+  });
+}
+
+function gradeSteps() {
+  const steps = app.currentSteps;
+  if (!steps || !steps.length) return;
+  steps.forEach((step, i) => {
+    const item = $(`step-item-${i}`);
+    const fb = $(`step-fb-${i}`);
+    const input = $(`step-input-${i}`);
+    if (input) input.disabled = true;
+    const sv = (app.stepValues[i] || '').trim();
+    if (!item || !fb) return;
+    if (sv === '') {
+      // 입력 안 함 → 정답만 표시
+      fb.innerHTML = `<span class="step-answer-reveal">정답: <strong>${escapeHTML(step.answer)}</strong></span>`;
+    } else if (sv === step.answer.trim()) {
+      item.classList.add('step-ok');
+      fb.innerHTML = `<span class="step-ok-mark">✓</span>`;
+    } else {
+      item.classList.add('step-ng');
+      fb.innerHTML = `<span class="step-answer-reveal">→ 정답: <strong>${escapeHTML(step.answer)}</strong></span>`;
+    }
+  });
+}
+
 function renderConceptNote(skillId) {
   const el = $('concept-note');
   if (!el) return;
@@ -2674,6 +2792,7 @@ function renderMission() {
   void visualEl.offsetHeight;
   visualEl.innerHTML = buildElementaryVisual(p);
   renderConceptNote(p.skillId);
+  renderSolutionSteps();
   if (p.expression && p.expression.trim()) {
     const exprDiv = document.createElement("div");
     exprDiv.className = "problem-expr-text";
@@ -2749,6 +2868,7 @@ function selectChoice(value, button) {
     if (sameAnswer(app.problem, btn.dataset.choice)) btn.classList.add("is-correct");
   });
   if (button) button.classList.add(correct ? "is-correct" : "is-wrong");
+  gradeSteps();
   const analysis = correct ? correctCoach() : wrongCoach(value);
   updateBoss(correct ? "hit" : "danger");
   setCoach(correct ? "good" : "alert", analysis.title, analysis.speech, analysis.cards);
