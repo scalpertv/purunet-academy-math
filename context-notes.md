@@ -1620,3 +1620,7 @@
 - 로컬 브라우저 검증은 `http://127.0.0.1:4179/elementary-ai-math/index.html`에서 1, 3, 6학년 기준으로 수행했고, 다크 배경, 흰색 벡터 보드, SVG 클래스 적용, 개념·코칭의 현재 식 언급, 정답 숨김, 콘솔 오류 없음, 가로 넘침 없음이 통과했다.
 - `node --check app/public/elementary-ai-math/app.js`, `npm.cmd run verify`, `npm.cmd run onefile`은 통과했다. `npm.cmd run lint`는 기존 미해결 파일 `functions/api/auth/cross-login.ts`, `functions/api/auth/sso-token.ts`, `src/App.tsx`, `src/components/LogicFlowCard.tsx`, `src/components/Practice.tsx`의 기존 lint 오류로 실패했다.
 - `npm run onefile` 산출물을 `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고, 모바일 `sw.js` 캐시 버전은 `v87`이다.
+- 작업 커밋은 `624952a fix elementary math visuals and contextual guidance`이다.
+- 운영 배포는 `%TEMP%/purunet-math-ebook-deploy-dark-svg-20260606065359` 임시 작업트리에서 커밋된 HEAD 기준으로 진행했다. `npm.cmd ci`, `npm.cmd run build`, `npx.cmd wrangler pages deploy dist --project-name purunet-math-ebook --branch main`을 실행했고 프리뷰 URL은 `https://7131b2ab.purunet-math-ebook.pages.dev`이다.
+- 운영 `https://purunet-math-ebook.pages.dev/elementary-ai-math/`에서 1, 3, 6학년 브라우저 검증을 수행했고, 다크 배경, 흰색 SVG 보드, SVG.js 로드, SVG 잘림 없음, 교사형 풀이 카드 4개 이상, 정답 숨김, 공개 정답 노드 없음, 가로 넘침 없음, 콘솔 오류 없음이 통과했다.
+- 운영 `index.html`과 `app.js`에서 `@svgdotjs/svg.js`, `enhanceMathVisual`, `stabilizeMathVisual`, `problemMathContext`, `buildTeacherSolutionCards`, `vf-card` 반영을 확인했다.
