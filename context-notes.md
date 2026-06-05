@@ -1572,3 +1572,6 @@
 - 수치형 정답은 문맥에서 `cm³`, `m`, `kg`, `L`, `명`, `°`, `%p` 등 단위를 추론해 보기에도 함께 표시한다.
 - `app/public/elementary-ai-math/generators.js`를 재생성했고, `npm run onefile` 산출물을 `CODEX 수학 익힘북 전자북(26.05.17)/CODEX-수학-익힘북-전자북.html`, `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했다. 모바일 `sw.js` 캐시 버전은 `v84`이다.
 - 검증 결과 6학년 전체 생성기 4300회 구조 검사, `npm.cmd run verify`, `npm.cmd run onefile`은 통과했다. `npm.cmd run lint`는 기존 미해결 lint 오류로 실패했다.
+- 작업 커밋은 `53c1c0b feat: convert grade 6 math to professional four-choice`이다.
+- 운영 배포는 `%TEMP%/purunet-math-ebook-deploy-g6-professional-20260606055740` 임시 작업트리에서 커밋된 HEAD 기준으로 진행했다. `npm.cmd ci`, `npm.cmd run build`, `npx.cmd wrangler pages deploy dist --project-name purunet-math-ebook --branch main`을 실행했고 프리뷰 URL은 `https://f0544d59.purunet-math-ebook.pages.dev`이다.
+- 운영 `https://purunet-math-ebook.pages.dev/elementary-ai-math/`는 HTTP 200이며, 운영 `generators.js` 실행 검사에서 대표 6학년 문항 3개가 `kind=choice`, `choices=4`, 정답 포함, `solutionSteps=3`으로 확인됐다.
