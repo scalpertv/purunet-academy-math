@@ -1603,3 +1603,7 @@
 - 검증 결과 `node --check app/public/elementary-ai-math/app.js`, `npm.cmd run verify`, `npm.cmd run onefile`은 통과했다. `npm.cmd run lint`는 기존 미해결 lint 오류로 실패했다.
 - 로컬 브라우저 검증에서 1-6학년 각각 풀이 버튼과 오답 코칭을 확인했고, 풀이 카드에 `정답:` 노출 없음, 숨김 정답 칸 유지, 공개 정답 없음, 가로 넘침 없음, 콘솔 오류 없음이 통과했다.
 - 모바일 `sw.js` 캐시 버전은 `v86`이다.
+- 작업 커밋은 `f52da31 feat: apply guided solution flow to all grades`이다.
+- 운영 배포는 `%TEMP%/purunet-math-ebook-deploy-all-grades-flow-20260606062658` 임시 작업트리에서 커밋된 HEAD 기준으로 진행했다. `npm.cmd ci`, `npm.cmd run build`, `npx.cmd wrangler pages deploy dist --project-name purunet-math-ebook --branch main`을 실행했고 프리뷰 URL은 `https://ef51e046.purunet-math-ebook.pages.dev`이다.
+- 운영 `https://purunet-math-ebook.pages.dev/elementary-ai-math/`에서 모바일 390×844 기준 1-6학년 풀이 버튼을 검증했고, 각 학년 카드 3개 이상, 풀이 흐름 숨김 정답 유지, 공개 정답 노드 없음, 콘솔 오류 없음, 가로 넘침 없음이 통과했다.
+- 운영 `app.js`에서 `teacherConceptGuide`, `buildTeacherSolutionCards`, `teacherHintSummary(app.problem)` 반영을 확인했다.
