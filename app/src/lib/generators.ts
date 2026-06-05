@@ -143,106 +143,218 @@ function answerDisplay(problem: Problem): string {
     return formatFrac(problem.answer);
   }
   if (Array.isArray(problem.answer)) return problem.answer.join(", ");
+  const inferUnit = () => {
+    const text = `${problem.solution} ${problem.expression}`;
+    return ["cm³", "cm²", "m³", "m²", "kg", "L", "cm", "m", "%p", "%", "°", "원", "쪽", "명", "묶음", "자리", "층", "컵", "개"].find((item) => text.includes(item));
+  };
+  if (typeof problem.answer === "number") {
+    const unit = inferUnit();
+    return unit ? `${problem.answer} ${unit}` : String(problem.answer);
+  }
+  if (typeof problem.answer === "string" && /^-?\d+(?:\.\d+)?$/.test(problem.answer)) {
+    const unit = inferUnit();
+    return unit ? `${problem.answer} ${unit}` : problem.answer;
+  }
   return String(problem.answer);
+}
+
+function uniqueOptions(options: string[], answer: string): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const option of [answer, ...options]) {
+    const value = option.trim();
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    result.push(value);
+    if (result.length === 4) break;
+  }
+  const fallback = ["계산 과정 오류", "단위 해석 오류", "조건 부족", "비례 관계 오류", "소수점 위치 오류"];
+  for (const option of fallback) {
+    if (result.length === 4) break;
+    if (seen.has(option) || option === answer) continue;
+    seen.add(option);
+    result.push(option);
+  }
+  return result;
+}
+
+function numericDistractors(value: number, answerText: string): string[] {
+  const suffix = answerText.startsWith(String(value)) ? answerText.slice(String(value).length) : "";
+  const candidates = [
+    value + 1,
+    Math.max(0, value - 1),
+    value * 10,
+    value / 10,
+    Math.round(value * 1.1),
+    Math.max(0, Math.round(value * 0.9)),
+  ];
+  return candidates
+    .filter((candidate) => Number.isFinite(candidate) && candidate !== value)
+    .map((candidate) => `${decimalText(candidate, Number.isInteger(candidate) ? 0 : 2)}${suffix}`);
+}
+
+function fractionDistractors(frac: Frac): string[] {
+  return [
+    formatFrac(reduceFrac(makeFrac(frac.n + 1, frac.d))),
+    formatFrac(reduceFrac(makeFrac(frac.n, frac.d + 1))),
+    formatFrac(reduceFrac(makeFrac(frac.n * 2, frac.d))),
+    formatFrac(reduceFrac(makeFrac(frac.d, Math.max(1, frac.n)))),
+    rawFrac(frac),
+  ];
+}
+
+function stringDistractors(answer: string, existing: string[] = []): string[] {
+  const ratio = answer.match(/^(\d+):(\d+)$/);
+  if (ratio) {
+    const a = Number(ratio[1]);
+    const b = Number(ratio[2]);
+    return [`${b}:${a}`, `${a + b}:${b}`, `${a}:${a + b}`, `${Math.max(1, a)}:${Math.max(1, b + 1)}`, `${Math.max(1, a + 1)}:${Math.max(1, b)}`, ...existing];
+  }
+  const percent = answer.match(/^(\d+(?:\.\d+)?)%$/);
+  if (percent) {
+    const value = Number(percent[1]);
+    return [`${value / 100}`, `${value + 10}%`, `${Math.max(0, value - 10)}%`, ...existing];
+  }
+  const decimal = Number(answer);
+  const numberWithUnit = answer.match(/^(-?\d+(?:\.\d+)?)(\s+\S+)$/);
+  if (numberWithUnit) {
+    return [...numericDistractors(Number(numberWithUnit[1]), answer), ...existing];
+  }
+  if (Number.isFinite(decimal) && answer.trim() !== "") {
+    return [...numericDistractors(decimal, answer), ...existing];
+  }
+  return [...existing, "기준량과 비교하는 양이 바뀐 값", "소수점 위치가 다른 값", "단위가 다른 값"];
+}
+
+function toG6FourChoice(problem: Problem, answerText: string): Problem {
+  const existingChoices = problem.choices ?? [];
+  let distractors: string[];
+  if (problem.kind === "fraction" && typeof problem.answer === "object" && problem.answer && "n" in problem.answer && "d" in problem.answer) {
+    distractors = fractionDistractors(problem.answer);
+  } else if (typeof problem.answer === "number") {
+    distractors = numericDistractors(problem.answer, answerText);
+  } else {
+    distractors = stringDistractors(answerText, existingChoices);
+  }
+  return {
+    ...problem,
+    kind: "choice",
+    answer: answerText,
+    answerText,
+    choices: shuffle(uniqueOptions(distractors, answerText)),
+    hint: "정답 1개를 고르세요.",
+  };
 }
 
 function numberedFlow(concept: string, steps: SolutionStep[], originalSolution: string): string {
   const flow = steps.map((step, index) => `${index + 1}. ${step.label}: ${step.answer}`).join("\n");
-  return `개념 핵심: ${concept}\n풀이 흐름\n${flow}\n계산 확인: ${originalSolution}`;
+  return `핵심 개념: ${concept}\n정형 풀이\n${flow}\n검산 및 단위 해석: ${originalSolution}`;
 }
 
 function g6ParkFlowProfile(topicId: string): G6ParkFlow | null {
   if (topicId.includes("decimal-divide")) {
     return {
-      concept: "소수의 나눗셈은 소수점의 위치를 먼저 읽고, 자연수 나눗셈처럼 계산한 뒤 몫의 소수점 자리를 되돌려 확인합니다.",
+      concept: "소수의 나눗셈은 피제수와 제수의 자리값을 보존한 채 자연수 나눗셈 알고리즘을 적용하고, 몫의 소수점 위치를 검산식으로 확정합니다.",
       prompts: [
-        "소수점 위치를 생각하며 나눗셈을 해결하세요.",
-        "소수 나눗셈의 계산 원리와 검산을 함께 확인하세요.",
-        "소수를 자연수처럼 나누고 소수점 자리를 맞추세요.",
+        "소수점의 자리값과 검산식을 근거로 알맞은 몫을 고르세요.",
+        "피제수, 제수, 몫의 관계를 이용해 소수 나눗셈을 해결하세요.",
+        "소수 나눗셈 알고리즘을 적용하여 옳은 값을 선택하세요.",
       ],
       steps: (problem, answerText) => [
-        { label: "자리값 읽기", answer: `${problem.expression}에서 소수점 아래 자릿수를 확인합니다.`, hint: "0.1, 0.01이 몇 개인지 먼저 봅니다." },
-        { label: "나눗셈 실행", answer: "자연수 나눗셈처럼 계산하고 필요한 경우 0을 붙여 계속 나눕니다.", hint: "몫의 소수점은 나누어지는 수의 자리와 맞춥니다." },
-        { label: "검산하기", answer: `몫 ${answerText}이 문제 조건에 맞는지 곱셈으로 되돌려 봅니다.`, hint: "몫 × 나누는 수 = 나누어지는 수인지 확인합니다." },
+        { label: "자리값 분석", answer: `${problem.expression}에서 피제수의 소수 자릿수와 제수의 크기를 확인합니다.`, hint: "0.1, 0.01 단위가 몇 개인지 해석합니다." },
+        { label: "나눗셈 알고리즘", answer: "자연수 나눗셈과 같은 절차로 계산하되, 몫의 소수점은 피제수의 자리값과 대응시킵니다.", hint: "필요하면 0을 보충해 나눗셈을 계속합니다." },
+        { label: "검산식 적용", answer: `몫 ${answerText}에 제수를 곱해 피제수가 되는지 확인합니다.`, hint: "몫 × 제수 = 피제수 관계를 사용합니다." },
       ],
     };
   }
   if (topicId.includes("ratio") || topicId.includes("rate") || topicId.includes("percent") || topicId.includes("quantity-from") || topicId.includes("proportion") || topicId.includes("scale")) {
     return {
-      concept: "비와 비율은 비교하는 양과 기준량을 구분하는 것이 먼저이며, 비율은 비교하는 양을 기준량으로 나눈 값입니다.",
+      concept: "비율은 비교하는 양을 기준량으로 나눈 값이며, 비 a:b, 분수 a/b, 소수, 백분율은 같은 양적 관계를 나타내는 서로 다른 표현입니다.",
       prompts: [
-        "비교하는 양과 기준량을 구분해 해결하세요.",
-        "비, 비율, 백분율의 관계를 생각하며 계산하세요.",
-        "같은 비율로 변하는 양을 표나 식으로 정리하세요.",
+        "비교하는 양과 기준량을 구분하여 알맞은 비율 표현을 고르세요.",
+        "비, 분수, 소수, 백분율의 동치 관계를 이용해 해결하세요.",
+        "동일 비율 관계를 식으로 모델링하여 정답을 선택하세요.",
       ],
       steps: (problem, answerText) => [
-        { label: "두 양 찾기", answer: `${problem.expression}에서 비교하는 양과 기준량을 표시합니다.`, hint: "무엇을 무엇에 대해 비교하는지 봅니다." },
-        { label: "관계식 세우기", answer: "비는 a:b로 쓰고, 비율은 a ÷ b 또는 a/b로 나타냅니다.", hint: "백분율은 비율에 100을 곱한 표현입니다." },
-        { label: "값 정리하기", answer: `가장 알맞은 형태로 정리하면 ${answerText}입니다.`, hint: "분수는 약분하고, 소수와 백분율은 단위를 확인합니다." },
+        { label: "양의 분류", answer: `${problem.expression}에서 비교하는 양과 기준량을 구분합니다.`, hint: "기준량은 비율 계산의 분모 역할을 합니다." },
+        { label: "관계식 모델링", answer: "비율 = 비교하는 양 ÷ 기준량 = 비교하는 양/기준량으로 나타냅니다.", hint: "백분율은 비율 × 100%입니다." },
+        { label: "표현 변환", answer: `약분, 소수 변환, 백분율 변환을 거쳐 ${answerText}로 정리합니다.`, hint: "동치인 표현인지 확인합니다." },
       ],
     };
   }
   if (topicId.includes("band-graph") || topicId.includes("circle-graph") || topicId.includes("graph-") || topicId.includes("percent-to-angle")) {
     return {
-      concept: "띠그래프와 원그래프는 전체를 100%로 보고 항목별 비율을 비교하거나, 필요한 수량을 비율 계산으로 구합니다.",
+      concept: "띠그래프와 원그래프는 전체를 100%로 정규화한 통계 표현이며, 각 항목의 백분율은 전체량에 대한 상대도수로 해석합니다.",
       prompts: [
-        "그래프의 전체와 각 항목의 비율을 읽어 해결하세요.",
-        "자료를 백분율로 해석하고 필요한 값을 구하세요.",
-        "띠그래프와 원그래프의 비율 관계를 비교하세요.",
+        "자료의 전체량과 상대도수를 해석하여 알맞은 값을 고르세요.",
+        "백분율, 수량, 중심각의 대응 관계를 이용해 해결하세요.",
+        "통계 그래프의 비율 정보를 수학식으로 변환하세요.",
       ],
       steps: (problem, answerText) => [
-        { label: "전체 확인", answer: "그래프나 표의 전체가 100% 또는 전체 인원이라는 점을 확인합니다.", hint: "원 전체와 띠 전체가 기준입니다." },
-        { label: "항목 읽기", answer: `${problem.expression}에서 필요한 항목의 백분율이나 수를 찾습니다.`, hint: "가장 큰 값, 차이, 일부 수를 구분합니다." },
-        { label: "계산 또는 비교", answer: `조건에 맞게 계산하면 ${answerText}입니다.`, hint: "인원수는 전체 × 비율, 중심각은 360° × 비율입니다." },
+        { label: "전체량 설정", answer: "그래프의 전체를 100% 또는 전체 도수로 설정합니다.", hint: "띠 전체와 원 전체가 기준량입니다." },
+        { label: "상대도수 해석", answer: `${problem.expression}에서 필요한 항목의 백분율, 도수, 또는 중심각 조건을 읽습니다.`, hint: "백분율은 전체에 대한 비율입니다." },
+        { label: "수량 변환", answer: `전체량 × 비율 또는 360° × 비율을 적용하여 ${answerText}를 얻습니다.`, hint: "차이는 %p 단위로 해석합니다." },
       ],
     };
   }
   if (topicId.includes("cuboid")) {
     return {
-      concept: "직육면체의 겉넓이는 마주 보는 세 쌍의 면 넓이를 모두 더하고, 부피는 한 층의 넓이에 높이를 곱해 구합니다.",
+      concept: "직육면체의 겉넓이는 서로 합동인 세 쌍의 직사각형 넓이의 합이고, 부피는 밑면의 넓이와 높이의 곱으로 정의됩니다.",
       prompts: [
-        "직육면체의 면과 모서리 길이를 정리해 해결하세요.",
-        "겉넓이와 부피 중 필요한 공식을 선택하세요.",
-        "단위까지 생각하며 직육면체 문제를 해결하세요.",
+        "직육면체의 길이 조건을 공식에 대입하여 알맞은 값을 고르세요.",
+        "겉넓이와 부피의 정의를 구분하여 해결하세요.",
+        "단위 차원을 고려해 직육면체의 측정값을 선택하세요.",
       ],
       steps: (problem, answerText) => [
-        { label: "길이 정리", answer: `${problem.expression}에서 가로, 세로, 높이 또는 부피 조건을 찾습니다.`, hint: "서로 수직인 세 모서리를 확인합니다." },
-        { label: "공식 선택", answer: "겉넓이는 세 면쌍의 넓이 합, 부피는 가로 × 세로 × 높이를 사용합니다.", hint: "빠진 길이는 부피를 밑면 넓이로 나누어 구합니다." },
-        { label: "단위 확인", answer: `계산 결과는 ${answerText}입니다.`, hint: "넓이는 제곱 단위, 부피는 세제곱 단위입니다." },
+        { label: "치수 추출", answer: `${problem.expression}에서 가로, 세로, 높이 또는 부피 조건을 추출합니다.`, hint: "서로 수직인 세 모서리가 기준 치수입니다." },
+        { label: "공식 적용", answer: "겉넓이 S=2(ab+bc+ca), 부피 V=abc 중 필요한 식을 적용합니다.", hint: "미지의 길이는 V ÷ 밑면의 넓이로 구합니다." },
+        { label: "단위 차원 확인", answer: `계산값 ${answerText}의 단위가 길이, 넓이, 부피 중 무엇인지 확인합니다.`, hint: "넓이는 cm², 부피는 cm³입니다." },
       ],
     };
   }
   if (topicId.includes("prism") || topicId.includes("pyramid") || topicId.includes("solid-name")) {
     return {
-      concept: "각기둥은 합동이고 평행한 두 밑면과 직사각형 옆면을 가지며, 각뿔은 한 밑면과 꼭짓점으로 모이는 삼각형 옆면을 가집니다.",
+      concept: "각기둥은 합동이고 평행한 두 밑면과 옆면으로 이루어진 다면체이고, 각뿔은 한 밑면과 한 꼭짓점에 모이는 삼각형 옆면으로 이루어진 다면체입니다.",
       prompts: [
-        "각기둥과 각뿔의 밑면, 옆면, 모서리 관계를 살펴보세요.",
-        "입체도형의 구성 요소를 세어 해결하세요.",
-        "전개도와 입체도형의 대응 관계를 확인하세요.",
+        "다면체의 밑면과 옆면 구조를 분석하여 알맞은 값을 고르세요.",
+        "각기둥과 각뿔의 구성 요소 사이의 규칙을 적용하세요.",
+        "전개도와 입체도형의 면 대응을 근거로 판단하세요.",
       ],
       steps: (problem, answerText) => [
-        { label: "밑면 확인", answer: `${problem.expression}에서 밑면의 모양이나 도형 설명을 찾습니다.`, hint: "각기둥은 밑면 2개, 각뿔은 밑면 1개입니다." },
-        { label: "구성 요소 세기", answer: "옆면, 밑면, 모서리를 밑면의 변의 수와 연결합니다.", hint: "전개도에서는 접히는 면의 종류를 봅니다." },
-        { label: "규칙 적용", answer: `도형의 규칙을 적용하면 ${answerText}입니다.`, hint: "각기둥과 각뿔의 규칙을 섞지 않도록 확인합니다." },
+        { label: "밑면 차수 확인", answer: `${problem.expression}에서 밑면이 n각형인지 확인합니다.`, hint: "밑면의 변의 수를 n으로 둡니다." },
+        { label: "구성 요소 공식화", answer: "각기둥은 면 n+2, 모서리 3n이고 각뿔은 면 n+1, 모서리 2n입니다.", hint: "전개도에서는 밑면과 옆면의 개수를 대응시킵니다." },
+        { label: "도형 규칙 적용", answer: `밑면의 차수 n을 대입하면 ${answerText}입니다.`, hint: "각기둥과 각뿔의 공식을 구분합니다." },
       ],
     };
   }
   if (topicId.includes("fraction-divide") || topicId.includes("quotient-fraction") || topicId.includes("mixed-divide") || topicId.includes("natural-divide-fraction")) {
     return {
-      concept: "분수의 나눗셈은 몫을 분수로 나타내거나, 나누는 수의 역수를 곱하는 식으로 바꾸어 계산합니다.",
+      concept: "분수의 나눗셈은 포함제와 등분제의 의미를 분수식으로 모델링하고, 제수의 역수를 곱하는 곱셈식으로 변환하여 계산합니다.",
       prompts: [
-        "분수의 의미와 나눗셈식을 연결해 해결하세요.",
-        "나누는 양이 몇 번 들어가는지 생각하며 계산하세요.",
-        "분수 나눗셈을 곱셈으로 바꾸어 풀이 흐름을 완성하세요.",
+        "분수 나눗셈의 의미를 식으로 모델링하여 알맞은 몫을 고르세요.",
+        "포함제 또는 등분제 상황을 분수 연산으로 변환하세요.",
+        "역수 곱셈 알고리즘을 적용하여 정답을 선택하세요.",
       ],
       steps: (problem, answerText) => [
-        { label: "나눗셈 상황 파악", answer: `${problem.expression}에서 전체량과 나누는 양을 구분합니다.`, hint: "전체를 몇으로 나누는지, 몇 묶음인지 봅니다." },
-        { label: "분수식으로 바꾸기", answer: "몫은 분수로 나타내거나 나누는 수의 역수를 곱하는 식으로 바꿉니다.", hint: "대분수는 먼저 가분수로 바꿉니다." },
-        { label: "계산과 약분", answer: `계산하고 가장 간단히 나타내면 ${answerText}입니다.`, hint: "분자와 분모의 공약수를 나누어 정리합니다." },
+        { label: "연산 구조 분석", answer: `${problem.expression}에서 피제수와 제수를 구분하고 나눗셈의 의미를 해석합니다.`, hint: "전체량, 한 묶음의 양, 나누는 수를 구분합니다." },
+        { label: "곱셈식 변환", answer: "분수로 나누는 경우 제수의 역수를 곱하고, 자연수로 나누는 경우 1/자연수를 곱합니다.", hint: "대분수는 가분수로 먼저 변환합니다." },
+        { label: "약분 및 표준형", answer: `계산 결과를 기약분수 또는 대분수의 표준형으로 정리하면 ${answerText}입니다.`, hint: "공약수로 약분해 동치분수 중 가장 간단한 형태를 찾습니다." },
       ],
     };
   }
-  return null;
+  return {
+    concept: "문제의 조건을 수학식으로 구조화하고, 연산 순서와 단위 해석을 함께 검토하여 정답을 판별합니다.",
+    prompts: [
+      "주어진 조건을 수학식으로 모델링하여 알맞은 답을 고르세요.",
+      "연산 구조와 단위 조건을 검토하여 정답을 선택하세요.",
+      "풀이 과정의 논리적 타당성을 확인하며 답을 고르세요.",
+    ],
+    steps: (problem, answerText) => [
+      { label: "조건의 수학화", answer: `${problem.expression}의 수량, 단위, 관계를 식으로 정리합니다.`, hint: "문장의 핵심 수량을 먼저 분리합니다." },
+      { label: "연산 절차 적용", answer: "정의, 공식, 연산 순서에 따라 계산 과정을 전개합니다.", hint: "괄호, 곱셈과 나눗셈, 덧셈과 뺄셈의 순서를 확인합니다." },
+      { label: "정답 판별", answer: `계산 결과와 조건을 대조하면 ${answerText}입니다.`, hint: "단위와 보기의 표현 형식까지 비교합니다." },
+    ],
+  };
 }
 
 function enrichG6ParkProblem(topicId: string, problem: Problem): Problem {
@@ -251,13 +363,14 @@ function enrichG6ParkProblem(topicId: string, problem: Problem): Problem {
   if (!profile) return problem;
   const answerText = answerDisplay(problem);
   const steps = problem.solutionSteps?.length ? problem.solutionSteps : profile.steps(problem, answerText);
-  return {
+  const enriched = {
     ...problem,
     prompt: choice(profile.prompts),
     conceptNote: problem.conceptNote ?? profile.concept,
     solutionSteps: steps,
     solution: numberedFlow(profile.concept, steps, problem.solution),
   };
+  return toG6FourChoice(enriched, answerText);
 }
 
 // ── 1단원: 자연수의 혼합 계산 ────────────────────────────────
@@ -3688,10 +3801,10 @@ const G6_SHARE_CONTEXTS = [
 ];
 
 const G6_DECIMAL_SHARE_CONTEXTS = [
-  { item: "코딩 로봇이 이동한 거리", unit: "m", target: "한 번에 이동한 거리" },
-  { item: "전시용 종이 끈", unit: "m", target: "한 장식에 쓰는 길이" },
-  { item: "학급 텃밭에 뿌릴 물", unit: "L", target: "한 구역에 뿌리는 양" },
-  { item: "관찰 기록지 묶음의 무게", unit: "kg", target: "한 묶음의 무게" },
+  { item: "코딩 로봇이 이동한 거리", unit: "m", target: "한 번에 이동한 거리", particle: "는" },
+  { item: "전시용 종이 끈", unit: "m", target: "한 장식에 쓰는 길이", particle: "는" },
+  { item: "학급 텃밭에 뿌릴 물", unit: "L", target: "한 구역에 뿌리는 양", particle: "은" },
+  { item: "관찰 기록지 묶음의 무게", unit: "kg", target: "한 묶음의 무게", particle: "는" },
 ];
 
 const G6_RATIO_CONTEXTS = [
@@ -3904,7 +4017,7 @@ function genG6DecimalDivideWord(): Problem {
   return mkChoice(
     "g6-decimal-divide-word",
     "문장을 읽고 소수 나눗셈으로 해결하세요.",
-    `${context.item} ${total} ${context.unit}를 ${divisor}개로 똑같이 나누면 ${context.target}은 몇 ${context.unit}입니까?`,
+    `${context.item} ${total} ${context.unit}를 ${divisor}개로 똑같이 나누면 ${context.target}${context.particle} 몇 ${context.unit}입니까?`,
     answer,
     [decimalText((each + 5) / 10, 1), decimalText(each / 100, 2), String(each)],
     `${total} ÷ ${divisor} = ${answer} ${context.unit}입니다.`,

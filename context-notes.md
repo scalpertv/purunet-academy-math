@@ -1561,3 +1561,14 @@
 - 임시 작업트리에서 `npm.cmd ci`와 `npm.cmd run build`가 통과했다. npm 감사 high 취약점 1건과 Vite 번들 크기 경고는 배포 차단 오류가 아니었다.
 - Cloudflare Pages 배포 명령은 `npx.cmd wrangler pages deploy dist --project-name purunet-math-ebook --branch main`이며 프리뷰 URL은 `https://bc6f578e.purunet-math-ebook.pages.dev`이다.
 - 운영 `https://purunet-math-ebook.pages.dev/elementary-ai-math/`는 HTTP 200이고, 운영 `generators.js`에서 `conceptNote`, `solutionSteps`, `개념 핵심`, `풀이 흐름`, `과학 실험용 색 물`, `직육면체의 겉넓이는`, `학급 프로젝트 주제` 반영을 확인했다.
+
+## 초등 AI 수학 6학년 전문 수학 표현·4지 선다 전환 (2026-06-06)
+- 요청 목표는 6학년 문제 생성기, 개념 설명, 단계별 풀이 흐름, 4지 선다 선택지를 모두 전문 수학 표현으로 정리하는 것이다.
+- 기존 6학년 보강 레이어인 `enrichG6ParkProblem`을 중심으로 손보면 원본 생성기 수식을 유지하면서 6학년 출력만 일괄 보정할 수 있다.
+- 구현 기준은 모든 6학년 생성 결과가 `kind: "choice"`와 정확히 4개 선택지를 갖고, 개념과 풀이 흐름은 수학 용어, 식, 검산, 단위 해석 중심으로 표현되는 것이다.
+- 기존 미커밋 변경이 많으므로 이번 작업은 `app/src/lib/generators.ts`와 생성 산출물 중심으로 제한한다.
+- 구현 결과 `answerDisplay`, `toG6FourChoice`, 선택지 보정 함수를 추가해 6학년 전체 생성 결과를 정확히 4개 보기의 선택형으로 변환한다.
+- 6학년 개념과 단계 풀이 표현을 `피제수`, `제수`, `자리값`, `비율`, `상대도수`, `다면체`, `겉넓이 S=2(ab+bc+ca)`, `부피 V=abc`, `역수 곱셈 알고리즘` 같은 전문 수학 표현 중심으로 정제했다.
+- 수치형 정답은 문맥에서 `cm³`, `m`, `kg`, `L`, `명`, `°`, `%p` 등 단위를 추론해 보기에도 함께 표시한다.
+- `app/public/elementary-ai-math/generators.js`를 재생성했고, `npm run onefile` 산출물을 `CODEX 수학 익힘북 전자북(26.05.17)/CODEX-수학-익힘북-전자북.html`, `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했다. 모바일 `sw.js` 캐시 버전은 `v84`이다.
+- 검증 결과 6학년 전체 생성기 4300회 구조 검사, `npm.cmd run verify`, `npm.cmd run onefile`은 통과했다. `npm.cmd run lint`는 기존 미해결 lint 오류로 실패했다.
