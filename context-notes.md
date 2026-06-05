@@ -1589,3 +1589,7 @@
 - 검증 결과 6학년 576개 샘플에서 4지선다 구조와 `solutionSteps` 3단계 이상, 풀이 문자열·단계 안 정답 누출 0건을 확인했다.
 - `npm.cmd run verify`와 `npm.cmd run onefile`은 통과했다. `npm.cmd run lint`는 기존 미해결 파일 `functions/api/auth/cross-login.ts`, `functions/api/auth/sso-token.ts`, `src/App.tsx`, `src/components/LogicFlowCard.tsx`, `src/components/Practice.tsx`의 기존 오류로 실패했다.
 - 로컬 브라우저 검증은 `http://127.0.0.1:4179/elementary-ai-math/index.html`에서 데스크톱 1366×900과 모바일 390×844로 수행했고, KaTeX 렌더링, 4지선다, 풀이 흐름 정답 숨김, 콘솔 오류 없음, 가로 넘침 없음이 통과했다.
+- 작업 커밋은 `85f6ba4 feat: polish elementary math professional learning page`이다.
+- 운영 배포는 `%TEMP%/purunet-math-ebook-deploy-prof-page-20260606061630` 임시 작업트리에서 커밋된 HEAD 기준으로 진행했다. `npm.cmd ci`, `npm.cmd run build`, `npx.cmd wrangler pages deploy dist --project-name purunet-math-ebook --branch main`을 실행했고 프리뷰 URL은 `https://cda3c7be.purunet-math-ebook.pages.dev`이다.
+- 운영 `https://purunet-math-ebook.pages.dev/elementary-ai-math/`에서 모바일 390×844 브라우저 검증을 수행했고, 제목, KaTeX 렌더링, 4개 선택지, 풀이 흐름 정답 숨김, 콘솔 오류 없음, 가로 넘침 없음이 통과했다.
+- 운영 `generators.js`에서 6학년 72개 주제 샘플을 실행해 `kind=choice`, 보기 4개, 풀이 문자열·단계 안 정답 누출 0건을 확인했다.
