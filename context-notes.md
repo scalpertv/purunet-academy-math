@@ -1508,3 +1508,11 @@
 - 1060px 이하에서는 사이드바 단원 목록을 가로 스크롤형으로 전환하고, 820px 이하에서는 단원 소개를 1열로 바꾸며, 740px 이하 낮은 화면에서는 추가 압축 규칙을 적용한다.
 - 검증은 로컬 사이트와 포털 개발 서버에서 1366×768, 1280×720, 390×844 화면으로 실행했다. 운영 주소와 프리뷰 주소에서도 풀이 카드, 질문 영역, SVG, 10문항 세션 목록, 가로 넘침 없음, 콘솔 오류 없음, 400 이상 응답 없음이 통과했다.
 - 포털 커밋은 `2c0bb34 fix: optimize Nakan workbook viewport layout`이며 배포 프리뷰는 `https://7ebdc210.purunet-academy.pages.dev`이다.
+
+## 천재교육 StreamDocs URL PDF 저장 (2026-06-05)
+- 요청 목표는 사용자가 제공한 StreamDocs 뷰어 URL을 로컬 PDF 파일로 저장하는 것이다.
+- 성공 기준은 PDF 파일 생성, 파일 크기 확인, 가능한 경우 페이지 수 확인으로 둔다.
+- 서버가 HEAD 요청을 허용하지 않아 GET 또는 브라우저 렌더링 기반 접근을 우선한다.
+- StreamDocs 뷰어는 `/streamdocs/v4/documents/{id}/renderings/{page}` API로 페이지 PNG 렌더링을 제공했다.
+- 총 78쪽을 PNG로 받아 인쇄용 HTML을 만들고 Chrome headless 인쇄로 `천재_초등_수학6-1(한대희)_교과서_StreamDocs.pdf`를 생성했다.
+- 검증 결과 최종 PDF는 57,068,591 bytes이며 pdfjs 기준 78쪽이다.
