@@ -3084,6 +3084,69 @@ function coachStartTip(skillId) {
   return "조건을 확인하고 알맞은 계산 방법을 생각해 보세요.";
 }
 
+function maskAnswerText(text, answer) {
+  let value = String(text || "");
+  const ans = String(answer || "").trim();
+  if (ans) value = value.split(ans).join("□");
+  value = value.replace(/(정답\s*[:：]\s*)[^\n.。]+/g, "$1□");
+  value = value.replace(/(=\s*)(-?\d+(?:\.\d+)?(?:\s+\d+\/\d+|\/\d+)?(?:\s*[a-zA-Z가-힣%°²³]+)?)/g, "$1□");
+  return value;
+}
+
+function teacherConceptGuide(problem) {
+  const id = problem.skillId || "";
+  if (id.includes("fraction") || id.includes("frac")) return "분수 문제는 분자와 분모가 각각 무엇을 뜻하는지 먼저 보아야 해요. 더하거나 빼면 통분, 곱하면 분자끼리와 분모끼리, 나누면 나누는 수의 역수를 떠올립니다.";
+  if (id.includes("decimal")) return "소수 문제는 자리값이 핵심입니다. 0.1, 0.01, 0.001 자리의 의미를 맞추고 소수점 위치를 끝까지 확인해요.";
+  if (id.includes("div")) return "나눗셈은 전체를 똑같이 나누거나 한 묶음이 몇 번 들어가는지 알아보는 계산입니다. 나누는 수와 몫을 곱해 되돌아오는지도 확인해요.";
+  if (id.includes("mul") || id.includes("times")) return "곱셈은 같은 크기의 묶음이 여러 개 있을 때 쓰는 계산입니다. 세로셈에서는 자리값과 받아올림을 차례대로 확인해요.";
+  if (id.includes("add")) return "덧셈은 같은 종류의 양을 모으는 계산입니다. 자리값을 맞추고 일의 자리부터 차례로 더하면 안정적이에요.";
+  if (id.includes("sub")) return "뺄셈은 남은 양이나 차이를 알아보는 계산입니다. 받아내림이 필요한 자리인지 먼저 살펴봅니다.";
+  if (id.includes("ratio") || id.includes("percent") || id.includes("rate")) return "비율은 비교하는 양을 기준량과 견주어 보는 생각입니다. 기준량이 무엇인지 먼저 정해야 분수, 소수, 백분율 표현이 흔들리지 않아요.";
+  if (id.includes("graph") || id.includes("table")) return "표와 그래프는 자료를 정리해 보여 주는 도구입니다. 전체, 항목, 단위, 눈금 간격을 차례로 읽어야 해요.";
+  if (id.includes("area") || id.includes("perimeter")) return "도형 문제는 길이, 둘레, 넓이를 구분하는 것이 먼저입니다. 둘레는 바깥 선의 길이 합, 넓이는 안쪽을 덮는 크기입니다.";
+  if (id.includes("volume") || id.includes("cuboid") || id.includes("cube")) return "입체도형에서는 길이, 넓이, 부피의 단위를 구분해야 합니다. 직육면체의 부피는 가로, 세로, 높이를 곱해 생각해요.";
+  if (id.includes("angle")) return "각도 문제는 기준이 되는 직각, 180도, 360도를 떠올리면 좋아요. 보조선이나 도형의 성질을 함께 사용합니다.";
+  if (id.includes("place") || id.includes("number")) return "수와 자리값 문제는 각 숫자가 어느 자리에 있는지 읽는 것이 핵심입니다. 같은 숫자라도 자리에 따라 값이 달라져요.";
+  if (id.includes("pattern")) return "규칙 문제는 앞뒤 항이 어떻게 변하는지 보는 것이 먼저입니다. 늘어나는 양, 줄어드는 양, 반복되는 모양을 찾아요.";
+  return `${problem.skillTitle || "이번"} 개념에서 주어진 조건과 구해야 하는 값을 먼저 나누어 생각해 봅시다.`;
+}
+
+function teacherPlanGuide(problem) {
+  const id = problem.skillId || "";
+  if (id.includes("choice") || problem.kind === "choice") return "계산만 급하게 하지 말고, 보기마다 조건에 맞는지 하나씩 대조해 봅니다. 맞는 보기 하나를 고를 때는 왜 다른 보기가 아닌지도 짧게 설명할 수 있어야 해요.";
+  if (id.includes("compare") || id.includes("order")) return "크기를 비교할 때는 같은 기준으로 바꾸는 일이 중요합니다. 자릿수를 맞추거나, 분모를 같게 하거나, 같은 단위로 바꾼 뒤 비교해요.";
+  if (id.includes("word")) return "문장제는 수를 바로 계산하기 전에 상황을 한 문장으로 다시 말해 봅니다. 전체량, 한 묶음의 양, 구해야 하는 양을 표시하면 식이 자연스럽게 세워져요.";
+  if (id.includes("graph") || id.includes("table")) return "자료 문제는 먼저 표나 그래프에서 필요한 값만 표시합니다. 그다음 전체와 부분의 관계, 차이, 합계를 식으로 옮겨 보세요.";
+  if (id.includes("area") || id.includes("volume") || id.includes("perimeter")) return "도형 문제는 공식을 외우기 전에 어떤 길이가 주어졌는지 표시합니다. 필요한 공식에 넣고, 마지막에는 단위가 맞는지 꼭 확인해요.";
+  return "문제의 핵심 수량을 식으로 옮긴 뒤, 계산 순서를 지키며 한 줄씩 풀어 봅니다. 마지막 값은 아직 가려 두고 보기와 조건을 비교해요.";
+}
+
+function buildTeacherSolutionCards(problem) {
+  const answer = problem.answer;
+  if (Array.isArray(problem.solutionSteps) && problem.solutionSteps.length) {
+    return problem.solutionSteps.map((step, i) => [
+      String(i + 1),
+      `${i + 1}단계 · ${step.label || "풀이"}`,
+      maskAnswerText(step.answer || step.hint || "풀이 이유를 차근차근 확인해 봅시다.", answer),
+    ]);
+  }
+  const cards = [
+    ["1", "문제 차분히 읽기", `${problem.skillTitle || "이번 문제"}에서 무엇을 구하라고 했는지 먼저 확인해요. 화면의 식과 조건을 손가락으로 짚듯이 읽으면 빠뜨리는 수가 줄어듭니다.`],
+    ["2", "핵심 개념 떠올리기", teacherConceptGuide(problem)],
+    ["3", "풀이 계획 세우기", teacherPlanGuide(problem)],
+    ["4", "정답은 가리고 대조하기", "마지막 계산값은 □로 가려 두겠습니다. 풀이 흐름을 따라 직접 계산한 뒤, 보기 중 같은 값 또는 같은 설명을 고르세요."],
+  ];
+  if (problem.hint) cards.splice(3, 0, ["힌트", "작은 도움", maskAnswerText(problem.hint, answer)]);
+  return cards;
+}
+
+function teacherHintSummary(problem) {
+  return buildTeacherSolutionCards(problem)
+    .slice(0, 3)
+    .map(([, head, body]) => `${head}: ${body}`)
+    .join(" ");
+}
+
 // ============================================================
 // 코칭 함수
 // ============================================================
@@ -3107,7 +3170,7 @@ function wrongCoach(value) {
     return { title, speech, errorType, cards:[
       ["⚠️","오답 확인",`${value}를 골랐습니다.`],
       ["💡","핵심 힌트",hint],
-      ["📝","풀이 힌트",app.problem.solution||"다시 확인하세요."],
+      ["📝","풀이 힌트",teacherHintSummary(app.problem)],
       ["🔄","재도전","처음 단계부터 다시 확인해봅시다."]
     ]};
   }
@@ -3148,12 +3211,7 @@ function wrongCoach(value) {
 function showSolutionFlow() {
   if (!app.problem) return;
   app.questExplained = true; renderRoad();
-  const guidedSteps = Array.isArray(app.problem.solutionSteps) && app.problem.solutionSteps.length
-    ? app.problem.solutionSteps.map((s,i) => [String(i+1), `${i+1}단계 · ${s.label || "풀이"}`, s.answer || s.hint || "풀이 이유를 차근차근 확인해 봅시다."])
-    : app.problem.steps && app.problem.steps.length
-      ? app.problem.steps.map((s,i) => [String(i+1),`${i+1}단계`,s])
-      : [["1","문제 읽기",app.problem.question],["2","생각 열기",app.problem.solution || "조건을 식으로 정리해 봅시다."],
-         ["3","힌트",app.problem.hint||coachStartTip(app.problem.skillId)],["4","답 가리기","정답은 여기서 공개하지 않습니다. 풀이를 따라 계산한 뒤 보기에서 직접 골라 보세요."]];
+  const guidedSteps = buildTeacherSolutionCards(app.problem);
   setMascot("thinking","좋아요. 정답은 잠깐 가려 두고, 선생님과 함께 풀이 길을 따라가 봅시다.");
   setCoach("thinking","단계별 풀이법","정답을 먼저 보는 것보다, 왜 그런 식을 세우는지 이해하는 힘이 더 중요해요. 한 단계씩 천천히 확인해봅시다.",guidedSteps);
   renderCoachQuestion("solution"); showToast("풀이 흐름을 열었습니다.");

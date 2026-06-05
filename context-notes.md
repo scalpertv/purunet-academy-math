@@ -1593,3 +1593,13 @@
 - 운영 배포는 `%TEMP%/purunet-math-ebook-deploy-prof-page-20260606061630` 임시 작업트리에서 커밋된 HEAD 기준으로 진행했다. `npm.cmd ci`, `npm.cmd run build`, `npx.cmd wrangler pages deploy dist --project-name purunet-math-ebook --branch main`을 실행했고 프리뷰 URL은 `https://cda3c7be.purunet-math-ebook.pages.dev`이다.
 - 운영 `https://purunet-math-ebook.pages.dev/elementary-ai-math/`에서 모바일 390×844 브라우저 검증을 수행했고, 제목, KaTeX 렌더링, 4개 선택지, 풀이 흐름 정답 숨김, 콘솔 오류 없음, 가로 넘침 없음이 통과했다.
 - 운영 `generators.js`에서 6학년 72개 주제 샘플을 실행해 `kind=choice`, 보기 4개, 풀이 문자열·단계 안 정답 누출 0건을 확인했다.
+
+## 초등 AI 수학 전 학년 교사형 풀이 흐름 적용 (2026-06-06)
+- 요청 목표는 앞선 전문 수학 학습 페이지 개선을 6학년뿐 아니라 1-6학년 전체 문제 생성·풀이 경험에 적용하는 것이다.
+- 직접 대상은 `/elementary-ai-math/` 정적 앱의 공통 풀이 렌더링과 코칭 로직이다. 각 학년별 생성기 전체를 대규모로 갈아엎기보다, 모든 문항이 지나가는 `generateProblem`, `wrongCoach`, `showSolutionFlow`, `renderVennFlow` 주변의 공통 표시 레이어를 우선 적용한다.
+- 성공 기준은 모든 학년에서 풀이 버튼을 눌렀을 때 정답이 드러나지 않고, 초등 교사가 설명하듯 문제 읽기, 개념 고르기, 식 세우기, 보기 대조하기 흐름이 제공되는 것이다.
+- 구현 결과 `maskAnswerText`, `teacherConceptGuide`, `teacherPlanGuide`, `buildTeacherSolutionCards`, `teacherHintSummary`를 추가해 1-6학년 전체에 공통 교사형 풀이 카드를 적용했다.
+- `showSolutionFlow`는 더 이상 원래 `problem.solution`을 fallback으로 직접 보여주지 않고, `wrongCoach`의 `풀이 힌트`도 정답을 가린 교사형 요약으로 바꿨다.
+- 검증 결과 `node --check app/public/elementary-ai-math/app.js`, `npm.cmd run verify`, `npm.cmd run onefile`은 통과했다. `npm.cmd run lint`는 기존 미해결 lint 오류로 실패했다.
+- 로컬 브라우저 검증에서 1-6학년 각각 풀이 버튼과 오답 코칭을 확인했고, 풀이 카드에 `정답:` 노출 없음, 숨김 정답 칸 유지, 공개 정답 없음, 가로 넘침 없음, 콘솔 오류 없음이 통과했다.
+- 모바일 `sw.js` 캐시 버전은 `v86`이다.
