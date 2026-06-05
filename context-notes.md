@@ -1607,3 +1607,16 @@
 - 운영 배포는 `%TEMP%/purunet-math-ebook-deploy-all-grades-flow-20260606062658` 임시 작업트리에서 커밋된 HEAD 기준으로 진행했다. `npm.cmd ci`, `npm.cmd run build`, `npx.cmd wrangler pages deploy dist --project-name purunet-math-ebook --branch main`을 실행했고 프리뷰 URL은 `https://ef51e046.purunet-math-ebook.pages.dev`이다.
 - 운영 `https://purunet-math-ebook.pages.dev/elementary-ai-math/`에서 모바일 390×844 기준 1-6학년 풀이 버튼을 검증했고, 각 학년 카드 3개 이상, 풀이 흐름 숨김 정답 유지, 공개 정답 노드 없음, 콘솔 오류 없음, 가로 넘침 없음이 통과했다.
 - 운영 `app.js`에서 `teacherConceptGuide`, `buildTeacherSolutionCards`, `teacherHintSummary(app.problem)` 반영을 확인했다.
+
+## 초등 AI 수학 다크 모드 복원·문제 연계 풀이·벡터 보드 개선 (2026-06-06)
+- 요청 목표는 `/elementary-ai-math/`의 흰 배경을 이전 다크 모드 계열로 되돌리고, 풀이·개념 설명을 현재 문제와 직접 연관되게 바꾸며, 문제 위 벡터 이미지가 잘리거나 비어 보이는 문제를 줄이는 것이다.
+- 사용자는 SVG.js, D3.js, JSXGraph, GeoGebra, Fabric.js 중 적합한 전문 수학 라이브러리를 골라 벡터가 그려지도록 수정하기를 요청했다. 현재 앱은 이미 수많은 자체 SVG 생성기를 갖고 있으므로, 외부 무거운 임베드보다 SVG.js를 보조 라이브러리로 연결하고 기존 SVG를 안정화하는 방향이 가장 낮은 위험이다.
+- 성공 기준은 전체 페이지 배경이 다크 톤으로 돌아가고, 문제 벡터 영역은 흰색 보드에서 잘리지 않으며, 풀이·개념 카드가 문제의 식·조건·단위·보기와 연결된 문장으로 표시되는 것이다.
+- 구현 결과 `index.html`에 SVG.js CDN을 연결했고, `svgWrap`, `enhanceMathVisual`, `stabilizeMathVisual`을 통해 기존 수학 SVG를 흰색 보드와 안정적인 viewBox로 감싸도록 했다.
+- `style.css`에는 다크 배경 복원 오버라이드와 흰색 문제 시각화 보드, SVG 잘림 방지 규칙을 추가했다. 학습 카드와 개념·풀이 영역은 흰색 배경을 유지해 수식과 설명의 가독성을 높였다.
+- `problemMathContext`, `buildProblemConcept`, `operationConceptFromContext`를 추가해 개념 설명이 현재 문제의 식, 질문, 수, 단위, 보기와 직접 연결되도록 했다.
+- `teacherConceptGuide`, `teacherPlanGuide`, `buildTeacherSolutionCards`는 현재 문제 조건 확인 카드를 먼저 보여 주고, 정답값은 `□`로 가린 채 현재 식과 수치에 연결된 풀이 흐름을 만들도록 보강했다.
+- 추가 확인에서 `step-note`가 기존 짧은 풀이 파서를 계속 쓰는 문제가 보여, `renderVennFlow`가 교사형 풀이 카드를 직접 렌더링하도록 바꿨다. 이제 단계별 풀이 영역도 문제 조건 확인, 핵심 개념, 풀이 계획, 힌트, 정답 가림 대조 카드로 표시된다.
+- 로컬 브라우저 검증은 `http://127.0.0.1:4179/elementary-ai-math/index.html`에서 1, 3, 6학년 기준으로 수행했고, 다크 배경, 흰색 벡터 보드, SVG 클래스 적용, 개념·코칭의 현재 식 언급, 정답 숨김, 콘솔 오류 없음, 가로 넘침 없음이 통과했다.
+- `node --check app/public/elementary-ai-math/app.js`, `npm.cmd run verify`, `npm.cmd run onefile`은 통과했다. `npm.cmd run lint`는 기존 미해결 파일 `functions/api/auth/cross-login.ts`, `functions/api/auth/sso-token.ts`, `src/App.tsx`, `src/components/LogicFlowCard.tsx`, `src/components/Practice.tsx`의 기존 lint 오류로 실패했다.
+- `npm run onefile` 산출물을 `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고, 모바일 `sw.js` 캐시 버전은 `v87`이다.

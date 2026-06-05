@@ -128,8 +128,50 @@ const IV_CSS = `
 `;
 
 function svgWrap(W, H, lbl, inner) {
-  const bg = `<rect width="${W}" height="${H}" rx="16" fill="#0d1b2e"/>`;
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHTML(lbl)}" style="width:100%;height:auto;display:block;max-height:240px"><defs><style>${IV_CSS}</style></defs>${bg}${inner}</svg>`;
+  const safeW = Math.max(160, Number(W) || 400);
+  const safeH = Math.max(96, Number(H) || 180);
+  const bg = `<rect x="1" y="1" width="${safeW - 2}" height="${safeH - 2}" rx="14" fill="#ffffff" stroke="#d9e2ef" stroke-width="2"/>`;
+  return `<svg class="math-svg-board" viewBox="0 0 ${safeW} ${safeH}" role="img" aria-label="${escapeHTML(lbl)}" preserveAspectRatio="xMidYMid meet" overflow="visible"><defs><style>${IV_CSS}</style></defs>${bg}<g class="math-svg-content">${inner}</g></svg>`;
+}
+
+function enhanceMathVisual(html, label = "수학 시각 자료") {
+  const raw = String(html || "").trim() || ivExpressionBox(app.problem || {});
+  const template = document.createElement("template");
+  template.innerHTML = raw;
+  const svg = template.content.querySelector("svg");
+  if (!svg) return raw;
+  const viewBox = svg.getAttribute("viewBox");
+  if (!viewBox) {
+    const width = parseFloat(svg.getAttribute("width")) || 400;
+    const height = parseFloat(svg.getAttribute("height")) || 180;
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  }
+  svg.classList.add("math-svg-board");
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+  svg.setAttribute("overflow", "visible");
+  svg.setAttribute("role", "img");
+  if (!svg.getAttribute("aria-label")) svg.setAttribute("aria-label", label);
+  svg.removeAttribute("width");
+  svg.removeAttribute("height");
+  svg.style.width = "100%";
+  svg.style.height = "auto";
+  svg.style.display = "block";
+  return template.innerHTML;
+}
+
+function stabilizeMathVisual(root) {
+  if (!root) return;
+  const svg = root.querySelector("svg.math-svg-board, svg");
+  if (!svg) return;
+  svg.classList.add("math-svg-board");
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+  if (window.SVG) {
+    try {
+      window.SVG(svg).viewbox(svg.getAttribute("viewBox") || "0 0 400 180");
+    } catch {
+      // SVG.js는 보조 안정화용입니다. 실패해도 기존 SVG는 그대로 표시합니다.
+    }
+  }
 }
 
 // ── 수직선 애니메이션 (덧셈/뺄셈) ─────────────────────────────
@@ -1441,7 +1483,7 @@ ${tTicks.join('')}${bTicks.join('')}`);
 function buildConceptStaticSVG(type) {
   const W = 320, H = 96;
   const sw = (inner, lbl) =>
-    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHTML(lbl||type)}" style="width:100%;height:auto;display:block;border-radius:8px"><defs><style>text{font-family:inherit;user-select:none}</style></defs><rect width="${W}" height="${H}" rx="8" fill="#0f172a"/>${inner}</svg>`;
+    `<svg class="math-svg-board concept-svg-board" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHTML(lbl||type)}" preserveAspectRatio="xMidYMid meet"><defs><style>text{font-family:inherit;user-select:none}</style></defs><rect x="1" y="1" width="${W-2}" height="${H-2}" rx="8" fill="#ffffff" stroke="#d9e2ef" stroke-width="2"/>${inner}</svg>`;
 
   if (type === 'add') {
     const d = [];
@@ -1706,7 +1748,7 @@ function buildElementaryVisual(problem) {
     if ((id.includes("mul") || id.includes("times")) &&
         (v.type === "data-table" || v.type === "object-array")) {
       const col = ivColumnMul(problem);
-      if (col) return col;
+      if (col) return enhanceMathVisual(col, problem.question || problem.skillTitle);
     }
     const map = {
       "number-line":          ivNumberLine,
@@ -1754,10 +1796,10 @@ function buildElementaryVisual(problem) {
       "cuisenaire-rods":      ivCuisenaireRods,
       "double-number-line":   ivDoubleNumberLine,
     };
-    if (map[v.type]) return map[v.type](v, problem);
-    return ivExpressionBox(problem);
+    if (map[v.type]) return enhanceMathVisual(map[v.type](v, problem), problem.question || problem.skillTitle);
+    return enhanceMathVisual(ivExpressionBox(problem), problem.question || problem.skillTitle);
   }
-  return ivAutoArithmetic(problem);
+  return enhanceMathVisual(ivAutoArithmetic(problem), problem.question || problem.skillTitle);
 }
 
 // ── AI 코치 보조 SVG (ai-stage 안 mood별) ──────────────────
@@ -2641,6 +2683,66 @@ function getConceptEntry(skillId) {
   return CONCEPT_BANK[42];
 }
 
+function problemMathContext(problem) {
+  const expression = String(problem?.expression || "").trim();
+  const question = String(problem?.question || "").trim();
+  const hint = String(problem?.hint || "").trim();
+  const source = `${question} ${expression} ${hint}`;
+  const units = ["cm³","cm²","m³","m²","km","mm","cm","m","kg","g","L","mL","원","명","개","쪽","분","초","°","%"].filter((unit) => source.includes(unit));
+  const numbers = (source.match(/-?\d+(?:\.\d+)?(?:\s+\d+\/\d+|\/\d+)?/g) || []).slice(0, 6);
+  const ops = [];
+  if (/[+＋]/.test(expression)) ops.push("더하기");
+  if (/[−-]/.test(expression)) ops.push("빼기");
+  if (/[×*]/.test(expression)) ops.push("곱하기");
+  if (/[÷/]/.test(expression)) ops.push("나누기");
+  if (/%/.test(source)) ops.push("백분율");
+  if (/:/.test(expression)) ops.push("비");
+  if (/\d+\/\d+/.test(expression)) ops.push("분수");
+  if (/\d+\.\d+/.test(expression)) ops.push("소수");
+  return {
+    expression,
+    question,
+    hint,
+    units: [...new Set(units)],
+    numbers: [...new Set(numbers)],
+    ops: [...new Set(ops)],
+  };
+}
+
+function operationConceptFromContext(ctx, problem) {
+  const id = problem.skillId || "";
+  if (ctx.ops.includes("백분율")) return "이 문제는 전체를 100으로 보았을 때 부분이 어느 정도인지 읽는 문제입니다. 먼저 전체량과 구하려는 부분을 표시한 뒤, 백분율을 분수나 소수와 연결해서 계산합니다.";
+  if (ctx.ops.includes("비")) return "이 문제는 두 양의 관계를 비로 나타내는 문제입니다. 앞항과 뒤항이 각각 어떤 양을 뜻하는지 확인하고, 같은 배로 늘리거나 줄여도 관계가 유지되는지 봅니다.";
+  if (ctx.ops.includes("분수") && ctx.ops.includes("나누기")) return "이 문제는 분수 나눗셈 구조입니다. 나누어지는 양과 나누는 양을 구분하고, 필요하면 나누는 수의 역수를 곱하는 식으로 바꾸어 풉니다.";
+  if (ctx.ops.includes("분수")) return "이 문제는 분수의 크기와 연산을 다룹니다. 분모는 전체를 나눈 칸 수, 분자는 그중 선택한 칸 수이므로, 분모가 다르면 같은 크기의 칸으로 맞추어 생각합니다.";
+  if (ctx.ops.includes("소수")) return "이 문제는 소수의 자리값을 맞추어 계산해야 합니다. 0.1, 0.01 자리의 의미를 확인하고, 소수점이 계산 과정에서 어디에 놓이는지 끝까지 살핍니다.";
+  if (ctx.ops.includes("나누기")) return "이 문제는 나눗셈 관계를 사용합니다. 전체를 똑같이 나누는지, 한 묶음이 몇 번 들어가는지 확인하고, 몫과 나누는 수를 곱해 검산할 수 있습니다.";
+  if (ctx.ops.includes("곱하기")) return "이 문제는 같은 크기의 묶음이 몇 개 있는지 보는 곱셈 관계입니다. 곱해지는 수와 곱하는 수가 무엇을 뜻하는지 표시하고 자리값을 맞추어 계산합니다.";
+  if (ctx.ops.includes("빼기")) return "이 문제는 남은 양이나 두 양의 차이를 구하는 뺄셈 관계입니다. 같은 단위끼리 빼고, 받아내림이 필요한 자리인지 확인합니다.";
+  if (ctx.ops.includes("더하기")) return "이 문제는 같은 종류의 양을 모으는 덧셈 관계입니다. 단위와 자리값을 맞춘 뒤 앞에서 주어진 양을 차례로 합합니다.";
+  if (/graph|table|chart/.test(id)) return "이 문제는 자료를 읽는 문제입니다. 표나 그래프에서 전체, 항목, 눈금 간격을 먼저 확인하고 필요한 값만 골라 식으로 옮깁니다.";
+  if (/area|perimeter|volume|cuboid|cube|shape|angle/.test(id)) return "이 문제는 도형의 성질을 현재 주어진 길이와 단위에 연결하는 문제입니다. 구하는 것이 길이, 넓이, 부피, 각도 중 무엇인지 먼저 확인합니다.";
+  return "이 문제는 주어진 조건을 식으로 옮기고, 구해야 하는 값을 보기와 대조하는 문제입니다. 문제의 수와 단위를 먼저 표시하면 풀이 방향이 선명해집니다.";
+}
+
+function buildProblemConcept(problem) {
+  const base = getConceptEntry(problem.skillId);
+  const ctx = problemMathContext(problem);
+  const exprText = ctx.expression ? `이번 식은 ${ctx.expression}입니다. ` : "";
+  const unitText = ctx.units.length ? `단위는 ${ctx.units.join(", ")}를 그대로 맞추어야 합니다. ` : "";
+  const numberText = ctx.numbers.length ? `눈여겨볼 수는 ${ctx.numbers.join(", ")}입니다. ` : "";
+  const choiceText = Array.isArray(problem.choices) && problem.choices.length ? "마지막에는 계산값과 같은 보기를 고릅니다." : "마지막에는 구한 값이 문제 조건에 맞는지 확인합니다.";
+  return {
+    emoji: base?.emoji || "📘",
+    title: `${problem.skillTitle || base?.title || "문제"} 개념 연결`,
+    core: `${exprText}${operationConceptFromContext(ctx, problem)}`,
+    example: `${numberText}${unitText}${choiceText}`,
+    real: problem.question || "문제 문장을 조건과 구해야 하는 값으로 나누어 읽습니다.",
+    remember: "정답 숫자는 먼저 보지 말고, 이 문제에 주어진 식과 단위를 따라가며 보기와 대조하세요.",
+    svgType: getConceptSVGType(base),
+  };
+}
+
 // 개념 카드 정적 SVG 타입 결정
 function getConceptSVGType(c) {
   if (!c) return 'default';
@@ -2828,6 +2930,43 @@ function renderVennFlow() {
   const p = app.problem;
   if (!p) { el.innerHTML = ''; return; }
 
+  const guidedCards = buildTeacherSolutionCards(p);
+  const answerValue = String(p.answer ?? '').trim();
+  const cardHTML = guidedCards.map((card, i) => {
+    const [num, title, body] = card;
+    const safeBody = maskAnswerText(String(body || ''), answerValue);
+    const cls = i === 0 ? 'vf-start' : 'vf-explain';
+    return `<div class="vf-node vf-card ${cls}" data-idx="${i}" role="listitem">
+      <span class="vf-tag">${escapeHTML(String(num || i + 1))}</span>
+      <strong class="vf-card-title">${escapeHTML(String(title || '풀이 단계'))}</strong>
+      <span class="vf-body-text">${formatMathHTML(safeBody)}</span>
+    </div>`;
+  }).join('<span class="vf-arrow" aria-hidden="true">→</span>');
+  const answerCard = `<span class="vf-arrow" aria-hidden="true">→</span><div class="vf-node vf-card vf-answer-card vf-end-locked" role="listitem">
+    <span class="vf-tag">정답 확인</span>
+    <strong class="vf-card-title">마지막 값은 아직 가려요</strong>
+    <span class="vf-answer-hidden vf-answer-locked" data-answer="${escapeHTML(answerValue)}">□</span>
+  </div>`;
+  el.innerHTML = `
+<div class="vflow-card">
+  <div class="vflow-head">
+    <span class="vflow-icon" aria-hidden="true">🔢</span>
+    <span class="vflow-title">단계별 풀이 흐름</span>
+    <button class="vflow-toggle" type="button" id="vflow-toggle-btn" aria-expanded="true">접기</button>
+  </div>
+  <div class="vflow-nodes" id="vflow-body" role="list">${cardHTML}${answerCard}</div>
+</div>`;
+
+  $('vflow-toggle-btn')?.addEventListener('click', function() {
+    const body = $('vflow-body');
+    if (!body) return;
+    const collapsed = body.style.display === 'none';
+    body.style.display = collapsed ? '' : 'none';
+    this.textContent = collapsed ? '접기' : '펼치기';
+    this.setAttribute('aria-expanded', String(collapsed));
+  });
+  return;
+
   const nodes = buildVennNodes(p);
 
   // 노드가 시작+끝만 있으면 (=중간 없으면) 그래도 렌더
@@ -2919,12 +3058,12 @@ function gradeSteps() {
   if (endNode) endNode.classList.add('vf-end-locked');
 }
 
-function renderConceptNote(skillId) {
+function renderConceptNote(problem) {
   const el = $('concept-note');
   if (!el) return;
-  const c = getConceptEntry(skillId);
+  const c = buildProblemConcept(problem || {});
   if (!c) { el.innerHTML = ''; return; }
-  const svgType = getConceptSVGType(c);
+  const svgType = c.svgType || 'default';
   const staticSVG = buildConceptStaticSVG(svgType);
   el.innerHTML =
     `<div class="concept-card">
@@ -2935,10 +3074,10 @@ function renderConceptNote(skillId) {
   </div>
   <div class="concept-body" id="concept-body-inner">
     <div class="concept-svg-wrap" aria-hidden="true">${staticSVG}</div>
-    <p class="concept-core">${escapeHTML(c.core)}</p>
-    <p class="concept-example">✏️ 예시: ${escapeHTML(c.example)}</p>
-    <p class="concept-real">🌍 실생활: ${escapeHTML(c.real)}</p>
-    <p class="concept-remember">💡 기억법: ${escapeHTML(c.remember)}</p>
+    <p class="concept-core">${formatMathHTML(c.core)}</p>
+    <p class="concept-example">✏️ 이 문제에서: ${formatMathHTML(c.example)}</p>
+    <p class="concept-real">📌 조건 읽기: ${escapeHTML(c.real)}</p>
+    <p class="concept-remember">💡 확인: ${escapeHTML(c.remember)}</p>
   </div>
 </div>`;
   el.querySelector('.concept-toggle')?.addEventListener('click', function() {
@@ -2963,7 +3102,7 @@ function renderMission() {
   visualEl.innerHTML = "";
   void visualEl.offsetHeight;
   visualEl.innerHTML = buildElementaryVisual(p);
-  renderConceptNote(p.skillId);
+  renderConceptNote(p);
   renderVennFlow();
   if (p.expression && p.expression.trim()) {
     const exprDiv = document.createElement("div");
@@ -2971,6 +3110,7 @@ function renderMission() {
     exprDiv.innerHTML = formatMathHTML(p.expression);
     visualEl.appendChild(exprDiv);
   }
+  stabilizeMathVisual(visualEl);
   renderChoices(true);
   renderRoad();
   updateStats();
@@ -3094,44 +3234,55 @@ function maskAnswerText(text, answer) {
 }
 
 function teacherConceptGuide(problem) {
+  const ctx = problemMathContext(problem);
+  const expr = ctx.expression ? `${ctx.expression}에서 ` : "이 문제에서 ";
+  const units = ctx.units.length ? ` 단위 ${ctx.units.join(", ")}도 함께 맞춥니다.` : "";
   const id = problem.skillId || "";
-  if (id.includes("fraction") || id.includes("frac")) return "분수 문제는 분자와 분모가 각각 무엇을 뜻하는지 먼저 보아야 해요. 더하거나 빼면 통분, 곱하면 분자끼리와 분모끼리, 나누면 나누는 수의 역수를 떠올립니다.";
-  if (id.includes("decimal")) return "소수 문제는 자리값이 핵심입니다. 0.1, 0.01, 0.001 자리의 의미를 맞추고 소수점 위치를 끝까지 확인해요.";
-  if (id.includes("div")) return "나눗셈은 전체를 똑같이 나누거나 한 묶음이 몇 번 들어가는지 알아보는 계산입니다. 나누는 수와 몫을 곱해 되돌아오는지도 확인해요.";
-  if (id.includes("mul") || id.includes("times")) return "곱셈은 같은 크기의 묶음이 여러 개 있을 때 쓰는 계산입니다. 세로셈에서는 자리값과 받아올림을 차례대로 확인해요.";
-  if (id.includes("add")) return "덧셈은 같은 종류의 양을 모으는 계산입니다. 자리값을 맞추고 일의 자리부터 차례로 더하면 안정적이에요.";
-  if (id.includes("sub")) return "뺄셈은 남은 양이나 차이를 알아보는 계산입니다. 받아내림이 필요한 자리인지 먼저 살펴봅니다.";
-  if (id.includes("ratio") || id.includes("percent") || id.includes("rate")) return "비율은 비교하는 양을 기준량과 견주어 보는 생각입니다. 기준량이 무엇인지 먼저 정해야 분수, 소수, 백분율 표현이 흔들리지 않아요.";
-  if (id.includes("graph") || id.includes("table")) return "표와 그래프는 자료를 정리해 보여 주는 도구입니다. 전체, 항목, 단위, 눈금 간격을 차례로 읽어야 해요.";
-  if (id.includes("area") || id.includes("perimeter")) return "도형 문제는 길이, 둘레, 넓이를 구분하는 것이 먼저입니다. 둘레는 바깥 선의 길이 합, 넓이는 안쪽을 덮는 크기입니다.";
-  if (id.includes("volume") || id.includes("cuboid") || id.includes("cube")) return "입체도형에서는 길이, 넓이, 부피의 단위를 구분해야 합니다. 직육면체의 부피는 가로, 세로, 높이를 곱해 생각해요.";
-  if (id.includes("angle")) return "각도 문제는 기준이 되는 직각, 180도, 360도를 떠올리면 좋아요. 보조선이나 도형의 성질을 함께 사용합니다.";
-  if (id.includes("place") || id.includes("number")) return "수와 자리값 문제는 각 숫자가 어느 자리에 있는지 읽는 것이 핵심입니다. 같은 숫자라도 자리에 따라 값이 달라져요.";
-  if (id.includes("pattern")) return "규칙 문제는 앞뒤 항이 어떻게 변하는지 보는 것이 먼저입니다. 늘어나는 양, 줄어드는 양, 반복되는 모양을 찾아요.";
-  return `${problem.skillTitle || "이번"} 개념에서 주어진 조건과 구해야 하는 값을 먼저 나누어 생각해 봅시다.`;
+  if (ctx.ops.includes("분수") || id.includes("fraction") || id.includes("frac")) return `${expr}분자, 분모, 연산 기호를 먼저 확인합니다. 분수는 같은 전체를 몇 칸으로 나누었는지 보는 수이므로, 현재 식에 있는 분모를 기준으로 계산 방법을 정합니다.${units}`;
+  if (ctx.ops.includes("소수") || id.includes("decimal")) return `${expr}소수점 위치와 자리값을 먼저 표시합니다. 계산 중에는 0.1, 0.01 자리의 의미가 바뀌지 않게 줄을 맞추어 생각합니다.${units}`;
+  if (ctx.ops.includes("나누기") || id.includes("div")) return `${expr}나누어지는 수와 나누는 수를 구분합니다. 몫을 바로 보려 하지 말고, '몇 묶음인지' 또는 '한 묶음의 양이 얼마인지'를 문제 문장과 연결합니다.${units}`;
+  if (ctx.ops.includes("곱하기") || id.includes("mul") || id.includes("times")) return `${expr}같은 크기의 묶음과 묶음 수를 구분합니다. 자리값이 있는 곱셈이라면 각 자리에서 나온 부분곱을 차례로 모읍니다.${units}`;
+  if (ctx.ops.includes("더하기")) return `${expr}더해야 하는 양들이 같은 종류인지 확인합니다. 자리값이나 단위가 다르면 먼저 맞춘 뒤 차례로 합합니다.${units}`;
+  if (ctx.ops.includes("빼기")) return `${expr}처음 양, 덜어 내는 양, 남는 양을 구분합니다. 같은 자리와 같은 단위끼리 빼며 받아내림 여부를 확인합니다.${units}`;
+  if (ctx.ops.includes("백분율") || ctx.ops.includes("비") || id.includes("ratio") || id.includes("percent") || id.includes("rate")) return `${expr}기준량과 비교하는 양을 먼저 나누어 봅니다. 비, 비율, 백분율은 모두 두 양의 관계를 나타내므로 기준이 되는 양이 무엇인지가 핵심입니다.${units}`;
+  if (id.includes("graph") || id.includes("table")) return `${expr}표나 그래프에서 필요한 항목과 전체를 먼저 찾습니다. 눈금 간격, 합계, 차이 중 무엇을 묻는지 표시한 뒤 식으로 옮깁니다.${units}`;
+  if (id.includes("area") || id.includes("perimeter") || id.includes("volume") || id.includes("cuboid") || id.includes("cube")) return `${expr}구하는 것이 길이, 둘레, 넓이, 부피 중 무엇인지 먼저 정합니다. 주어진 치수를 도형 위에 대응시키고 맞는 공식을 선택합니다.${units}`;
+  if (id.includes("angle")) return `${expr}주어진 각과 구해야 하는 각을 구분합니다. 직각 90도, 일직선 180도, 한 바퀴 360도 중 어느 기준을 쓰는지 확인합니다.`;
+  if (id.includes("place") || id.includes("number")) return `${expr}각 숫자가 어느 자리에 있는지 확인합니다. 같은 숫자라도 자리에 따라 값이 달라지므로 자리표를 떠올리며 읽습니다.`;
+  if (id.includes("pattern")) return `${expr}앞뒤 항이 얼마씩 변하는지, 또는 어떤 모양이 반복되는지 찾습니다. 찾은 규칙을 다음 칸에도 똑같이 적용합니다.`;
+  return `${expr}주어진 조건과 구해야 하는 값을 먼저 나누어 생각합니다. 문제에 나온 수와 단위를 식에 그대로 연결하면 풀이 방향이 선명해집니다.${units}`;
 }
 
 function teacherPlanGuide(problem) {
+  const ctx = problemMathContext(problem);
+  const expr = ctx.expression ? `식 ${ctx.expression}을 기준으로 ` : "문제 조건을 기준으로 ";
+  const numbers = ctx.numbers.length ? `사용할 수는 ${ctx.numbers.join(", ")}입니다. ` : "";
   const id = problem.skillId || "";
-  if (id.includes("choice") || problem.kind === "choice") return "계산만 급하게 하지 말고, 보기마다 조건에 맞는지 하나씩 대조해 봅니다. 맞는 보기 하나를 고를 때는 왜 다른 보기가 아닌지도 짧게 설명할 수 있어야 해요.";
-  if (id.includes("compare") || id.includes("order")) return "크기를 비교할 때는 같은 기준으로 바꾸는 일이 중요합니다. 자릿수를 맞추거나, 분모를 같게 하거나, 같은 단위로 바꾼 뒤 비교해요.";
-  if (id.includes("word")) return "문장제는 수를 바로 계산하기 전에 상황을 한 문장으로 다시 말해 봅니다. 전체량, 한 묶음의 양, 구해야 하는 양을 표시하면 식이 자연스럽게 세워져요.";
-  if (id.includes("graph") || id.includes("table")) return "자료 문제는 먼저 표나 그래프에서 필요한 값만 표시합니다. 그다음 전체와 부분의 관계, 차이, 합계를 식으로 옮겨 보세요.";
-  if (id.includes("area") || id.includes("volume") || id.includes("perimeter")) return "도형 문제는 공식을 외우기 전에 어떤 길이가 주어졌는지 표시합니다. 필요한 공식에 넣고, 마지막에는 단위가 맞는지 꼭 확인해요.";
-  return "문제의 핵심 수량을 식으로 옮긴 뒤, 계산 순서를 지키며 한 줄씩 풀어 봅니다. 마지막 값은 아직 가려 두고 보기와 조건을 비교해요.";
+  if (id.includes("compare") || id.includes("order")) return `${numbers}${expr}두 값을 같은 기준으로 바꾼 뒤 비교합니다. 분수는 분모를 맞추고, 소수는 자릿수를 맞추고, 단위가 있으면 단위를 통일합니다.`;
+  if (id.includes("word")) return `${numbers}문장에 나온 양을 전체량, 한 묶음의 양, 구해야 하는 양으로 표시합니다. 그 표시를 그대로 식에 연결한 뒤 마지막 값은 보기와 비교합니다.`;
+  if (id.includes("graph") || id.includes("table")) return `${numbers}그래프나 표에서 필요한 칸만 먼저 표시합니다. 전체와 부분, 차이, 합계 중 문제에서 묻는 관계를 찾아 계산합니다.`;
+  if (id.includes("area") || id.includes("volume") || id.includes("perimeter")) return `${numbers}도형의 각 길이를 공식의 문자 자리에 대응시킵니다. 계산 뒤에는 cm, cm², cm³처럼 단위 차원이 맞는 보기를 찾습니다.`;
+  if (problem.kind === "choice") return `${numbers}${expr}한 줄씩 계산하거나 조건을 확인한 뒤, 네 보기 중 같은 값 또는 같은 설명을 고릅니다. 답은 □로 가려 두고 보기의 단위와 표현까지 대조합니다.`;
+  return `${numbers}${expr}계산 순서를 지키며 한 줄씩 풀어 봅니다. 마지막 값은 아직 가려 두고 조건과 단위를 비교합니다.`;
 }
 
 function buildTeacherSolutionCards(problem) {
   const answer = problem.answer;
+  const ctx = problemMathContext(problem);
+  const contextCard = [
+    "1",
+    "문제 조건 확인",
+    `${ctx.expression ? `먼저 식 ${ctx.expression}을 봅니다. ` : ""}${ctx.numbers.length ? `문제에 쓰인 수는 ${ctx.numbers.join(", ")}입니다. ` : ""}${ctx.units.length ? `단위 ${ctx.units.join(", ")}를 마지막까지 맞춥니다. ` : ""}무엇을 구하는지 확인한 뒤 정답값은 □로 가려 두고 풀이합니다.`,
+  ];
   if (Array.isArray(problem.solutionSteps) && problem.solutionSteps.length) {
-    return problem.solutionSteps.map((step, i) => [
-      String(i + 1),
-      `${i + 1}단계 · ${step.label || "풀이"}`,
+    return [contextCard, ...problem.solutionSteps.map((step, i) => [
+      String(i + 2),
+      `${i + 2}단계 · ${step.label || "풀이"}`,
       maskAnswerText(step.answer || step.hint || "풀이 이유를 차근차근 확인해 봅시다.", answer),
-    ]);
+    ])];
   }
   const cards = [
-    ["1", "문제 차분히 읽기", `${problem.skillTitle || "이번 문제"}에서 무엇을 구하라고 했는지 먼저 확인해요. 화면의 식과 조건을 손가락으로 짚듯이 읽으면 빠뜨리는 수가 줄어듭니다.`],
+    contextCard,
     ["2", "핵심 개념 떠올리기", teacherConceptGuide(problem)],
     ["3", "풀이 계획 세우기", teacherPlanGuide(problem)],
     ["4", "정답은 가리고 대조하기", "마지막 계산값은 □로 가려 두겠습니다. 풀이 흐름을 따라 직접 계산한 뒤, 보기 중 같은 값 또는 같은 설명을 고르세요."],
