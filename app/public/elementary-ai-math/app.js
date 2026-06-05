@@ -1739,12 +1739,89 @@ function buildConceptStaticSVG(type) {
 <text x="${W/2}" y="${H/2+22}" text-anchor="middle" fill="#64748b" font-size="11">문제를 풀며 개념을 익혀요!</text>`, '수학 개념');
 }
 
+// ── visual ↔ problem 정합성 검증 ─────────────────────────
+// [visual.type, 해당 visual이 유효한 skillId 패턴] — 나열된 타입은 매칭되는 스킬에서만 허용
+const VISUAL_TYPE_SKILL_RULES = [
+  ["clock",               /clock|time/],
+  ["ruler",               /ruler|measure|length/],
+  ["angle-diagram",       /angle/],
+  ["probability-bag",     /probability/],
+  ["coin-chance",         /probability|coin/],
+  ["coordinate-plane",    /coordinate/],
+  ["symmetry-shape",      /symmetry/],
+  ["rotation-180",        /rotation/],
+  ["congruent-triangles", /congruent/],
+  ["cube-stack",          /cube.stack|stack/],
+  ["solid-shape",         /solid|prism|pyramid|cylinder|cone|sphere/],
+  ["net-diagram",         /net|solid|prism|pyramid/],
+  ["range-line",          /range|inequality/],
+  ["bar-chart",           /chart|graph|data/],
+  ["line-chart",          /chart|graph|data/],
+  ["circle-chart",        /chart|graph|data/],
+  ["pictograph",          /pictograph|chart|graph/],
+  ["double-number-line",  /proportion|ratio/],
+  ["circle-diagram",      /circle/],
+  ["circle-pattern",      /circle/],
+  ["parallel-lines",      /parallel|perpendicular/],
+  ["quadrilateral-diagram",/quadrilateral|사각형/],
+  ["polygon-diagram",     /polygon|다각형/],
+];
+
+function isVisualTypeCompatible(visualType, skillId) {
+  const rule = VISUAL_TYPE_SKILL_RULES.find(([type]) => type === visualType);
+  if (!rule) return true; // 규칙 없는 타입은 통과
+  return rule[1].test(skillId);
+}
+
+function isVisualDataConsistent(v, problem) {
+  const text = `${problem.question || ""} ${problem.expression || ""} ${problem.answer || ""}`;
+
+  if (v.type === "clock") {
+    const hourM = text.match(/(\d{1,2})\s*시/);
+    const minM  = text.match(/(\d{1,2})\s*분/);
+    if (hourM && v.hour !== undefined && Number(hourM[1]) !== v.hour) return false;
+    if (minM  && v.minute !== undefined && Number(minM[1]) !== v.minute) return false;
+    return true;
+  }
+
+  if (v.type === "fraction-strip" || v.type === "fraction-circle") {
+    const fracs = [...text.matchAll(/(\d+)\/(\d+)/g)];
+    if (fracs.length === 0) return true;
+    return fracs.some(m => Number(m[1]) === v.numerator && Number(m[2]) === v.denominator);
+  }
+
+  if (v.type === "angle-diagram") {
+    if (v.degrees === undefined) return true;
+    const nums = text.match(/\d+/g) || [];
+    return nums.includes(String(v.degrees));
+  }
+
+  if (v.type === "ruler") {
+    if (v.length === undefined) return true;
+    const nums = text.match(/\d+(?:\.\d+)?/g) || [];
+    return nums.includes(String(v.length));
+  }
+
+  return true;
+}
+
 // ── 메인 비주얼 라우터 ────────────────────────────────────
 function buildElementaryVisual(problem) {
   const v = problem.visual;
   if (v) {
-    // 곱셈 문제는 data-table/object-array 대신 세로셈 SVG 우선 표시
     const id = problem.skillId || "";
+
+    // 검증 1: visual.type ↔ skillId 타입 호환성
+    if (!isVisualTypeCompatible(v.type, id)) {
+      return enhanceMathVisual(ivAutoArithmetic(problem), problem.question || problem.skillTitle);
+    }
+
+    // 검증 2: visual 데이터 ↔ 문제 수치 정합성 (clock·분수·각도·자 등)
+    if (!isVisualDataConsistent(v, problem)) {
+      return enhanceMathVisual(ivExpressionBox(problem), problem.question || problem.skillTitle);
+    }
+
+    // 곱셈 문제는 data-table/object-array 대신 세로셈 SVG 우선 표시
     if ((id.includes("mul") || id.includes("times")) &&
         (v.type === "data-table" || v.type === "object-array")) {
       const col = ivColumnMul(problem);
