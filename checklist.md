@@ -7435,3 +7435,10 @@
 - [x] 빌드 산출물과 단일 HTML·모바일 파일 반영 여부를 확인한다.
 - [x] `npm run lint`, `npm run verify`, `npm run onefile` 검증을 실행한다.
 - [x] Git 저장소 변경 상태를 확인하고 작업 결과를 커밋한다.
+
+## 초등 AI 수학 6학년 박만구 과정 Cloudflare 배포 (2026-06-05)
+- [x] 미커밋 변경이 섞이지 않도록 커밋된 HEAD 기준 임시 작업트리를 만든다.
+- [x] 임시 작업트리에서 의존성 설치와 빌드를 실행한다.
+- [x] `purunet-math-ebook` Cloudflare Pages production에 배포한다.
+- [x] 운영 URL `/elementary-ai-math/`에서 박만구 6-1 과정 반영을 확인한다.
+- [x] 배포 결과를 기록하고 커밋한다.

@@ -1535,3 +1535,11 @@
 - `app/public/elementary-ai-math/generators.js`를 재생성했고, `npm run onefile` 뒤 `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html`에 단일 HTML을 반영했다. 모바일 `sw.js` 캐시 버전은 `v82`이다.
 - 검증 결과 `npm.cmd run verify`와 `npm.cmd run onefile`은 통과했다. `npm.cmd run lint`는 이번 변경과 무관한 기존 파일 `functions/api/auth/cross-login.ts`, `functions/api/auth/sso-token.ts`, `src/App.tsx`, `src/components/LogicFlowCard.tsx`, `src/components/Practice.tsx`의 기존 lint 오류로 실패했다.
 - `rewrite grade 6 AI math curriculum` 커밋으로 작업 결과를 저장했다.
+
+## 초등 AI 수학 6학년 박만구 과정 Cloudflare 배포 (2026-06-05)
+- 요청 목표는 위 6학년 박만구 6-1 과정 변경을 `purunet-math-ebook` Cloudflare Pages 운영 사이트에 반영하는 것이다.
+- 현재 작업 폴더에는 요청 전부터 여러 미커밋 변경이 있으므로, 운영 배포는 커밋된 `12cf917` 상태를 별도 임시 작업트리로 체크아웃해 진행한다.
+- 성공 기준은 임시 작업트리 빌드 통과, Cloudflare Pages production 배포 완료, 운영 URL `/elementary-ai-math/`에서 `분수의 나눗셈`, `각기둥과 각뿔`, `직육면체의 겉넓이와 부피` 같은 새 과정명이 확인되는 것이다.
+- 임시 작업트리는 `%TEMP%/purunet-math-ebook-deploy-20260605223158`에 만들었고, `npm.cmd ci`와 `npm.cmd run build`를 통과했다. npm 감사에서 기존 의존성 high 취약점 1건은 보고됐지만 빌드 차단 오류는 아니었다.
+- Cloudflare Pages 배포는 `npx.cmd wrangler pages deploy dist --project-name purunet-math-ebook --branch main`으로 완료했다. 프리뷰 URL은 `https://74b88f2f.purunet-math-ebook.pages.dev`이다.
+- 운영 URL `https://purunet-math-ebook.pages.dev/elementary-ai-math/`는 HTTP 200이며, 운영 `generators.js`에서 `분수의 나눗셈`, `각기둥과 각뿔`, `직육면체의 겉넓이와 부피`, `6-1 최종 점검` 반영을 확인했다.
