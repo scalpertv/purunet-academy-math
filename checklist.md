@@ -7449,3 +7449,8 @@
 - [x] 박만구 6-1 단원 흐름에 맞춘 자체 문항 다양화와 단계 풀이를 구현한다.
 - [x] 정적 산출물과 단일 HTML·모바일 파일을 갱신한다.
 - [x] 검증과 Git 커밋을 완료한다.
+
+## 초등 AI 수학 6학년 생성기 보강 Cloudflare 배포 (2026-06-05)
+- [x] 커밋된 HEAD 기준 임시 작업트리에서 빌드를 실행한다.
+- [x] `purunet-math-ebook` Cloudflare Pages production에 배포한다.
+- [x] 운영 URL의 `generators.js`에서 새 개념·풀이 흐름·문항 소재 반영을 확인한다.

@@ -1554,3 +1554,10 @@
 - 반복 문항 완화를 위해 분수·소수 나눗셈 문장제, 비 표현, 백분율, 그래프, 직육면체 문제의 상황 소재 풀을 확장했다.
 - `app/public/elementary-ai-math/generators.js`를 재생성했고, `npm run onefile` 결과를 `CODEX 수학 익힘북 전자북(26.05.17)/CODEX-수학-익힘북-전자북.html`, `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했다. 모바일 `sw.js` 캐시 버전은 `v83`이다.
 - 검증 결과 `npm.cmd run verify`, `npm.cmd run onefile`, 6학년 대표 주제 5개 구조 검사는 통과했다. `npm.cmd run lint`는 기존 미해결 파일들의 `no-useless-assignment`, `react-hooks/set-state-in-effect` 오류로 실패했으며 이번 생성기 변경에서 새 lint 오류는 확인되지 않았다.
+
+## 초등 AI 수학 6학년 생성기 보강 Cloudflare 배포 (2026-06-05)
+- 배포 대상 커밋은 `0a890e6 feat: enrich grade 6 math generators`이다.
+- 현재 작업 폴더에는 요청 전부터 미커밋 변경이 많으므로 `%TEMP%/purunet-math-ebook-deploy-g6flow-20260605225105` 임시 작업트리에서 커밋된 HEAD 기준으로 배포했다.
+- 임시 작업트리에서 `npm.cmd ci`와 `npm.cmd run build`가 통과했다. npm 감사 high 취약점 1건과 Vite 번들 크기 경고는 배포 차단 오류가 아니었다.
+- Cloudflare Pages 배포 명령은 `npx.cmd wrangler pages deploy dist --project-name purunet-math-ebook --branch main`이며 프리뷰 URL은 `https://bc6f578e.purunet-math-ebook.pages.dev`이다.
+- 운영 `https://purunet-math-ebook.pages.dev/elementary-ai-math/`는 HTTP 200이고, 운영 `generators.js`에서 `conceptNote`, `solutionSteps`, `개념 핵심`, `풀이 흐름`, `과학 실험용 색 물`, `직육면체의 겉넓이는`, `학급 프로젝트 주제` 반영을 확인했다.
