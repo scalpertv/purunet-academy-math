@@ -246,9 +246,9 @@ function toG6FourChoice(problem: Problem, answerText: string): Problem {
   };
 }
 
-function numberedFlow(concept: string, steps: SolutionStep[], originalSolution: string): string {
+function numberedFlow(concept: string, steps: SolutionStep[]): string {
   const flow = steps.map((step, index) => `${index + 1}. ${step.label}: ${step.answer}`).join("\n");
-  return `핵심 개념: ${concept}\n정형 풀이\n${flow}\n검산 및 단위 해석: ${originalSolution}`;
+  return `핵심 개념: ${concept}\n선생님 풀이 안내\n${flow}\n마무리 확인: 마지막 계산값은 □로 가려 두었습니다. 풀이 흐름을 따라 직접 계산한 뒤 보기에서 같은 값을 찾아보세요.`;
 }
 
 function g6ParkFlowProfile(topicId: string): G6ParkFlow | null {
@@ -260,10 +260,10 @@ function g6ParkFlowProfile(topicId: string): G6ParkFlow | null {
         "피제수, 제수, 몫의 관계를 이용해 소수 나눗셈을 해결하세요.",
         "소수 나눗셈 알고리즘을 적용하여 옳은 값을 선택하세요.",
       ],
-      steps: (problem, answerText) => [
-        { label: "자리값 분석", answer: `${problem.expression}에서 피제수의 소수 자릿수와 제수의 크기를 확인합니다.`, hint: "0.1, 0.01 단위가 몇 개인지 해석합니다." },
-        { label: "나눗셈 알고리즘", answer: "자연수 나눗셈과 같은 절차로 계산하되, 몫의 소수점은 피제수의 자리값과 대응시킵니다.", hint: "필요하면 0을 보충해 나눗셈을 계속합니다." },
-        { label: "검산식 적용", answer: `몫 ${answerText}에 제수를 곱해 피제수가 되는지 확인합니다.`, hint: "몫 × 제수 = 피제수 관계를 사용합니다." },
+      steps: () => [
+        { label: "자리값부터 읽기", answer: "좋아요. 먼저 문제에 제시된 나누어지는 수와 나누는 수를 나누어 읽어 볼게요. 소수는 0.1, 0.01 같은 자리값이 모인 수라서, 소수점이 어디에 있는지 표시하고 시작하면 계산이 훨씬 안정됩니다.", hint: "피제수와 제수의 소수 자릿수를 각각 표시합니다." },
+        { label: "자연수처럼 나누기", answer: "그다음에는 자연수 나눗셈을 하듯 몫을 차례로 세웁니다. 다만 몫의 소수점은 마음대로 찍는 것이 아니라 피제수의 자리값과 나누는 과정을 맞추어 정해야 해요. 필요하면 끝에 0을 덧붙여 계속 나눌 수 있습니다.", hint: "0을 보충해도 수의 크기는 변하지 않습니다." },
+        { label: "검산으로 확인하기", answer: "마지막에는 몫 □에 제수를 곱했을 때 처음 피제수에 가까워지는지 확인합니다. 이 검산을 하면 소수점 위치를 잘못 찍은 보기를 걸러낼 수 있어요.", hint: "몫 × 제수 = 피제수 관계를 사용합니다." },
       ],
     };
   }
@@ -275,10 +275,10 @@ function g6ParkFlowProfile(topicId: string): G6ParkFlow | null {
         "비, 분수, 소수, 백분율의 동치 관계를 이용해 해결하세요.",
         "동일 비율 관계를 식으로 모델링하여 정답을 선택하세요.",
       ],
-      steps: (problem, answerText) => [
-        { label: "양의 분류", answer: `${problem.expression}에서 비교하는 양과 기준량을 구분합니다.`, hint: "기준량은 비율 계산의 분모 역할을 합니다." },
-        { label: "관계식 모델링", answer: "비율 = 비교하는 양 ÷ 기준량 = 비교하는 양/기준량으로 나타냅니다.", hint: "백분율은 비율 × 100%입니다." },
-        { label: "표현 변환", answer: `약분, 소수 변환, 백분율 변환을 거쳐 ${answerText}로 정리합니다.`, hint: "동치인 표현인지 확인합니다." },
+      steps: () => [
+        { label: "기준량과 비교하는 양 찾기", answer: "먼저 문제에 제시된 수량에서 무엇을 기준으로 삼는지, 무엇을 그 기준과 비교하는지 나누어 볼게요. 기준량은 분수의 분모처럼 생각하면 좋고, 비교하는 양은 분자처럼 위에 놓입니다.", hint: "기준량은 전체 또는 비교의 바탕이 되는 양입니다." },
+        { label: "비율식으로 나타내기", answer: "이제 비율 = 비교하는 양 ÷ 기준량으로 식을 세웁니다. 비 a:b, 분수 a/b, 소수, 백분율은 모습만 다르고 같은 관계를 나타낼 수 있으니 문제에서 요구한 표현을 확인해야 해요.", hint: "백분율은 비율에 100%를 곱합니다." },
+        { label: "같은 값인지 대조하기", answer: "계산한 비율을 약분하거나 소수, 백분율로 바꾼 뒤 보기와 하나씩 맞추어 봅니다. 여기서는 최종값을 □로 가려 두었으니, 같은 관계를 나타내는 보기를 직접 찾아보세요.", hint: "표현은 달라도 크기가 같으면 같은 비율입니다." },
       ],
     };
   }
@@ -290,10 +290,10 @@ function g6ParkFlowProfile(topicId: string): G6ParkFlow | null {
         "백분율, 수량, 중심각의 대응 관계를 이용해 해결하세요.",
         "통계 그래프의 비율 정보를 수학식으로 변환하세요.",
       ],
-      steps: (problem, answerText) => [
-        { label: "전체량 설정", answer: "그래프의 전체를 100% 또는 전체 도수로 설정합니다.", hint: "띠 전체와 원 전체가 기준량입니다." },
-        { label: "상대도수 해석", answer: `${problem.expression}에서 필요한 항목의 백분율, 도수, 또는 중심각 조건을 읽습니다.`, hint: "백분율은 전체에 대한 비율입니다." },
-        { label: "수량 변환", answer: `전체량 × 비율 또는 360° × 비율을 적용하여 ${answerText}를 얻습니다.`, hint: "차이는 %p 단위로 해석합니다." },
+      steps: () => [
+        { label: "전체를 먼저 정하기", answer: "그래프 문제는 전체를 먼저 잡아야 합니다. 띠 전체와 원 전체는 100%이고, 실제 사람 수나 물건 수가 주어지면 그 수가 전체량이 됩니다.", hint: "띠 전체와 원 전체가 기준량입니다." },
+        { label: "필요한 항목 읽기", answer: "문제에 제시된 자료에서 구하려는 항목의 백분율, 도수, 중심각을 차분히 찾아봅니다. 그래프에서는 작은 칸이나 부채꼴 하나가 전체의 어느 정도인지 해석하는 일이 중요해요.", hint: "백분율은 전체에 대한 비율입니다." },
+        { label: "수량 또는 각도로 바꾸기", answer: "전체량에 비율을 곱하거나, 원그래프라면 360°에 비율을 곱해 필요한 값을 구합니다. 마지막 값은 □로 남겨 두고 단위가 %, %p, 명, ° 중 무엇인지까지 보기와 비교하세요.", hint: "차이는 %p 단위로 해석합니다." },
       ],
     };
   }
@@ -305,10 +305,10 @@ function g6ParkFlowProfile(topicId: string): G6ParkFlow | null {
         "겉넓이와 부피의 정의를 구분하여 해결하세요.",
         "단위 차원을 고려해 직육면체의 측정값을 선택하세요.",
       ],
-      steps: (problem, answerText) => [
-        { label: "치수 추출", answer: `${problem.expression}에서 가로, 세로, 높이 또는 부피 조건을 추출합니다.`, hint: "서로 수직인 세 모서리가 기준 치수입니다." },
-        { label: "공식 적용", answer: "겉넓이 S=2(ab+bc+ca), 부피 V=abc 중 필요한 식을 적용합니다.", hint: "미지의 길이는 V ÷ 밑면의 넓이로 구합니다." },
-        { label: "단위 차원 확인", answer: `계산값 ${answerText}의 단위가 길이, 넓이, 부피 중 무엇인지 확인합니다.`, hint: "넓이는 cm², 부피는 cm³입니다." },
+      steps: () => [
+        { label: "세 치수 표시하기", answer: "먼저 문제에 제시된 가로, 세로, 높이를 찾아 이름표를 붙여 봅시다. 직육면체는 서로 수직인 세 모서리가 기본 치수라서, 어떤 길이가 빠졌는지도 함께 확인해야 해요.", hint: "서로 수직인 세 모서리가 기준 치수입니다." },
+        { label: "공식 선택하기", answer: "겉넓이를 묻는다면 S = 2(ab + bc + ca), 부피를 묻는다면 V = abc를 씁니다. 빠진 길이를 묻는 문제라면 부피를 밑면의 넓이로 나누어 높이를 찾는 식처럼 공식을 거꾸로 사용할 수 있습니다.", hint: "미지의 길이는 V ÷ 밑면의 넓이로 구합니다." },
+        { label: "단위까지 점검하기", answer: "계산 결과를 바로 고르기 전에 단위를 꼭 확인합니다. 길이는 cm, 넓이는 cm², 부피는 cm³처럼 차원이 다르므로, 최종값 □와 같은 단위를 가진 보기를 골라야 해요.", hint: "넓이는 cm², 부피는 cm³입니다." },
       ],
     };
   }
@@ -320,10 +320,10 @@ function g6ParkFlowProfile(topicId: string): G6ParkFlow | null {
         "각기둥과 각뿔의 구성 요소 사이의 규칙을 적용하세요.",
         "전개도와 입체도형의 면 대응을 근거로 판단하세요.",
       ],
-      steps: (problem, answerText) => [
-        { label: "밑면 차수 확인", answer: `${problem.expression}에서 밑면이 n각형인지 확인합니다.`, hint: "밑면의 변의 수를 n으로 둡니다." },
-        { label: "구성 요소 공식화", answer: "각기둥은 면 n+2, 모서리 3n이고 각뿔은 면 n+1, 모서리 2n입니다.", hint: "전개도에서는 밑면과 옆면의 개수를 대응시킵니다." },
-        { label: "도형 규칙 적용", answer: `밑면의 차수 n을 대입하면 ${answerText}입니다.`, hint: "각기둥과 각뿔의 공식을 구분합니다." },
+      steps: () => [
+        { label: "밑면 모양 확인하기", answer: "먼저 문제에 제시된 입체도형의 밑면이 몇 각형인지 봅니다. 밑면의 변의 수를 n이라고 두면 면, 모서리, 꼭짓점의 개수를 규칙적으로 정리할 수 있어요.", hint: "밑면의 변의 수를 n으로 둡니다." },
+        { label: "각기둥과 각뿔 구분하기", answer: "각기둥은 합동이고 평행한 밑면이 2개, 각뿔은 밑면이 1개이고 옆면이 한 꼭짓점으로 모입니다. 그래서 각기둥은 면 n+2, 모서리 3n이고 각뿔은 면 n+1, 모서리 2n으로 정리할 수 있습니다.", hint: "전개도에서는 밑면과 옆면의 개수를 대응시킵니다." },
+        { label: "규칙에 대입하기", answer: "이제 n에 밑면의 변의 수를 넣어 계산합니다. 최종 개수는 □로 가려 두었으니, 각기둥인지 각뿔인지 다시 확인한 뒤 보기에서 같은 값을 찾으세요.", hint: "각기둥과 각뿔의 공식을 구분합니다." },
       ],
     };
   }
@@ -335,10 +335,10 @@ function g6ParkFlowProfile(topicId: string): G6ParkFlow | null {
         "포함제 또는 등분제 상황을 분수 연산으로 변환하세요.",
         "역수 곱셈 알고리즘을 적용하여 정답을 선택하세요.",
       ],
-      steps: (problem, answerText) => [
-        { label: "연산 구조 분석", answer: `${problem.expression}에서 피제수와 제수를 구분하고 나눗셈의 의미를 해석합니다.`, hint: "전체량, 한 묶음의 양, 나누는 수를 구분합니다." },
-        { label: "곱셈식 변환", answer: "분수로 나누는 경우 제수의 역수를 곱하고, 자연수로 나누는 경우 1/자연수를 곱합니다.", hint: "대분수는 가분수로 먼저 변환합니다." },
-        { label: "약분 및 표준형", answer: `계산 결과를 기약분수 또는 대분수의 표준형으로 정리하면 ${answerText}입니다.`, hint: "공약수로 약분해 동치분수 중 가장 간단한 형태를 찾습니다." },
+      steps: () => [
+        { label: "나눗셈 의미 파악하기", answer: "먼저 문제에 제시된 식에서 피제수와 제수를 구분해 봅시다. 전체량을 몇 묶음으로 나누는지, 또는 한 묶음의 양이 얼마인지 찾는지 생각하면 분수 나눗셈의 뜻이 더 분명해져요.", hint: "전체량, 한 묶음의 양, 나누는 수를 구분합니다." },
+        { label: "역수 곱셈으로 바꾸기", answer: "분수로 나누는 경우에는 제수의 역수를 곱하는 곱셈식으로 바꿉니다. 대분수가 있으면 먼저 가분수로 고치고, 자연수로 나누면 그 자연수분의 1을 곱한다고 생각하면 됩니다.", hint: "대분수는 가분수로 먼저 변환합니다." },
+        { label: "약분하고 보기와 비교하기", answer: "계산 과정에서 약분할 수 있으면 먼저 약분해 수를 작게 만듭니다. 마지막 값은 기약분수 또는 대분수의 표준형으로 정리하되, 정답은 □로 가려 두었으니 직접 계산한 모양과 같은 보기를 고르세요.", hint: "공약수로 약분해 동치분수 중 가장 간단한 형태를 찾습니다." },
       ],
     };
   }
@@ -349,10 +349,10 @@ function g6ParkFlowProfile(topicId: string): G6ParkFlow | null {
       "연산 구조와 단위 조건을 검토하여 정답을 선택하세요.",
       "풀이 과정의 논리적 타당성을 확인하며 답을 고르세요.",
     ],
-    steps: (problem, answerText) => [
-      { label: "조건의 수학화", answer: `${problem.expression}의 수량, 단위, 관계를 식으로 정리합니다.`, hint: "문장의 핵심 수량을 먼저 분리합니다." },
-      { label: "연산 절차 적용", answer: "정의, 공식, 연산 순서에 따라 계산 과정을 전개합니다.", hint: "괄호, 곱셈과 나눗셈, 덧셈과 뺄셈의 순서를 확인합니다." },
-      { label: "정답 판별", answer: `계산 결과와 조건을 대조하면 ${answerText}입니다.`, hint: "단위와 보기의 표현 형식까지 비교합니다." },
+    steps: () => [
+      { label: "조건을 식으로 정리하기", answer: "문제에 제시된 수량, 단위, 관계를 먼저 표시합니다. 문제 문장을 바로 계산하려고 하지 말고, 주어진 양과 구해야 하는 양을 나누어 적으면 실수가 줄어듭니다.", hint: "문장의 핵심 수량을 먼저 분리합니다." },
+      { label: "알맞은 연산 선택하기", answer: "정의, 공식, 연산 순서에 따라 풀이를 전개합니다. 괄호가 있으면 괄호부터, 곱셈과 나눗셈은 덧셈과 뺄셈보다 먼저 계산한다는 약속도 함께 확인해요.", hint: "괄호, 곱셈과 나눗셈, 덧셈과 뺄셈의 순서를 확인합니다." },
+      { label: "보기와 논리적으로 대조하기", answer: "계산한 값의 크기와 단위, 표현 형식을 보기와 비교합니다. 최종 정답은 □로 숨겨 두었으니, 풀이 이유가 맞는지 확인하며 가장 알맞은 보기를 고르세요.", hint: "단위와 보기의 표현 형식까지 비교합니다." },
     ],
   };
 }
@@ -362,13 +362,13 @@ function enrichG6ParkProblem(topicId: string, problem: Problem): Problem {
   const profile = g6ParkFlowProfile(topicId);
   if (!profile) return problem;
   const answerText = answerDisplay(problem);
-  const steps = problem.solutionSteps?.length ? problem.solutionSteps : profile.steps(problem, answerText);
+  const steps = profile.steps(problem, answerText);
   const enriched = {
     ...problem,
     prompt: choice(profile.prompts),
     conceptNote: problem.conceptNote ?? profile.concept,
     solutionSteps: steps,
-    solution: numberedFlow(profile.concept, steps, problem.solution),
+    solution: numberedFlow(profile.concept, steps),
   };
   return toG6FourChoice(enriched, answerText);
 }

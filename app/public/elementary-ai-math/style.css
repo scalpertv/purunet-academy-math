@@ -804,13 +804,81 @@ h1,h2,h3,p { overflow-wrap: anywhere; }
 .vf-start  .vf-body-text { color: #1e3a8a; font-size: 16px; }
 .vf-explain .vf-body-text { font-size: 13px; font-weight: 700; color: #4c1d95; }
 
-/* 정답 텍스트 — 크고 굵게 */
+/* 정답 텍스트 — 크고 굵게 (레거시, 현재 미사용) */
 .vf-answer-text {
   font-size: 22px;
   font-weight: 900;
   color: #14532d;
   line-height: 1.2;
   letter-spacing: -0.02em;
+}
+
+/* 숨겨진 정답 자리 표시 (채점 전) */
+.vf-answer-hidden {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  padding: 2px 10px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1.5px dashed rgba(99, 102, 241, 0.5);
+  color: #6366f1;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  cursor: default;
+  user-select: none;
+}
+/* 정답 노드(vf-end)의 숨김 표시는 더 크게 */
+.vf-end .vf-answer-hidden {
+  font-size: 22px;
+  min-width: 44px;
+  padding: 4px 14px;
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.5);
+  color: #15803d;
+}
+
+/* 채점 후 공개된 정답 */
+.vf-answer-revealed {
+  display: inline-flex;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 900;
+  color: #1d4ed8;
+  animation: vf-reveal-pop 0.3s ease;
+}
+.vf-end .vf-answer-revealed {
+  font-size: 22px;
+  color: #14532d;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+@keyframes vf-reveal-pop {
+  0%   { transform: scale(0.7); opacity: 0; }
+  70%  { transform: scale(1.12); }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+/* = 기호 */
+.vf-eq {
+  color: #64748b;
+  font-weight: 700;
+}
+
+/* 힌트 텍스트 (중간 계산 노드) */
+.vf-hint-text {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #92400e;
+  background: rgba(251, 191, 36, 0.13);
+  border-radius: 5px;
+  padding: 2px 6px;
+  margin-top: 3px;
+  line-height: 1.5;
+  word-break: keep-all;
 }
 
 /* 좁은 화면: 노드 세로 배치 */
@@ -820,3 +888,168 @@ h1,h2,h3,p { overflow-wrap: anywhere; }
   .vf-node { max-width: 100%; width: 100%; }
 }
 
+/* 전문 수학 학습 페이지 톤 */
+body {
+  color: #172033;
+  background: #f5f7fb;
+}
+.bg-grid {
+  opacity: .18;
+  background-image:
+    linear-gradient(rgba(30, 64, 175, .08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(22, 101, 52, .06) 1px, transparent 1px);
+}
+.orb {
+  display: none;
+}
+.app {
+  max-width: 1480px;
+}
+.topbar,
+.panel,
+.problem-area,
+.concept-card,
+.vflow-card,
+.c-mission-card,
+.option4,
+.hud-pill,
+.start-btn,
+.home-btn,
+.grade-tab,
+.semester-btn {
+  border-radius: 8px;
+}
+.topbar {
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #d9e2ef;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, .08);
+}
+.logo {
+  border-radius: 8px;
+  background: #123c69;
+  color: #ffffff;
+  box-shadow: none;
+  animation: none;
+}
+.brand h1 {
+  color: #10233f;
+  letter-spacing: 0;
+}
+.brand p {
+  color: #516174;
+  font-weight: 700;
+}
+.panel {
+  background: #ffffff;
+  border: 1px solid #d9e2ef;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, .08);
+}
+.hud-pill,
+.home-btn {
+  background: #f7fafc;
+  border: 1px solid #d9e2ef;
+  color: #1f2f46;
+}
+.start-btn {
+  background: #123c69;
+  color: #ffffff;
+  border: 1px solid #123c69;
+  box-shadow: none;
+}
+.problem-visual {
+  background: #ffffff;
+  border: 1px solid #d9e2ef;
+  border-radius: 8px;
+}
+.problem-expr-text {
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #cbd8e6;
+  color: #10233f;
+  font-size: clamp(22px, 3.2vw, 38px);
+  line-height: 1.35;
+}
+.katex-math {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 .04em;
+}
+.katex-math .katex {
+  font-size: 1.08em;
+}
+.option4 {
+  background: #ffffff;
+  border: 1px solid #cbd8e6;
+  color: #172033;
+  min-height: 58px;
+}
+.option4:hover {
+  border-color: #2563eb;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, .12);
+}
+.option4-label {
+  background: #123c69;
+  color: #ffffff;
+}
+.option4-value {
+  color: #172033;
+  font-weight: 800;
+}
+.concept-card {
+  background: #ffffff;
+  border: 1px solid #d9e2ef;
+  color: #172033;
+}
+.concept-core,
+.concept-example,
+.concept-real,
+.concept-remember {
+  color: #2d3b4f;
+}
+.vflow-card {
+  background: #ffffff;
+  border: 1px solid #cbd8e6;
+}
+.vflow-title {
+  color: #123c69;
+}
+.vflow-toggle {
+  border-radius: 8px;
+  background: #f1f5f9;
+  border-color: #cbd8e6;
+  color: #123c69;
+}
+.vf-node {
+  border-radius: 8px;
+  max-width: 280px;
+}
+.vf-answer-hidden,
+.vf-answer-locked {
+  border-radius: 8px;
+  background: #fff7ed;
+  border-color: #f59e0b;
+  color: #9a3412;
+}
+.vf-end.vf-end-locked {
+  background: rgba(245, 158, 11, .08);
+  border-color: rgba(245, 158, 11, .46);
+  box-shadow: none;
+}
+.c-mission-card small {
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    align-items: flex-start;
+  }
+  .problem-expr-text {
+    font-size: 24px;
+  }
+  .option4 {
+    min-height: 54px;
+  }
+}

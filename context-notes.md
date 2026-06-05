@@ -1575,3 +1575,17 @@
 - 작업 커밋은 `53c1c0b feat: convert grade 6 math to professional four-choice`이다.
 - 운영 배포는 `%TEMP%/purunet-math-ebook-deploy-g6-professional-20260606055740` 임시 작업트리에서 커밋된 HEAD 기준으로 진행했다. `npm.cmd ci`, `npm.cmd run build`, `npx.cmd wrangler pages deploy dist --project-name purunet-math-ebook --branch main`을 실행했고 프리뷰 URL은 `https://f0544d59.purunet-math-ebook.pages.dev`이다.
 - 운영 `https://purunet-math-ebook.pages.dev/elementary-ai-math/`는 HTTP 200이며, 운영 `generators.js` 실행 검사에서 대표 6학년 문항 3개가 `kind=choice`, `choices=4`, 정답 포함, `solutionSteps=3`으로 확인됐다.
+
+## 초등 AI 수학 전문 HTML5 학습 페이지·풀이 흐름 개선 (2026-06-06)
+- 요청 목표는 `https://purunet-math-ebook.pages.dev/elementary-ai-math`를 KaTeX, HTML5, CSS, JavaScript 기반의 수학 전문 학습 페이지로 정리하고, 풀이 흐름에서 정답을 가린 채 초등 교사가 설명하듯 다정하고 충분한 단계 풀이를 제공하는 것이다.
+- 직접 대상은 `app/public/elementary-ai-math/index.html`, `app/public/elementary-ai-math/app.js`, `app/public/elementary-ai-math/style.css`, `app/src/lib/generators.ts`와 생성 산출물이다.
+- 기존 작업 전부터 `app/public/elementary-ai-math/app.js`, `app/public/elementary-ai-math/style.css`, `app/src/components/Practice.tsx`, `app/src/index.css`, `app/src/lib/types.ts` 등에 미커밋 변경이 있으므로 관련 없는 변경은 되돌리지 않는다.
+- 확인 결과 6학년 보강 함수 `g6ParkFlowProfile`의 일부 단계 문장과 `numberedFlow`가 정답 또는 원래 해설을 풀이 문자열 안에 직접 포함하고 있었다.
+- 화면 쪽 `renderVennFlow`는 풀이 흐름의 값 일부를 숨기지만 `gradeSteps`가 채점 후 중간 계산값과 정답 노드를 모두 공개한다. 이번 요청에서는 풀이 흐름 자체는 답을 가린 사고 안내로 유지하고, 최종 정답 확인은 선택 피드백 영역으로 분리한다.
+- 구현 결과 `index.html`에 KaTeX CSS/JS를 연결하고 `formatMathHTML`이 분수와 대분수를 KaTeX로 렌더링하도록 보강했다.
+- 6학년 `solutionSteps`는 정답값과 문제 식 반복을 제거하고, 자리값, 기준량, 상대도수, 공식 선택, 역수 곱셈, 단위 차원을 교사가 말하듯 안내하는 3단계 풀이로 바꿨다.
+- `gradeSteps`는 채점 후에도 풀이 흐름 안의 정답 칸을 `□`로 유지하며, 정답 확인은 선택 후 피드백 영역에서만 제공한다.
+- `app/public/elementary-ai-math/generators.js`를 재생성했고, `npm run onefile` 산출물을 `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했다. 모바일 `sw.js` 캐시 버전은 `v85`이다.
+- 검증 결과 6학년 576개 샘플에서 4지선다 구조와 `solutionSteps` 3단계 이상, 풀이 문자열·단계 안 정답 누출 0건을 확인했다.
+- `npm.cmd run verify`와 `npm.cmd run onefile`은 통과했다. `npm.cmd run lint`는 기존 미해결 파일 `functions/api/auth/cross-login.ts`, `functions/api/auth/sso-token.ts`, `src/App.tsx`, `src/components/LogicFlowCard.tsx`, `src/components/Practice.tsx`의 기존 오류로 실패했다.
+- 로컬 브라우저 검증은 `http://127.0.0.1:4179/elementary-ai-math/index.html`에서 데스크톱 1366×900과 모바일 390×844로 수행했고, KaTeX 렌더링, 4지선다, 풀이 흐름 정답 숨김, 콘솔 오류 없음, 가로 넘침 없음이 통과했다.

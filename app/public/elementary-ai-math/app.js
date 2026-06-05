@@ -35,7 +35,29 @@ function escapeHTML(v) {
     .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 }
 
-// 텍스트 분수(3/5, 2 3/5)를 수학 전문 분수 HTML로 변환
+function katexInline(tex) {
+  if (!window.katex || !tex) return "";
+  try {
+    return window.katex.renderToString(tex, {
+      throwOnError: false,
+      strict: "ignore",
+      displayMode: false,
+      output: "htmlAndMathml"
+    });
+  } catch {
+    return "";
+  }
+}
+
+function latexFromToken(token) {
+  const mixed = String(token).match(/^(-?\d+)\s+(\d+)\/(\d+)$/);
+  if (mixed) return `${mixed[1]}\\frac{${mixed[2]}}{${mixed[3]}}`;
+  const frac = String(token).match(/^(-?\d+)\/(\d+)$/);
+  if (frac) return `\\frac{${frac[1]}}{${frac[2]}}`;
+  return "";
+}
+
+// 텍스트 분수(3/5, 2 3/5)를 KaTeX 기반 수학 HTML로 변환
 function formatMathHTML(str) {
   if (!str) return '';
   const s = String(str);
@@ -46,6 +68,11 @@ function formatMathHTML(str) {
   let m;
   while ((m = re.exec(s)) !== null) {
     parts.push(escapeHTML(s.slice(last, m.index)));
+    const tex = latexFromToken(m[0]);
+    const rendered = katexInline(tex);
+    if (rendered) {
+      parts.push(`<span class="katex-math">${rendered}</span>`);
+    } else
     if (m[1] !== undefined) {
       // 대분수: 정수부 + 분수부
       parts.push(`<span class="mf-mixed"><span class="mf-whole">${m[1]}</span><span class="mf"><span class="mf-n">${m[2]}</span><span class="mf-d">${m[3]}</span></span></span>`);
@@ -1955,6 +1982,7 @@ function generateProblem(topicEntry) {
     kind:       raw.kind || "integer",
     visual:     raw.visual || null,
     steps:      raw.steps || [],
+    solutionSteps: raw.solutionSteps || [],
     choices:    shuffle(choices4),
   };
 }
@@ -2781,7 +2809,19 @@ function buildVennNodes(problem) {
   return nodes;
 }
 
-// 벤다이어그램식 풀이 흐름 HTML 렌더링
+// 계산식 표현에서 사고 유도 힌트 도출
+function _calcHint(exprText) {
+  const t = exprText;
+  if (t.includes('×') || t.includes('*')) return '두 수를 곱하면 얼마가 될까요?';
+  if (t.includes('÷')) return '나누면 얼마가 나올까요?';
+  if (t.includes('+')) return '두 수를 더하면 얼마가 될까요?';
+  if (/\d\s*[-−]\s*\d/.test(t)) return '큰 수에서 작은 수를 빼면 얼마가 남을까요?';
+  if (t.includes('/') || t.includes('분의')) return '분자끼리, 분모끼리 계산해보세요.';
+  if (t.includes('²') || t.includes('³')) return '거듭제곱을 계산해보세요.';
+  return '식을 읽고 □에 알맞은 값을 생각해보세요.';
+}
+
+// 벤다이어그램식 풀이 흐름 HTML 렌더링 (정답 숨김 — 채점 후 공개)
 function renderVennFlow() {
   const el = $('step-note');
   if (!el) return;
@@ -2800,11 +2840,48 @@ function renderVennFlow() {
                : n.type === 'end'     ? '★ 정답'
                : n.type === 'explain' ? '💡 풀이'
                :                       `⓪①②③④⑤`[i] + ' 계산';
-    const displayText = n.type === 'end'
-      ? `<span class="vf-answer-text">${formatMathHTML(n.text)}</span>`
-      : `<span class="vf-body-text">${formatMathHTML(n.text)}</span>`;
-    return `<div class="vf-node ${cls}" data-idx="${i}">\
-<span class="vf-tag">${tag}</span>${displayText}</div>`;
+    let displayText;
+    if (n.type === 'start') {
+      // 시작 노드: 문제 수식 그대로 표시
+      displayText = `<span class="vf-body-text">${formatMathHTML(n.text)}</span>`;
+    } else if (n.type === 'end') {
+      // 정답 노드: 채점 전까지 숨김
+      displayText = `<span class="vf-answer-hidden" data-answer="${escapeHTML(n.text)}">?</span>`;
+    } else if (n.type === 'explain') {
+      // 설명 노드: "식 = 값" 패턴이 있으면 값 숨김, 없으면 최종 정답 문자열 마스킹
+      const eqIdxEx = n.text.lastIndexOf(' = ');
+      if (eqIdxEx >= 0) {
+        const exprPart = n.text.slice(0, eqIdxEx);
+        const ansPart  = n.text.slice(eqIdxEx + 3);
+        displayText = `<span class="vf-body-text">${formatMathHTML(exprPart)}&nbsp;<span class="vf-eq">=</span>&nbsp;<span class="vf-answer-hidden" data-answer="${escapeHTML(ansPart)}">?</span></span>`;
+      } else {
+        // 설명 문장 안에 최종 정답이 포함되면 마스킹
+        const finalAns = String(p.answer ?? '').trim();
+        let safeHtml;
+        if (finalAns && n.text.includes(finalAns)) {
+          const idx = n.text.indexOf(finalAns);
+          safeHtml = formatMathHTML(n.text.slice(0, idx))
+            + `<span class="vf-answer-hidden" data-answer="${escapeHTML(finalAns)}">?</span>`
+            + formatMathHTML(n.text.slice(idx + finalAns.length));
+        } else {
+          safeHtml = formatMathHTML(n.text);
+        }
+        displayText = `<span class="vf-body-text">${safeHtml}</span>`;
+      }
+    } else {
+      // 중간 계산 노드: "식 = ?" 로 정답 숨기고 힌트 표시
+      const eqIdx = n.text.lastIndexOf(' = ');
+      if (eqIdx >= 0) {
+        const exprPart = n.text.slice(0, eqIdx);
+        const ansPart  = n.text.slice(eqIdx + 3);
+        const hint     = _calcHint(exprPart);
+        displayText = `<span class="vf-body-text">${formatMathHTML(exprPart)}&nbsp;<span class="vf-eq">=</span>&nbsp;<span class="vf-answer-hidden" data-answer="${escapeHTML(ansPart)}">?</span></span>`
+          + `<span class="vf-hint-text">💡 ${hint}</span>`;
+      } else {
+        displayText = `<span class="vf-body-text">${formatMathHTML(n.text)}</span>`;
+      }
+    }
+    return `<div class="vf-node ${cls}" data-idx="${i}"><span class="vf-tag">${tag}</span>${displayText}</div>`;
   });
 
   // 노드 사이에 화살표 삽입
@@ -2832,11 +2909,14 @@ function renderVennFlow() {
   });
 }
 
-// 정답 선택 후 노드에 정오 색상 적용
+// 채점 후에도 풀이 흐름 안의 값은 숨김 유지
 function gradeSteps() {
-  // venn flow는 read-only — 채점 시 end 노드 강조만
+  document.querySelectorAll('#vflow-body .vf-answer-hidden').forEach(el => {
+    el.classList.add('vf-answer-locked');
+    el.innerHTML = '□';
+  });
   const endNode = document.querySelector('#vflow-body .vf-end');
-  if (endNode) endNode.classList.add('vf-end-revealed');
+  if (endNode) endNode.classList.add('vf-end-locked');
 }
 
 function renderConceptNote(skillId) {
@@ -3068,12 +3148,14 @@ function wrongCoach(value) {
 function showSolutionFlow() {
   if (!app.problem) return;
   app.questExplained = true; renderRoad();
-  const steps = app.problem.steps && app.problem.steps.length
-    ? app.problem.steps.map((s,i) => [String(i+1),`${i+1}단계`,s])
-    : [["1","문제 확인",app.problem.question],["2","풀이",app.problem.solution],
-       ["3","힌트",app.problem.hint||coachStartTip(app.problem.skillId)],["4","정답",`정답: ${app.problem.answer}`]];
-  setMascot("thinking","풀이 흐름을 보고 각 단계를 내 말로 따라 말해봅시다.");
-  setCoach("thinking","단계별 풀이법","정답을 외우기보다 풀이 단계의 이유를 이해해봅시다.",steps);
+  const guidedSteps = Array.isArray(app.problem.solutionSteps) && app.problem.solutionSteps.length
+    ? app.problem.solutionSteps.map((s,i) => [String(i+1), `${i+1}단계 · ${s.label || "풀이"}`, s.answer || s.hint || "풀이 이유를 차근차근 확인해 봅시다."])
+    : app.problem.steps && app.problem.steps.length
+      ? app.problem.steps.map((s,i) => [String(i+1),`${i+1}단계`,s])
+      : [["1","문제 읽기",app.problem.question],["2","생각 열기",app.problem.solution || "조건을 식으로 정리해 봅시다."],
+         ["3","힌트",app.problem.hint||coachStartTip(app.problem.skillId)],["4","답 가리기","정답은 여기서 공개하지 않습니다. 풀이를 따라 계산한 뒤 보기에서 직접 골라 보세요."]];
+  setMascot("thinking","좋아요. 정답은 잠깐 가려 두고, 선생님과 함께 풀이 길을 따라가 봅시다.");
+  setCoach("thinking","단계별 풀이법","정답을 먼저 보는 것보다, 왜 그런 식을 세우는지 이해하는 힘이 더 중요해요. 한 단계씩 천천히 확인해봅시다.",guidedSteps);
   renderCoachQuestion("solution"); showToast("풀이 흐름을 열었습니다.");
 }
 
@@ -3225,7 +3307,7 @@ function setCoach(mood, title, speech, cards) {
     missionsEl.innerHTML=(cards||[]).map(([icon,head,body])=>
       `<div class="c-mission-card ${cardClass}">
         <div class="c-mission-icon">${escapeHTML(String(icon))}</div>
-        <div><strong>${escapeHTML(String(head))}</strong><small>${escapeHTML(String(body))}</small></div>
+        <div><strong>${escapeHTML(String(head))}</strong><small>${formatMathHTML(String(body))}</small></div>
       </div>`
     ).join("");
   }
