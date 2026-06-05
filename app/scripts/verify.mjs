@@ -121,6 +121,10 @@ function validateVisual(visual) {
         if (typeof visual[key] === "number") assertFiniteNumber(visual[key], `solidShape.${key}`, true);
       }
       return;
+    case "net-diagram":
+      if (!["prism", "pyramid", "cylinder"].includes(visual.kind)) throw new Error("bad net diagram kind");
+      if (visual.sides !== undefined) assertFiniteNumber(Number(visual.sides), "netDiagram.sides", true);
+      return;
     case "cube-stack":
       assertFiniteNumber(visual.cols, "cubeStack.cols", true);
       assertFiniteNumber(visual.rows, "cubeStack.rows", true);

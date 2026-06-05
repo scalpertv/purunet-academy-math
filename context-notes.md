@@ -1524,3 +1524,14 @@
 - 문서 정보는 `천재_초등_수학6-1(박만구)_교과서.pdf`이며 StreamDocs layout 기준 총 100쪽이다.
 - Chrome headless 인쇄로 `천재_초등_수학6-1(박만구)_교과서_StreamDocs.pdf`를 생성했다.
 - 검증 결과 최종 PDF는 72,594,720 bytes이며 pdfjs 기준 100쪽이다.
+
+## 초등 AI 수학 6학년 박만구 교과서 기반 재작성 (2026-06-05)
+- 요청 목표는 `https://purunet-math-ebook.pages.dev/elementary-ai-math/`의 6학년 과정을 로컬 PDF `천재_초등_수학6-1(박만구)_교과서_StreamDocs.pdf` 기준으로 다시 구성하는 것이다.
+- 직접 대상은 `/elementary-ai-math/` 정적 앱이며, 6학년 연산 과정 데이터는 `app/src/lib/curriculum.ts`에서 정의되고 `app/build-generators.mjs`를 통해 `app/public/elementary-ai-math/generators.js`로 생성된다.
+- 성공 기준은 박만구 6-1 단원 흐름 확인, 6학년 과정 데이터 재작성, 생성 산출물 갱신, 프로젝트 기본 검증 통과이다.
+- 현재 작업 전부터 `app/public/elementary-ai-math/app.js`, `app/public/elementary-ai-math/style.css`, `app/src/components/Practice.tsx`, `app/src/index.css`, `app/src/lib/types.ts` 등 여러 파일에 미커밋 변경이 있다. 이번 작업은 직접 필요한 파일만 만지고 기존 변경은 되돌리지 않는다.
+- StreamDocs 텍스트 API와 PDF에서 확인한 박만구 6-1 단원 순서는 1. 분수의 나눗셈, 2. 각기둥과 각뿔, 3. 소수의 나눗셈, 4. 비와 비율, 5. 직육면체의 겉넓이와 부피, 6. 여러 가지 그래프이다.
+- 구현 결과 6학년 3~8월은 위 여섯 단원 순서로, 9~2월은 같은 6-1 범위의 종합·평가·실생활 적용·최종 점검 과정으로 재작성했다.
+- `app/public/elementary-ai-math/generators.js`를 재생성했고, `npm run onefile` 뒤 `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html`에 단일 HTML을 반영했다. 모바일 `sw.js` 캐시 버전은 `v82`이다.
+- 검증 결과 `npm.cmd run verify`와 `npm.cmd run onefile`은 통과했다. `npm.cmd run lint`는 이번 변경과 무관한 기존 파일 `functions/api/auth/cross-login.ts`, `functions/api/auth/sso-token.ts`, `src/App.tsx`, `src/components/LogicFlowCard.tsx`, `src/components/Practice.tsx`의 기존 lint 오류로 실패했다.
+- `rewrite grade 6 AI math curriculum` 커밋으로 작업 결과를 저장했다.
