@@ -1516,3 +1516,11 @@
 - StreamDocs 뷰어는 `/streamdocs/v4/documents/{id}/renderings/{page}` API로 페이지 PNG 렌더링을 제공했다.
 - 총 78쪽을 PNG로 받아 인쇄용 HTML을 만들고 Chrome headless 인쇄로 `천재_초등_수학6-1(한대희)_교과서_StreamDocs.pdf`를 생성했다.
 - 검증 결과 최종 PDF는 57,068,591 bytes이며 pdfjs 기준 78쪽이다.
+
+## 천재교육 StreamDocs URL PDF 저장 2차 (2026-06-05)
+- 요청 목표는 StreamDocs ID `WA8TT6ioGNR1Tm_v29EVNmSWMB1Q1LZ4qU2fvw5rb4o` 문서를 로컬 PDF 파일로 저장하는 것이다.
+- 이전 작업에서 확인한 `/streamdocs/v4/documents/{id}/renderings/{page}` API 기반 이미지 추출 후 Chrome headless 인쇄 방식을 재사용한다.
+- 성공 기준은 PDF 파일 생성, pdfjs 기준 페이지 수 확인, 파일 크기 확인이다.
+- 문서 정보는 `천재_초등_수학6-1(박만구)_교과서.pdf`이며 StreamDocs layout 기준 총 100쪽이다.
+- Chrome headless 인쇄로 `천재_초등_수학6-1(박만구)_교과서_StreamDocs.pdf`를 생성했다.
+- 검증 결과 최종 PDF는 72,594,720 bytes이며 pdfjs 기준 100쪽이다.
