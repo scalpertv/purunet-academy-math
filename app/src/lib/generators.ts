@@ -14,7 +14,7 @@ import {
   subFrac,
   type Frac,
 } from "./frac";
-import type { CompareSign, Problem } from "./types";
+import type { CompareSign, Problem, SolutionStep } from "./types";
 
 // ── 공통 헬퍼 ────────────────────────────────────────────────
 
@@ -129,6 +129,135 @@ function retopic(topicId: string, problem: Problem): Problem {
 
 function withVisual(problem: Problem, visual: NonNullable<Problem["visual"]>): Problem {
   return { ...problem, visual };
+}
+
+type G6ParkFlow = {
+  concept: string;
+  prompts: string[];
+  steps: (problem: Problem, answerText: string) => SolutionStep[];
+};
+
+function answerDisplay(problem: Problem): string {
+  if (problem.answerText) return problem.answerText;
+  if (problem.kind === "fraction" && typeof problem.answer === "object" && problem.answer && "n" in problem.answer && "d" in problem.answer) {
+    return formatFrac(problem.answer);
+  }
+  if (Array.isArray(problem.answer)) return problem.answer.join(", ");
+  return String(problem.answer);
+}
+
+function numberedFlow(concept: string, steps: SolutionStep[], originalSolution: string): string {
+  const flow = steps.map((step, index) => `${index + 1}. ${step.label}: ${step.answer}`).join("\n");
+  return `개념 핵심: ${concept}\n풀이 흐름\n${flow}\n계산 확인: ${originalSolution}`;
+}
+
+function g6ParkFlowProfile(topicId: string): G6ParkFlow | null {
+  if (topicId.includes("decimal-divide")) {
+    return {
+      concept: "소수의 나눗셈은 소수점의 위치를 먼저 읽고, 자연수 나눗셈처럼 계산한 뒤 몫의 소수점 자리를 되돌려 확인합니다.",
+      prompts: [
+        "소수점 위치를 생각하며 나눗셈을 해결하세요.",
+        "소수 나눗셈의 계산 원리와 검산을 함께 확인하세요.",
+        "소수를 자연수처럼 나누고 소수점 자리를 맞추세요.",
+      ],
+      steps: (problem, answerText) => [
+        { label: "자리값 읽기", answer: `${problem.expression}에서 소수점 아래 자릿수를 확인합니다.`, hint: "0.1, 0.01이 몇 개인지 먼저 봅니다." },
+        { label: "나눗셈 실행", answer: "자연수 나눗셈처럼 계산하고 필요한 경우 0을 붙여 계속 나눕니다.", hint: "몫의 소수점은 나누어지는 수의 자리와 맞춥니다." },
+        { label: "검산하기", answer: `몫 ${answerText}이 문제 조건에 맞는지 곱셈으로 되돌려 봅니다.`, hint: "몫 × 나누는 수 = 나누어지는 수인지 확인합니다." },
+      ],
+    };
+  }
+  if (topicId.includes("ratio") || topicId.includes("rate") || topicId.includes("percent") || topicId.includes("quantity-from") || topicId.includes("proportion") || topicId.includes("scale")) {
+    return {
+      concept: "비와 비율은 비교하는 양과 기준량을 구분하는 것이 먼저이며, 비율은 비교하는 양을 기준량으로 나눈 값입니다.",
+      prompts: [
+        "비교하는 양과 기준량을 구분해 해결하세요.",
+        "비, 비율, 백분율의 관계를 생각하며 계산하세요.",
+        "같은 비율로 변하는 양을 표나 식으로 정리하세요.",
+      ],
+      steps: (problem, answerText) => [
+        { label: "두 양 찾기", answer: `${problem.expression}에서 비교하는 양과 기준량을 표시합니다.`, hint: "무엇을 무엇에 대해 비교하는지 봅니다." },
+        { label: "관계식 세우기", answer: "비는 a:b로 쓰고, 비율은 a ÷ b 또는 a/b로 나타냅니다.", hint: "백분율은 비율에 100을 곱한 표현입니다." },
+        { label: "값 정리하기", answer: `가장 알맞은 형태로 정리하면 ${answerText}입니다.`, hint: "분수는 약분하고, 소수와 백분율은 단위를 확인합니다." },
+      ],
+    };
+  }
+  if (topicId.includes("band-graph") || topicId.includes("circle-graph") || topicId.includes("graph-") || topicId.includes("percent-to-angle")) {
+    return {
+      concept: "띠그래프와 원그래프는 전체를 100%로 보고 항목별 비율을 비교하거나, 필요한 수량을 비율 계산으로 구합니다.",
+      prompts: [
+        "그래프의 전체와 각 항목의 비율을 읽어 해결하세요.",
+        "자료를 백분율로 해석하고 필요한 값을 구하세요.",
+        "띠그래프와 원그래프의 비율 관계를 비교하세요.",
+      ],
+      steps: (problem, answerText) => [
+        { label: "전체 확인", answer: "그래프나 표의 전체가 100% 또는 전체 인원이라는 점을 확인합니다.", hint: "원 전체와 띠 전체가 기준입니다." },
+        { label: "항목 읽기", answer: `${problem.expression}에서 필요한 항목의 백분율이나 수를 찾습니다.`, hint: "가장 큰 값, 차이, 일부 수를 구분합니다." },
+        { label: "계산 또는 비교", answer: `조건에 맞게 계산하면 ${answerText}입니다.`, hint: "인원수는 전체 × 비율, 중심각은 360° × 비율입니다." },
+      ],
+    };
+  }
+  if (topicId.includes("cuboid")) {
+    return {
+      concept: "직육면체의 겉넓이는 마주 보는 세 쌍의 면 넓이를 모두 더하고, 부피는 한 층의 넓이에 높이를 곱해 구합니다.",
+      prompts: [
+        "직육면체의 면과 모서리 길이를 정리해 해결하세요.",
+        "겉넓이와 부피 중 필요한 공식을 선택하세요.",
+        "단위까지 생각하며 직육면체 문제를 해결하세요.",
+      ],
+      steps: (problem, answerText) => [
+        { label: "길이 정리", answer: `${problem.expression}에서 가로, 세로, 높이 또는 부피 조건을 찾습니다.`, hint: "서로 수직인 세 모서리를 확인합니다." },
+        { label: "공식 선택", answer: "겉넓이는 세 면쌍의 넓이 합, 부피는 가로 × 세로 × 높이를 사용합니다.", hint: "빠진 길이는 부피를 밑면 넓이로 나누어 구합니다." },
+        { label: "단위 확인", answer: `계산 결과는 ${answerText}입니다.`, hint: "넓이는 제곱 단위, 부피는 세제곱 단위입니다." },
+      ],
+    };
+  }
+  if (topicId.includes("prism") || topicId.includes("pyramid") || topicId.includes("solid-name")) {
+    return {
+      concept: "각기둥은 합동이고 평행한 두 밑면과 직사각형 옆면을 가지며, 각뿔은 한 밑면과 꼭짓점으로 모이는 삼각형 옆면을 가집니다.",
+      prompts: [
+        "각기둥과 각뿔의 밑면, 옆면, 모서리 관계를 살펴보세요.",
+        "입체도형의 구성 요소를 세어 해결하세요.",
+        "전개도와 입체도형의 대응 관계를 확인하세요.",
+      ],
+      steps: (problem, answerText) => [
+        { label: "밑면 확인", answer: `${problem.expression}에서 밑면의 모양이나 도형 설명을 찾습니다.`, hint: "각기둥은 밑면 2개, 각뿔은 밑면 1개입니다." },
+        { label: "구성 요소 세기", answer: "옆면, 밑면, 모서리를 밑면의 변의 수와 연결합니다.", hint: "전개도에서는 접히는 면의 종류를 봅니다." },
+        { label: "규칙 적용", answer: `도형의 규칙을 적용하면 ${answerText}입니다.`, hint: "각기둥과 각뿔의 규칙을 섞지 않도록 확인합니다." },
+      ],
+    };
+  }
+  if (topicId.includes("fraction-divide") || topicId.includes("quotient-fraction") || topicId.includes("mixed-divide") || topicId.includes("natural-divide-fraction")) {
+    return {
+      concept: "분수의 나눗셈은 몫을 분수로 나타내거나, 나누는 수의 역수를 곱하는 식으로 바꾸어 계산합니다.",
+      prompts: [
+        "분수의 의미와 나눗셈식을 연결해 해결하세요.",
+        "나누는 양이 몇 번 들어가는지 생각하며 계산하세요.",
+        "분수 나눗셈을 곱셈으로 바꾸어 풀이 흐름을 완성하세요.",
+      ],
+      steps: (problem, answerText) => [
+        { label: "나눗셈 상황 파악", answer: `${problem.expression}에서 전체량과 나누는 양을 구분합니다.`, hint: "전체를 몇으로 나누는지, 몇 묶음인지 봅니다." },
+        { label: "분수식으로 바꾸기", answer: "몫은 분수로 나타내거나 나누는 수의 역수를 곱하는 식으로 바꿉니다.", hint: "대분수는 먼저 가분수로 바꿉니다." },
+        { label: "계산과 약분", answer: `계산하고 가장 간단히 나타내면 ${answerText}입니다.`, hint: "분자와 분모의 공약수를 나누어 정리합니다." },
+      ],
+    };
+  }
+  return null;
+}
+
+function enrichG6ParkProblem(topicId: string, problem: Problem): Problem {
+  if (!topicId.startsWith("g6-")) return problem;
+  const profile = g6ParkFlowProfile(topicId);
+  if (!profile) return problem;
+  const answerText = answerDisplay(problem);
+  const steps = problem.solutionSteps?.length ? problem.solutionSteps : profile.steps(problem, answerText);
+  return {
+    ...problem,
+    prompt: choice(profile.prompts),
+    conceptNote: problem.conceptNote ?? profile.concept,
+    solutionSteps: steps,
+    solution: numberedFlow(profile.concept, steps, problem.solution),
+  };
 }
 
 // ── 1단원: 자연수의 혼합 계산 ────────────────────────────────
@@ -3551,6 +3680,48 @@ function genG4AreaTrapezoidPrep(): Problem {
 
 // ── 6학년 3월~다음 해 2월 추가 학습 ───────────────────────
 
+const G6_SHARE_CONTEXTS = [
+  { item: "과학 실험용 색 물", unit: "L", group: "모둠 컵", countUnit: "개", each: "한 컵에 담기는 양" },
+  { item: "현수막 리본", unit: "m", group: "학생", countUnit: "명", each: "한 명이 받는 길이" },
+  { item: "찰흙", unit: "kg", group: "작품", countUnit: "개", each: "한 작품에 쓰는 양" },
+  { item: "텃밭 거름", unit: "kg", group: "화분", countUnit: "개", each: "한 화분에 넣는 양" },
+];
+
+const G6_DECIMAL_SHARE_CONTEXTS = [
+  { item: "코딩 로봇이 이동한 거리", unit: "m", target: "한 번에 이동한 거리" },
+  { item: "전시용 종이 끈", unit: "m", target: "한 장식에 쓰는 길이" },
+  { item: "학급 텃밭에 뿌릴 물", unit: "L", target: "한 구역에 뿌리는 양" },
+  { item: "관찰 기록지 묶음의 무게", unit: "kg", target: "한 묶음의 무게" },
+];
+
+const G6_RATIO_CONTEXTS = [
+  { left: "완성한 과제", right: "남은 과제", unit: "개" },
+  { left: "참여한 학생", right: "참여하지 않은 학생", unit: "명" },
+  { left: "파란 타일", right: "노란 타일", unit: "개" },
+  { left: "물", right: "원액", unit: "컵" },
+];
+
+const G6_PERCENT_CONTEXTS = [
+  { total: "체험 활동 신청자", unit: "명", part: "참가 확정자" },
+  { total: "읽기 목표 쪽수", unit: "쪽", part: "읽은 쪽수" },
+  { total: "저금 목표액", unit: "원", part: "모은 금액" },
+  { total: "학급 설문 응답자", unit: "명", part: "찬성한 학생" },
+];
+
+const G6_GRAPH_CONTEXTS = [
+  { title: "학급 프로젝트 주제", labels: ["환경", "과학", "역사"] },
+  { title: "방과 후 활동 선호도", labels: ["독서", "운동", "음악"] },
+  { title: "급식 메뉴 선호도", labels: ["한식", "분식", "양식"] },
+  { title: "학습 도구 사용 비율", labels: ["태블릿", "공책", "교구"] },
+];
+
+const G6_CUBOID_CONTEXTS = [
+  "수학 교구 상자",
+  "학급 자료 보관함",
+  "입체 모형 포장 상자",
+  "전시 작품 받침대",
+];
+
 function genG6QuotientFractionProper(): Problem {
   const denominator = randInt(3, 12);
   const numerator = randInt(1, denominator - 1);
@@ -3646,18 +3817,20 @@ function genG6FractionDivideIntegerWord(): Problem {
   const numerator = randInt(2, denominator - 1);
   const people = randInt(2, 5);
   const answer = reduceFrac(makeFrac(numerator, denominator * people));
+  const context = choice(G6_SHARE_CONTEXTS);
+  const recipient = context.countUnit === "명" ? `${people}명의 ${context.group}에게` : `${people}개의 ${context.group}에`;
   return withVisual(
     {
       topicId: "g6-fraction-divide-integer-word",
       prompt: "문장을 읽고 분수 나눗셈으로 해결하세요.",
-      expression: `주스 ${numerator}/${denominator} L를 ${people}명이 똑같이 나누어 마십니다. 한 명이 마시는 양`,
+      expression: `${context.item} ${numerator}/${denominator} ${context.unit}를 ${recipient} 똑같이 나눕니다. ${context.each}`,
       hint: "분수로 입력",
       answer,
       kind: "fraction",
-      answerText: `${formatFrac(answer)} L`,
-      solution: `${numerator}/${denominator} ÷ ${people} = ${formatFrac(answer)} L입니다.`,
+      answerText: `${formatFrac(answer)} ${context.unit}`,
+      solution: `${numerator}/${denominator} ÷ ${people} = ${formatFrac(answer)} ${context.unit}입니다.`,
     },
-    { type: "fraction-strip", title: "주스를 똑같이 나누기 전", numerator, denominator },
+    { type: "fraction-strip", title: `${context.item}를 똑같이 나누기 전`, numerator, denominator },
   );
 }
 
@@ -3725,15 +3898,16 @@ function genG6DecimalDivideRemainder(): Problem {
 function genG6DecimalDivideWord(): Problem {
   const divisor = randInt(2, 8);
   const each = randInt(12, 85);
+  const context = choice(G6_DECIMAL_SHARE_CONTEXTS);
   const total = decimalText((divisor * each) / 10, 1);
   const answer = decimalText(each / 10, 1);
   return mkChoice(
     "g6-decimal-divide-word",
     "문장을 읽고 소수 나눗셈으로 해결하세요.",
-    `리본 ${total} m를 ${divisor}명에게 똑같이 나누면 한 명은 몇 m씩 가집니까?`,
+    `${context.item} ${total} ${context.unit}를 ${divisor}개로 똑같이 나누면 ${context.target}은 몇 ${context.unit}입니까?`,
     answer,
     [decimalText((each + 5) / 10, 1), decimalText(each / 100, 2), String(each)],
-    `${total} ÷ ${divisor} = ${answer} m입니다.`,
+    `${total} ÷ ${divisor} = ${answer} ${context.unit}입니다.`,
   );
 }
 
@@ -3755,16 +3929,17 @@ function genG6DecimalDivideCheck(): Problem {
 function genG6RatioWrite(): Problem {
   const a = randInt(2, 12);
   const b = randInt(2, 12);
+  const context = choice(G6_RATIO_CONTEXTS);
   return withVisual(
     mkChoice(
       "g6-ratio-write",
       "두 양의 관계를 비로 나타내세요.",
-      `빨간 구슬 ${a}개와 파란 구슬 ${b}개`,
+      `${context.left} ${a}${context.unit}, ${context.right} ${b}${context.unit}`,
       `${a}:${b}`,
       [`${b}:${a}`, `${a + b}:${b}`, `${a}:${a + b}`],
-      `빨간 구슬 수에 대한 파란 구슬 수의 비는 ${a}:${b}입니다.`,
+      `${context.left} 수에 대한 ${context.right} 수의 비는 ${a}:${b}입니다.`,
     ),
-    { type: "ratio-strip", title: "구슬 수 비교", leftLabel: "빨간 구슬", rightLabel: "파란 구슬", left: a, right: b, unit: "개" },
+    { type: "ratio-strip", title: `${context.left}와 ${context.right} 비교`, leftLabel: context.left, rightLabel: context.right, left: a, right: b, unit: context.unit },
   );
 }
 
@@ -3825,15 +4000,16 @@ function genG6PercentBasic(): Problem {
 function genG6PercentOfQuantity(): Problem {
   const total = choice([80, 120, 160, 200, 240, 300]);
   const percentValue = choice([10, 20, 25, 40, 50, 75]);
+  const context = choice(G6_PERCENT_CONTEXTS);
   return withVisual(
     mkInteger(
       "g6-percent-of-quantity",
       "전체의 백분율만큼의 양을 구하세요.",
-      `${total}의 ${percentValue}%`,
+      `${context.total} ${total}${context.unit} 중 ${percentValue}%에 해당하는 ${context.part}`,
       (total * percentValue) / 100,
-      `${total} × ${percentValue}/100 = ${(total * percentValue) / 100}입니다.`,
+      `${total} × ${percentValue}/100 = ${(total * percentValue) / 100}${context.unit}입니다.`,
     ),
-    { type: "circle-chart", title: `전체 ${total} 중 ${percentValue}%`, unit: "%", items: [{ label: "구할 부분", value: percentValue }, { label: "나머지", value: 100 - percentValue }] },
+    { type: "circle-chart", title: `${context.part} 비율`, unit: "%", items: [{ label: context.part, value: percentValue }, { label: "나머지", value: 100 - percentValue }] },
   );
 }
 
@@ -3841,15 +4017,16 @@ function genG6QuantityFromPercent(): Problem {
   const percentValue = choice([10, 20, 25, 40, 50]);
   const part = choice([12, 16, 24, 30, 40, 60]);
   const total = (part * 100) / percentValue;
+  const context = choice(G6_PERCENT_CONTEXTS);
   return withVisual(
     mkInteger(
       "g6-quantity-from-percent",
       "일부와 백분율을 보고 전체를 구하세요.",
-      `${part}명은 전체의 ${percentValue}%입니다. 전체 인원`,
+      `${context.part} ${part}${context.unit}은 전체의 ${percentValue}%입니다. 전체 ${context.total}`,
       total,
-      `전체 = ${part} ÷ ${percentValue}/100 = ${total}명입니다.`,
+      `전체 = ${part} ÷ ${percentValue}/100 = ${total}${context.unit}입니다.`,
     ),
-    { type: "circle-chart", title: `${part}명이 차지하는 비율`, unit: "%", items: [{ label: `${part}명`, value: percentValue }, { label: "나머지", value: 100 - percentValue }] },
+    { type: "circle-chart", title: `${context.part}이 차지하는 비율`, unit: "%", items: [{ label: `${context.part} ${part}${context.unit}`, value: percentValue }, { label: "나머지", value: 100 - percentValue }] },
   );
 }
 
@@ -3857,10 +4034,11 @@ function genG6BandGraphRead(): Problem {
   const a = choice([20, 25, 30, 35, 40]);
   const b = choice([15, 20, 25, 30]);
   const c = 100 - a - b;
+  const context = choice(G6_GRAPH_CONTEXTS);
   const items = [
-    { label: "독서", value: a },
-    { label: "운동", value: b },
-    { label: "음악", value: c },
+    { label: context.labels[0]!, value: a },
+    { label: context.labels[1]!, value: b },
+    { label: context.labels[2]!, value: c },
   ];
   const max = items.reduce((best, item) => (item.value > best.value ? item : best), items[0]!);
   return withVisual(
@@ -3872,22 +4050,24 @@ function genG6BandGraphRead(): Problem {
       items.map((item) => item.label).filter((label) => label !== max.label),
       `가장 큰 백분율은 ${max.value}%이므로 ${max.label}입니다.`,
     ),
-    { type: "ratio-strip", title: "띠그래프: 활동별 비율", leftLabel: max.label, rightLabel: "나머지", left: max.value, right: 100 - max.value, unit: "%", total: 100 },
+    { type: "ratio-strip", title: `띠그래프: ${context.title}`, leftLabel: max.label, rightLabel: "나머지", left: max.value, right: 100 - max.value, unit: "%", total: 100 },
   );
 }
 
 function genG6CircleGraphRead(): Problem {
   const percentValue = choice([10, 20, 25, 30, 40]);
   const total = choice([100, 120, 160, 200, 240]);
+  const context = choice(G6_GRAPH_CONTEXTS);
+  const label = choice(context.labels);
   return withVisual(
     mkInteger(
       "g6-circle-graph-read",
       "원그래프의 백분율을 보고 인원수를 구하세요.",
-      `전체 ${total}명 중 수학을 좋아하는 학생 ${percentValue}%`,
+      `전체 ${total}명 중 ${label}을 선택한 학생 ${percentValue}%`,
       (total * percentValue) / 100,
       `${total} × ${percentValue}/100 = ${(total * percentValue) / 100}명입니다.`,
     ),
-    { type: "circle-chart", title: "좋아하는 과목 원그래프", unit: "%", items: [{ label: "수학", value: percentValue }, { label: "기타", value: 100 - percentValue }] },
+    { type: "circle-chart", title: `${context.title} 원그래프`, unit: "%", items: [{ label, value: percentValue }, { label: "기타", value: 100 - percentValue }] },
   );
 }
 
@@ -3908,15 +4088,17 @@ function genG6PercentToAngle(): Problem {
 function genG6GraphCompare(): Problem {
   const first = randInt(20, 45);
   const second = randInt(10, first - 5);
+  const context = choice(G6_GRAPH_CONTEXTS);
+  const label = choice(context.labels);
   return withVisual(
     mkInteger(
       "g6-graph-compare",
       "두 항목의 백분율 차를 구하세요.",
-      `5월 학용품 ${first}%, 6월 학용품 ${second}%`,
+      `1차 조사 ${label} ${first}%, 2차 조사 ${label} ${second}%`,
       first - second,
       `${first} - ${second} = ${first - second}%p입니다.`,
     ),
-    { type: "bar-chart", title: "월별 학용품 비율", unit: "%", items: [{ label: "5월", value: first }, { label: "6월", value: second }] },
+    { type: "bar-chart", title: `${context.title} 변화`, unit: "%", items: [{ label: "1차", value: first }, { label: "2차", value: second }] },
   );
 }
 
@@ -3941,15 +4123,16 @@ function genG6GraphTablePercent(): Problem {
   const b = randInt(15, 40);
   const total = choice([100, 120, 150, 200]);
   const c = total - a - b;
+  const context = choice(G6_GRAPH_CONTEXTS);
   return withVisual(
     mkInteger(
       "g6-graph-table-percent",
       "표의 자료 중 남은 항목의 수를 구하세요.",
-      `전체 ${total}명, A ${a}명, B ${b}명, C □명`,
+      `전체 ${total}명, ${context.labels[0]} ${a}명, ${context.labels[1]} ${b}명, ${context.labels[2]} □명`,
       c,
       `${total} - ${a} - ${b} = ${c}명입니다.`,
     ),
-    { type: "data-table", caption: "조사 결과", headers: ["항목", "A", "B", "C", "합계"], rows: [["수", a, b, "□", total]] },
+    { type: "data-table", caption: context.title, headers: ["항목", ...context.labels, "합계"], rows: [["수", a, b, "□", total]] },
   );
 }
 
@@ -4452,11 +4635,12 @@ function genG6CuboidSurfaceArea(): Problem {
   const depth = randInt(3, 10);
   const height = randInt(3, 9);
   const answer = 2 * (width * depth + width * height + depth * height);
+  const context = choice(G6_CUBOID_CONTEXTS);
   return withVisual(
     mkInteger(
       "g6-cuboid-surface-area",
       "직육면체의 겉넓이를 구하세요.",
-      `가로 ${width} cm, 세로 ${depth} cm, 높이 ${height} cm`,
+      `${context}의 가로 ${width} cm, 세로 ${depth} cm, 높이 ${height} cm`,
       answer,
       `서로 같은 면이 2개씩 있으므로 2 × (${width}×${depth} + ${width}×${height} + ${depth}×${height}) = ${answer} cm²입니다.`,
     ),
@@ -4469,11 +4653,12 @@ function genG6CuboidVolume(): Problem {
   const depth = randInt(3, 10);
   const height = randInt(3, 9);
   const answer = width * depth * height;
+  const context = choice(G6_CUBOID_CONTEXTS);
   return withVisual(
     mkInteger(
       "g6-cuboid-volume",
       "직육면체의 부피를 구하세요.",
-      `가로 ${width} cm, 세로 ${depth} cm, 높이 ${height} cm`,
+      `${context}의 가로 ${width} cm, 세로 ${depth} cm, 높이 ${height} cm`,
       answer,
       `직육면체의 부피는 ${width} × ${depth} × ${height} = ${answer} cm³입니다.`,
     ),
@@ -4501,11 +4686,12 @@ function genG6CuboidMissingEdgeFromVolume(): Problem {
   const depth = randInt(3, 8);
   const height = randInt(3, 10);
   const volume = width * depth * height;
+  const context = choice(G6_CUBOID_CONTEXTS);
   return withVisual(
     mkInteger(
       "g6-cuboid-missing-edge-volume",
       "부피를 보고 빠진 높이를 구하세요.",
-      `가로 ${width} cm, 세로 ${depth} cm, 부피 ${volume} cm³인 직육면체의 높이`,
+      `${context}의 가로 ${width} cm, 세로 ${depth} cm, 부피 ${volume} cm³일 때 높이`,
       height,
       `높이 = 부피 ÷ (가로 × 세로) = ${volume} ÷ (${width} × ${depth}) = ${height} cm입니다.`,
     ),
@@ -9289,5 +9475,5 @@ const RAW_GENERATORS: Record<string, () => Problem> = {
 };
 
 export const GENERATORS: Record<string, () => Problem> = Object.fromEntries(
-  Object.entries(RAW_GENERATORS).map(([topicId, generate]) => [topicId, () => hideFirstGradeAnswerVisual(generate())]),
+  Object.entries(RAW_GENERATORS).map(([topicId, generate]) => [topicId, () => hideFirstGradeAnswerVisual(enrichG6ParkProblem(topicId, generate()))]),
 ) as Record<string, () => Problem>;

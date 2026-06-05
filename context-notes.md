@@ -1543,3 +1543,14 @@
 - 임시 작업트리는 `%TEMP%/purunet-math-ebook-deploy-20260605223158`에 만들었고, `npm.cmd ci`와 `npm.cmd run build`를 통과했다. npm 감사에서 기존 의존성 high 취약점 1건은 보고됐지만 빌드 차단 오류는 아니었다.
 - Cloudflare Pages 배포는 `npx.cmd wrangler pages deploy dist --project-name purunet-math-ebook --branch main`으로 완료했다. 프리뷰 URL은 `https://74b88f2f.purunet-math-ebook.pages.dev`이다.
 - 운영 URL `https://purunet-math-ebook.pages.dev/elementary-ai-math/`는 HTTP 200이며, 운영 `generators.js`에서 `분수의 나눗셈`, `각기둥과 각뿔`, `직육면체의 겉넓이와 부피`, `6-1 최종 점검` 반영을 확인했다.
+
+## 초등 AI 수학 6학년 박만구 생성기·개념·단계풀이 전면 보강 (2026-06-05)
+- 요청 목표는 6학년 문제 생성기, 개념 설명, 단계별 풀이 흐름을 로컬 PDF `천재_초등_수학6-1(박만구)_교과서_StreamDocs.pdf`의 단원 흐름에 맞게 전면 보강하는 것이다.
+- 저작권 보호를 위해 교과서 원문 문제, 개념 문장, 풀이 서술, 지면 이미지는 그대로 복제하지 않는다. 대신 6-1 단원 순서와 학습 목표를 기준으로 자체 생성 문항, 자체 개념 설명, 자체 풀이 단계를 만든다.
+- 사용자의 핵심 문제 제기는 기존 생성 루틴이 비슷한 문제를 반복하고, 개념 설명과 풀이 흐름이 약해 학업 성취도가 낮게 나온다는 점이다.
+- 성공 기준은 분수의 나눗셈, 각기둥과 각뿔, 소수의 나눗셈, 비와 비율, 직육면체의 겉넓이와 부피, 여러 가지 그래프에서 문항 맥락·수치·질문 방식이 다양해지고, 각 문항에 개념 핵심과 3단계 이상 풀이 흐름이 포함되는 것이다.
+- 기존 작업 전부터 여러 파일에 미커밋 변경이 있으므로 이번 변경은 생성기와 필요한 산출물 중심으로 제한하고, 관련 없는 기존 변경은 되돌리지 않는다.
+- 구현 결과 6학년 생성기에 박만구 6-1 단원별 보강 프로필을 추가했다. 분수의 나눗셈, 각기둥과 각뿔, 소수의 나눗셈, 비와 비율, 직육면체, 그래프 유형은 생성될 때 `conceptNote`, 3단계 `solutionSteps`, 번호가 붙은 풀이 문자열을 함께 가진다.
+- 반복 문항 완화를 위해 분수·소수 나눗셈 문장제, 비 표현, 백분율, 그래프, 직육면체 문제의 상황 소재 풀을 확장했다.
+- `app/public/elementary-ai-math/generators.js`를 재생성했고, `npm run onefile` 결과를 `CODEX 수학 익힘북 전자북(26.05.17)/CODEX-수학-익힘북-전자북.html`, `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했다. 모바일 `sw.js` 캐시 버전은 `v83`이다.
+- 검증 결과 `npm.cmd run verify`, `npm.cmd run onefile`, 6학년 대표 주제 5개 구조 검사는 통과했다. `npm.cmd run lint`는 기존 미해결 파일들의 `no-useless-assignment`, `react-hooks/set-state-in-effect` 오류로 실패했으며 이번 생성기 변경에서 새 lint 오류는 확인되지 않았다.
