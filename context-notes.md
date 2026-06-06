@@ -1677,3 +1677,17 @@
 - `node --check js/nakan-middle1-math-workbook-ai-math.js`와 `npm.cmd run build`가 통과했다. AI 페이지 전용 HTML·CSS·JS만 `cfcabb7 feat: upgrade middle1 AI math learning` 커밋으로 저장했다.
 - 커밋된 HEAD 기준 임시 작업트리에서 `npm.cmd ci`, `npm.cmd run build`, `npm.cmd run deploy`를 실행해 Cloudflare Pages에 배포했다. 프리뷰 URL은 `https://a2e1e61d.purunet-academy.pages.dev`이다.
 - 운영 `https://purunet-academy.pages.dev/nakan-middle1-math-workbook-ai-math`에서 HTTP 200, 새 제목, 4지선다, 정답 가림, KaTeX와 세 전문 시각화, Three.js 비어 있지 않은 픽셀, 모바일 가로 넘침 0, 콘솔·네트워크 오류 0을 재확인했다.
+
+## 교사용 관리센터 영문법 6개 과목 등록 (2026-06-06)
+- 요청 목표는 교사용 관리센터의 학생관리 수강 과목과 아카데미 학습현황에 초등·중등·고등 내신 영문법, 초등·중등·고등 NLP 내신 문법을 정식 과목으로 추가하는 것이다.
+- 각 문법 학습 페이지와 홈 바로가기 카드는 이미 존재한다. 이번 작업은 관리센터의 공통 과목 ID, 학생 등록·수정 선택 목록, 학습현황 표시명과 필터를 일관된 ID로 연결하는 범위이다.
+- 현재 아카데미 저장소에는 일반 중1 웹북과 배포 스크립트 등에 사용자 미커밋 변경이 있으므로 직접 관련된 관리센터 데이터·뷰 파일만 수정하고 기존 변경은 되돌리지 않는다.
+- 관리 과목 ID는 실제 페이지 주소와 맞춰 `elementary-school-grammar`, `middle-school-grammar`, `high-school-grammar`, `nlp-elementary-grammar`, `nlp-middle-grammar`, `nlp-high-grammar`로 정했다.
+- `js/views.js`의 공통 학생 수강 과목 목록에 6개 과목을 추가해 학생 등록, 학생 정보 수정, 수강관리 화면이 같은 목록을 사용하도록 했다.
+- 아카데미 학습현황의 과목 라벨 사전에 같은 6개 ID를 연결해 진도가 없는 수강 과목은 0%, 진도 레코드가 있는 과목은 해당 비율과 완료 토픽 수로 표시되게 했다.
+- `node --check js/views.js`와 `npm.cmd run build`가 통과했다.
+- 로컬 Playwright 검증에서 학생 등록·수정·수강관리 화면의 누락 과목 0개, 기존 학생의 6개 체크 상태 유지, 아카데미 학습현황 상세 과목 행 6개, 콘솔 오류 0개, 모바일 390px 가로 넘침 0을 확인했다.
+- 아카데미 저장소 구현 커밋은 `468557c feat: add grammar subjects to teacher management`이다.
+- Cloudflare Pages 배포 프리뷰는 `https://20aa6a6d.purunet-academy.pages.dev`이며 운영 `https://purunet-academy.pages.dev/`에도 같은 `views.js`가 반영됐다.
+- 운영 Playwright 검증에서 학생 등록, 학생 수정, 수강관리, 아카데미 학습현황에 6개 과목이 모두 표시되고 학습현황 상세에 진도 행 6개가 생성되는 것을 확인했다. 콘솔 오류와 모바일 390px 가로 넘침은 없었다.
+- 현재 사용자 작업트리의 `npm.cmd run build`는 통과했다. 별도 깨끗한 작업트리에서는 기존에 커밋되지 않은 `scripts/.math-entry.tsx`가 없어 수학 번들 재빌드가 실패했지만, 이번 변경 대상인 `js/views.js` 정적 배포는 정상 완료됐고 운영 반영을 직접 검증했다.
