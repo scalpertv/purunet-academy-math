@@ -1639,3 +1639,7 @@
 - 각기둥·각뿔·원기둥 전개도는 모바일에서 면 수와 접는 선 수, 면 선택, 연결된 Three.js 화면을 별도로 확인했다.
 - `node --check app/public/elementary-ai-math/app.js`, `npm.cmd run verify`, `npm.cmd run onefile`은 통과했다. `npm.cmd run lint`는 기존 미해결 파일 `functions/api/auth/cross-login.ts`, `functions/api/auth/sso-token.ts`, `src/App.tsx`, `src/components/LogicFlowCard.tsx`, `src/components/Practice.tsx`의 기존 lint 오류 12건으로 실패했다.
 - 단일 HTML 산출물은 `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고 세 파일의 SHA-256 일치를 확인했다. 모바일 `sw.js` 캐시 버전은 `v88`이다.
+- 구현 커밋은 `fcc1338 feat: add professional math visualization tools`이다.
+- 운영 배포는 `%TEMP%/purunet-math-ebook-deploy-math-tools-20260606121626` 임시 작업트리에서 커밋된 HEAD 기준으로 진행했다. `npm.cmd ci`, `npm.cmd run build`, `npx.cmd wrangler pages deploy dist --project-name purunet-math-ebook --branch main`을 실행했고 프리뷰 URL은 `https://f2f1304a.purunet-math-ebook.pages.dev`이다.
+- 운영 `https://purunet-math-ebook.pages.dev/elementary-ai-math/`에서 데스크톱 1440×1000과 모바일 390×844로 대표 5개 문제를 재검증했다. Three.js 캔버스 픽셀, 전개도 면 선택과 연결 화면, JSXGraph SVG, Chart.js 캔버스, 정답 가림, 제어 버튼 경계, 가로 넘침, 콘솔·페이지·HTTP 오류를 확인했고 실패는 0건이었다.
+- 운영 `index.html`과 `app.js`에서 고정 라이브러리 버전과 `upgradeProfessionalVisual`, Three.js·JSXGraph·Chart.js 마운트 함수, 전문 전개도 렌더러 반영을 확인했다.
