@@ -1643,3 +1643,15 @@
 - 운영 배포는 `%TEMP%/purunet-math-ebook-deploy-math-tools-20260606121626` 임시 작업트리에서 커밋된 HEAD 기준으로 진행했다. `npm.cmd ci`, `npm.cmd run build`, `npx.cmd wrangler pages deploy dist --project-name purunet-math-ebook --branch main`을 실행했고 프리뷰 URL은 `https://f2f1304a.purunet-math-ebook.pages.dev`이다.
 - 운영 `https://purunet-math-ebook.pages.dev/elementary-ai-math/`에서 데스크톱 1440×1000과 모바일 390×844로 대표 5개 문제를 재검증했다. Three.js 캔버스 픽셀, 전개도 면 선택과 연결 화면, JSXGraph SVG, Chart.js 캔버스, 정답 가림, 제어 버튼 경계, 가로 넘침, 콘솔·페이지·HTTP 오류를 확인했고 실패는 0건이었다.
 - 운영 `index.html`과 `app.js`에서 고정 라이브러리 버전과 `upgradeProfessionalVisual`, Three.js·JSXGraph·Chart.js 마운트 함수, 전문 전개도 렌더러 반영을 확인했다.
+
+## 푸르넷 아카데미 통합 인증·학습 모니터링·영단어 지도 (2026-06-06)
+- 요청 대상은 별도 Pages 프로젝트인 `purunet-math-ebook`의 초등 AI 수학과 `purunet-academy`의 교사용 관리 센터, 중1 AI 수학, 초등·중등·고등 영단어 페이지이다.
+- 중1 AI 수학은 이미 아카데미 세션 키 `purunet-academy-session-v1`과 `/api/progress`를 사용한다. 초등 AI 수학은 별도 도메인이므로 아카데미 `/api/math-sso`가 발급한 일회용 토큰을 수학 사이트 `/api/auth/sso-verify`에서 검증하는 기존 구조를 확장한다.
+- 아카데미 진도 저장소는 `student_progress`가 학생·모듈별 최신 상태를 보관한다. 로그인 이력과 현재 접속 상태는 별도 활동 이벤트가 필요하므로 `student_activity`와 `/api/activity`를 추가하고 교사용 스냅샷에 최근 이벤트를 포함한다.
+- 영단어 페이지는 초등 `elem-vocab.js`, 중등·고등 공용 `middle-vocab.js`가 각각 자체 SRS 상태를 관리한다. 각 테마를 10단어 단위 단계로 나눈 전체 지도와 단계 선택, 완료 후 다음 단계 자동 이동을 기존 렌더러 내부에 추가한다.
+- 영단어 인증·진도 전송은 세 페이지가 같은 아카데미 도메인에 있으므로 공통 브리지 `js/academy-learning-bridge.js`에서 세션을 읽고 `/api/progress`, `/api/activity`로 동기화한다.
+- 구현 결과 아카데미 D1에 `student_activity`를 추가하고 로그인, 하트비트, 학습 시작, 문제·단계 완료, 종료 이벤트를 저장하도록 했다. 교사용 아카데미 학습현황은 최근 이벤트 1,000건을 바탕으로 130초 이내 하트비트를 로그인 중으로 표시한다.
+- `AI 초등 수학 코치반`을 학생 수강 과목과 기본 클래스에 추가했다. 아카데미 홈의 AI 초등 수학 바로가기는 `/api/math-sso` 일회용 토큰을 발급하고, 초등 수학은 `/api/auth/sso-verify` 검증 후 학생 ID로 진도와 활동을 기록한다.
+- 초등·중등·고등 영단어는 각 테마를 10단어 단계로 나눠 초등 80단계, 중등 180단계, 고등 300단계 전체 지도를 표시한다. 완료한 단계는 표시하고 어느 단계든 선택할 수 있으며 완료 후 3.5초 뒤 다음 단계로 이동한다.
+- Playwright 검증에서 세 영단어 페이지의 로그인 연동, 지도 선택, 완료·다음 단계 이벤트, 모바일 가로 넘침 없음이 통과했다. 초등 수학은 SSO 토큰 제거, 학원 홈 링크, 진도·활동 POST를 확인했고 교사용 화면은 온라인 상태, 최근 활동 2건, AI 초등 수학 진도, 기본 클래스 필터가 표시됐다.
+- 아카데미 `npm run build`, 전자북 `npm run verify`, `npm run onefile`은 통과했다. `npm run lint`는 이번 변경과 무관한 기존 12건의 오류로 실패했다.

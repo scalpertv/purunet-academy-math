@@ -109,6 +109,13 @@ h1,h2,h3,p { overflow-wrap: anywhere; }
 }
 .start-btn:hover, .home-btn:hover { filter: brightness(1.08); transform: translateY(-2px); }
 .start-btn-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.academy-sync-status {
+  max-width: 190px; padding: 7px 10px; border: 1px solid rgba(148,163,184,.3);
+  border-radius: 8px; background: rgba(15,23,42,.72); color: #cbd5e1;
+  font-size: 11px; font-weight: 800; line-height: 1.35; text-align: center;
+}
+.academy-sync-status.is-online { border-color: rgba(74,222,128,.55); color: #86efac; }
+.academy-sync-status.is-offline { border-color: rgba(251,191,36,.45); color: #fde68a; }
 
 /* 3열 레이아웃 */
 .layout { display: grid; grid-template-columns: .68fr 1.5fr .88fr; gap: 16px; }

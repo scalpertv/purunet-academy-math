@@ -19,9 +19,158 @@ const app = {
 
 const $ = id => document.getElementById(id);
 
+const ACADEMY_API = "https://purunet-academy.pages.dev/api";
+const ACADEMY_ACCOUNT_KEY = "purunet-elementary-ai-account-v1";
+let academyAccount = readStoredJson(ACADEMY_ACCOUNT_KEY, null);
+let academyHeartbeat = null;
+
 // ============================================================
 // 헬퍼
 // ============================================================
+function readStoredJson(key, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeStoredJson(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+
+function academyPost(path, body, keepalive = false) {
+  return fetch(`${ACADEMY_API}${path}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+    keepalive
+  }).then(response => {
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  });
+}
+
+function updateAcademyStatus(message, online) {
+  const status = $("academy-sync-status");
+  if (!status) return;
+  status.textContent = message;
+  status.classList.toggle("is-online", !!online);
+  status.classList.toggle("is-offline", !online);
+}
+
+function academyActivity(eventType, detail = {}, keepalive = false) {
+  if (!academyAccount || academyAccount.role !== "student") return Promise.resolve();
+  return academyPost("/activity", {
+    id: [academyAccount.id, "elementary-ai-math", eventType, Date.now(), Math.random().toString(36).slice(2, 8)].join("-"),
+    student_id: academyAccount.id,
+    username: academyAccount.username || "",
+    module_id: "ai-elementary-math",
+    event_type: eventType,
+    occurred_at: new Date().toISOString(),
+    detail,
+    page: location.pathname
+  }, keepalive).catch(() => {});
+}
+
+async function initAcademyLink() {
+  const params = new URLSearchParams(location.search);
+  const token = params.get("sso_token");
+  if (token) {
+    try {
+      const response = await fetch("/api/auth/sso-verify", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ token })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || `HTTP ${response.status}`);
+      academyAccount = {
+        id: data.userId || data.learnerId || data.username,
+        username: data.username,
+        name: data.displayName || data.username,
+        role: data.role || "student",
+        source: data.source || "academy"
+      };
+      writeStoredJson(ACADEMY_ACCOUNT_KEY, academyAccount);
+      params.delete("sso_token");
+      const query = params.toString();
+      history.replaceState({}, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`);
+    } catch (error) {
+      updateAcademyStatus(`학원 로그인 연결 실패 · ${error.message}`, false);
+      return;
+    }
+  }
+
+  if (!academyAccount) {
+    updateAcademyStatus("학원 홈에서 로그인하면 학습 기록이 저장됩니다", false);
+    return;
+  }
+  updateAcademyStatus(`${academyAccount.name || academyAccount.username} · 학습 기록 저장 중`, true);
+  await academyActivity("login", { source: academyAccount.source || "saved-session" });
+  academyHeartbeat = window.setInterval(() => {
+    academyActivity("heartbeat", { visibility: document.visibilityState });
+  }, 60000);
+}
+
+function academyModuleInfo() {
+  const unit = currentUnit();
+  const unitId = unit?.unitId || unit?.id || `unit-${app.unitIdx + 1}`;
+  return {
+    moduleId: `ai-elementary-math:g${app.grade}-s${app.semester}-${unitId}`,
+    unitId,
+    unitTitle: unit?.unitTitle || unit?.title || `${app.unitIdx + 1}단원`,
+    topicTotal: Math.max(1, unit?.topics?.length || 1)
+  };
+}
+
+function syncAcademyAttempt(correct, selectedValue) {
+  if (!academyAccount || academyAccount.role !== "student" || !app.problem) return;
+  const info = academyModuleInfo();
+  const key = `${ACADEMY_ACCOUNT_KEY}:progress:${academyAccount.id}:${info.moduleId}`;
+  const previous = readStoredJson(key, { completed: [], attempts: 0, correct: 0 });
+  const completed = Array.isArray(previous.completed) ? previous.completed.slice() : [];
+  if (completed.indexOf(app.problem.skillId) < 0) completed.push(app.problem.skillId);
+  const attempts = Number(previous.attempts || 0) + 1;
+  const correctCount = Number(previous.correct || 0) + (correct ? 1 : 0);
+  const percent = Math.min(100, Math.round(completed.length / info.topicTotal * 100));
+  const updatedAt = new Date().toISOString();
+  const record = {
+    student_id: academyAccount.id,
+    module_id: info.moduleId,
+    subject_id: "ai-elementary-math",
+    percent,
+    stickers: correctCount,
+    completed_topics: completed,
+    updated_at: updatedAt,
+    title: `${app.grade}학년 ${app.semester}학기 ${info.unitTitle}`,
+    grade: app.grade,
+    semester: app.semester,
+    unitId: info.unitId,
+    unitTitle: info.unitTitle,
+    topicId: app.problem.skillId,
+    topicTitle: app.problem.skillTitle,
+    attempts,
+    correct: correctCount,
+    accuracy: Math.round(correctCount / attempts * 100),
+    lastResult: correct ? "correct" : "wrong",
+    selectedValue: String(selectedValue)
+  };
+  writeStoredJson(key, { completed, attempts, correct: correctCount, record });
+  academyPost("/progress", record).catch(() => {
+    updateAcademyStatus(`${academyAccount.name || academyAccount.username} · 기록 재연결 대기`, false);
+  });
+  academyActivity("problem_complete", {
+    grade: app.grade,
+    semester: app.semester,
+    unitTitle: info.unitTitle,
+    topicTitle: app.problem.skillTitle,
+    correct,
+    percent
+  });
+}
+
 function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 function shuffle(arr) {
   const a = [...arr];
@@ -3844,6 +3993,7 @@ function selectChoice(value, button) {
   const meterFill=$("meter-fill"), meterText=$("meter-text");
   if (meterFill && meterText) { meterFill.className=`meter-fill ${correct?"low":"mid"}`; meterText.textContent=correct?"낮음 · 20%":"중간 · 55%"; }
   updateStats(); renderGameProgress(); renderReport();
+  syncAcademyAttempt(correct, value);
 }
 
 // ============================================================
@@ -4286,7 +4436,11 @@ function printProblemSet() {
 // ============================================================
 // 이벤트 리스너
 // ============================================================
-function startNewSession() { app.sessionProblems=0; makeMission(); }
+function startNewSession() {
+  app.sessionProblems=0;
+  academyActivity("session_start", { grade: app.grade, semester: app.semester });
+  makeMission();
+}
 $("new-mission").addEventListener("click", startNewSession);
 const newMissionAlt=$("new-mission-alt"); if(newMissionAlt) newMissionAlt.addEventListener("click",startNewSession);
 $("set-count-select").addEventListener("change", e=>{ app.setLimit=Number(e.target.value); });
@@ -4298,7 +4452,8 @@ const printBtn=$("print-btn"); if(printBtn) printBtn.addEventListener("click",pr
 // ============================================================
 // 초기화 (boot)
 // ============================================================
-function boot() {
+async function boot() {
+  await initAcademyLink();
   initCurriculum();
   initGradeTabs();
   renderUnitSelect();
@@ -4308,3 +4463,8 @@ function boot() {
 }
 
 boot();
+
+window.addEventListener("pagehide", () => {
+  if (academyHeartbeat) window.clearInterval(academyHeartbeat);
+  academyActivity("offline", { reason: "pagehide" }, true);
+});
