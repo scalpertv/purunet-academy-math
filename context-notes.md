@@ -1655,3 +1655,8 @@
 - 초등·중등·고등 영단어는 각 테마를 10단어 단계로 나눠 초등 80단계, 중등 180단계, 고등 300단계 전체 지도를 표시한다. 완료한 단계는 표시하고 어느 단계든 선택할 수 있으며 완료 후 3.5초 뒤 다음 단계로 이동한다.
 - Playwright 검증에서 세 영단어 페이지의 로그인 연동, 지도 선택, 완료·다음 단계 이벤트, 모바일 가로 넘침 없음이 통과했다. 초등 수학은 SSO 토큰 제거, 학원 홈 링크, 진도·활동 POST를 확인했고 교사용 화면은 온라인 상태, 최근 활동 2건, AI 초등 수학 진도, 기본 클래스 필터가 표시됐다.
 - 아카데미 `npm run build`, 전자북 `npm run verify`, `npm run onefile`은 통과했다. `npm run lint`는 이번 변경과 무관한 기존 12건의 오류로 실패했다.
+- D1 원격 스키마에 `student_activity`와 인덱스를 적용했고 16개 쿼리가 성공했다. 기존 데이터는 유지됐다.
+- 아카데미 커밋은 `97a79fa feat: connect academy learning monitoring`, 루트 커밋은 `25cb0ca feat: sync academy student learning`이다.
+- Cloudflare Pages 배포는 커밋된 HEAD의 임시 작업트리에서 수행했다. 아카데미 프리뷰는 `https://e537f953.purunet-academy.pages.dev`, 수학 전자북 프리뷰는 `https://48f95067.purunet-math-ebook.pages.dev`이다.
+- 운영 SSO 종단 검증에서 `/api/math-sso` 토큰 발급, 초등 수학 `/api/auth/sso-verify`, 문제 풀이 후 아카데미 D1의 진도 1건과 `login`, `problem_complete` 활동 저장을 확인했다. 검증용 학생·진도·활동·토큰 데이터는 확인 직후 삭제했다.
+- 운영 영단어 페이지에서 초등 80단계, 중등 180단계, 고등 300단계와 모바일 가로 넘침 없음, 중1 수학 학원 홈 링크를 확인했다. `/api/activity`, `/api/progress`의 수학 도메인 CORS 사전 요청은 모두 204로 통과했다.
