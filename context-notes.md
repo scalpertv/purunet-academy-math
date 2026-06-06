@@ -1660,3 +1660,20 @@
 - Cloudflare Pages 배포는 커밋된 HEAD의 임시 작업트리에서 수행했다. 아카데미 프리뷰는 `https://e537f953.purunet-academy.pages.dev`, 수학 전자북 프리뷰는 `https://48f95067.purunet-math-ebook.pages.dev`이다.
 - 운영 SSO 종단 검증에서 `/api/math-sso` 토큰 발급, 초등 수학 `/api/auth/sso-verify`, 문제 풀이 후 아카데미 D1의 진도 1건과 `login`, `problem_complete` 활동 저장을 확인했다. 검증용 학생·진도·활동·토큰 데이터는 확인 직후 삭제했다.
 - 운영 영단어 페이지에서 초등 80단계, 중등 180단계, 고등 300단계와 모바일 가로 넘침 없음, 중1 수학 학원 홈 링크를 확인했다. `/api/activity`, `/api/progress`의 수학 도메인 CORS 사전 요청은 모두 204로 통과했다.
+
+## 중1 AI 수학 전문 학습 페이지·교사형 풀이·시각화 (2026-06-06)
+- 요청 목표는 `/nakan-middle1-math-workbook-ai-math`의 문제 생성, 개념, 단계별 풀이, 선택지를 중학교 수학 교과 표현으로 통일하고 전문 시각화 도구를 문제 유형에 맞게 적용하는 것이다.
+- 직접 대상은 아카데미 저장소의 `nakan-middle1-math-workbook-ai-math.html`, `assets/nakan-middle1-math-workbook-ai-math.css`, `js/nakan-middle1-math-workbook-ai-math.js`이다.
+- 현재 일반 중1 웹북과 배포 스크립트 등에 사용자 미커밋 변경이 있으므로 이번 작업에서는 AI 수학 전용 파일만 수정하고 기존 변경은 되돌리지 않는다.
+- 확인 결과 현재 입력 방식은 소수 판별 2지선다, 소인수분해 직접 입력, 작도·합동 3지선다, 나머지 4지선다로 나뉜다. 공통 선택지 생성 계층에서 모든 문항을 4지선다로 통일한다.
+- 현재 풀이 카드는 생성기 `problem.steps`의 정답 포함 문장을 직접 표시할 수 있다. 채점 전에는 현재 문제의 조건, 개념, 풀이 계획, 검산 기준만 보여 주고 최종값은 `□`로 가리는 공통 교사형 풀이 계층을 적용한다.
+- 기존 자체 SVG는 fallback으로 유지한다. 좌표·함수형 문제는 JSXGraph, 통계 문제는 Chart.js, 입체도형은 Three.js로 자동 승격하고 외부 라이브러리 로드 실패 시 원래 SVG를 계속 표시한다.
+- 구현 결과 소수 판별, 소인수분해, 작도·합동을 포함한 43개 생성 유형을 모두 4지선다로 통일했다. 각 문항은 중복 없는 보기 4개와 정답 보기 1개를 갖는다.
+- 작도 문항의 질문에 SSS·SAS·ASA 정답 약어가 직접 들어가던 문제를 조건 설명형 문장으로 바꿨다. 소인수분해 그림은 빈 인수 트리, 삼각형 내각 문제는 미지각 `?°`, 함수값 문제의 점 라벨은 `(x, ?)`로 표시해 선택 전 정답 노출을 막았다.
+- 개념 카드는 현재 문제 문장, 주어진 시각 자료 값, 사용할 공식, 검산 기준을 직접 연결한다. 풀이 카드는 문제 조건 읽기, 핵심 개념 선택, 풀이식 세우기, 계산 검토, 보기 대조의 5단계로 구성하고 최종값은 `□`로 유지한다.
+- KaTeX `0.16.11`, JSXGraph `1.12.2`, Chart.js `4.5.1`, Three.js `0.184.0`을 고정 버전으로 연결했다. 좌표는 JSXGraph, 통계는 Chart.js, 입체도형은 OrbitControls를 포함한 Three.js로 표시하며 기존 SVG는 전문 렌더러 준비 전 또는 로드 실패 시 fallback으로 남는다.
+- 전체 43개 유형 브라우저 순회 검사에서 보기 4개, 보기 중복 없음, 정답 보기 1개, 풀이 카드의 `□` 유지가 모두 통과했다. 생성기 자체는 7개 단원, 43개 유형, 1,548개 샘플을 검사했다.
+- 데스크톱 1440×1000과 모바일 390×844에서 JSXGraph, Chart.js, Three.js 렌더링, Three.js 중심 픽셀 `[108, 229, 255, 255]`, 모바일 가로 넘침 0, 콘솔 오류 0을 확인했다.
+- `node --check js/nakan-middle1-math-workbook-ai-math.js`와 `npm.cmd run build`가 통과했다. AI 페이지 전용 HTML·CSS·JS만 `cfcabb7 feat: upgrade middle1 AI math learning` 커밋으로 저장했다.
+- 커밋된 HEAD 기준 임시 작업트리에서 `npm.cmd ci`, `npm.cmd run build`, `npm.cmd run deploy`를 실행해 Cloudflare Pages에 배포했다. 프리뷰 URL은 `https://a2e1e61d.purunet-academy.pages.dev`이다.
+- 운영 `https://purunet-academy.pages.dev/nakan-middle1-math-workbook-ai-math`에서 HTTP 200, 새 제목, 4지선다, 정답 가림, KaTeX와 세 전문 시각화, Three.js 비어 있지 않은 픽셀, 모바일 가로 넘침 0, 콘솔·네트워크 오류 0을 재확인했다.
