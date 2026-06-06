@@ -6,6 +6,7 @@ import type { Problem, SolutionStep } from "../lib/types";
 import type { ReaderPrefs } from "../lib/readerPrefs";
 import MathText from "./MathText";
 import MathVisual from "./MathVisual";
+import LogicFlowCard from "./LogicFlowCard";
 
 interface Props {
   title: string;
@@ -401,6 +402,17 @@ export default function Practice({
             </div>
           )}
 
+          {/* 풀이 흐름도 카드 (solutionSteps가 있을 때만 표시) */}
+          {problem.solutionSteps && problem.solutionSteps.length > 0 && (
+            <LogicFlowCard
+              steps={problem.solutionSteps}
+              stepValues={stepValues}
+              stepResults={stepResults}
+              phase={phase}
+              onStepChange={updateStepValue}
+            />
+          )}
+
           {/* 수식 표현 영역 */}
           <div className="prac-expr" aria-live="polite">
             {problem.visual && <MathVisual visual={problem.visual} />}
@@ -412,54 +424,6 @@ export default function Practice({
           </div>
 
           {problem.hint && <p className="prac-hint">{problem.hint}</p>}
-
-          {/* 단계별 풀이 과정 (solutionSteps가 있을 때만 표시) */}
-          {problem.solutionSteps && problem.solutionSteps.length > 0 && (
-            <div className="prac-steps">
-              <div className="prac-steps-header">
-                <span className="prac-steps-icon">📝</span>
-                <span className="prac-steps-title">풀이 과정 (먼저 중간 계산을 써보세요)</span>
-              </div>
-              {problem.solutionSteps.map((step: SolutionStep, si: number) => {
-                const res = stepResults[si];
-                const attempted = (stepValues[si]?.trim() ?? "") !== "";
-                return (
-                  <div
-                    key={si}
-                    className={[
-                      "prac-step",
-                      phase === "graded" && attempted && res === true ? "step-ok" : "",
-                      phase === "graded" && attempted && res === false ? "step-ng" : "",
-                    ].filter(Boolean).join(" ")}
-                  >
-                    <label className="prac-step-label">{step.label}</label>
-                    <div className="prac-step-row">
-                      <input
-                        className="prac-step-input"
-                        type="text"
-                        inputMode="numeric"
-                        value={stepValues[si] ?? ""}
-                        onChange={(e) => updateStepValue(si, e.target.value)}
-                        disabled={phase === "graded"}
-                        placeholder="중간 답"
-                        aria-label={`단계 ${si + 1} 중간 답 입력`}
-                      />
-                      {phase === "graded" && (
-                        <span className="prac-step-feedback">
-                          {res === true && <span className="step-ok-mark">✓</span>}
-                          {(res === false || (phase === "graded" && !attempted)) && (
-                            <span className="prac-step-answer">
-                              {res === false && "→ "}정답: <strong>{step.answer}</strong>
-                            </span>
-                          )}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
 
           {/* ── 입력 영역 ── */}
 

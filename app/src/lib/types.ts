@@ -67,6 +67,7 @@ export type MathVisual =
 export type SolutionStep = {
   label: string;   // e.g. "① 괄호 안: 25 + 27 = □"
   answer: string;  // 중간 계산 정답 문자열
+  hint?: string;   // 선택: 정답을 바로 보여주기 전 사고 유도 힌트
 };
 
 export interface Problem {
