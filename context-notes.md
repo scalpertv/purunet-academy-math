@@ -1691,3 +1691,18 @@
 - Cloudflare Pages 배포 프리뷰는 `https://20aa6a6d.purunet-academy.pages.dev`이며 운영 `https://purunet-academy.pages.dev/`에도 같은 `views.js`가 반영됐다.
 - 운영 Playwright 검증에서 학생 등록, 학생 수정, 수강관리, 아카데미 학습현황에 6개 과목이 모두 표시되고 학습현황 상세에 진도 행 6개가 생성되는 것을 확인했다. 콘솔 오류와 모바일 390px 가로 넘침은 없었다.
 - 현재 사용자 작업트리의 `npm.cmd run build`는 통과했다. 별도 깨끗한 작업트리에서는 기존에 커밋되지 않은 `scripts/.math-entry.tsx`가 없어 수학 번들 재빌드가 실패했지만, 이번 변경 대상인 `js/views.js` 정적 배포는 정상 완료됐고 운영 반영을 직접 검증했다.
+
+## 영단어 9개 학습 페이지 아카데미 연동 개선 (2026-06-06)
+- 요청 대상은 초등·중등·고등 영단어의 초급·중급·고급 9개 변형이다. 실제 구현은 `elem-vocab.html`, `middle-vocab.html`, `high-vocab.html` 3개 파일이 `level` 쿼리로 난이도를 나누며, 중등·고등은 공통 `middle-vocab.js`를 사용한다.
+- 기존 `academy-learning-bridge.js`에 아카데미 세션 읽기와 `/api/progress`, `/api/activity` 전송이 있으므로 별도 인증 체계를 만들지 않고 공통 브리지를 상단 계정 표시와 실시간 세션 갱신의 단일 경로로 확장한다.
+- 홈은 현재 영단어 과정의 난이도 선택 화면으로 돌아가는 동작, 학원 홈은 아카데미 루트 `https://purunet-academy.pages.dev/`로 이동하는 동작으로 구분한다.
+- 상단 상태 바에는 로그인 이름, 로그인 아이디, 서버 연결·저장 상태와 학원 홈 버튼을 표시한다. `storage`, `focus`, `visibilitychange`, 2초 폴링으로 다른 탭의 계정 변경을 감지하고 계정이 바뀌면 현재 학습 URL을 유지한 채 다시 불러온다.
+- 초등 `ev3`, 중등 `mv3`, 고등 `hv3` SRS 저장 키에 로그인 계정 ID를 포함해 학생별 단어 숙련도, 연속 학습일, XP가 서로 섞이지 않게 했다. 비로그인 사용자는 기존 게스트 저장 키를 유지한다.
+- 학습 시작·단계 완료·하트비트 활동은 `elementary|middle|high-vocab:beginner|intermediate|advanced` 모듈과 대응 과목 ID를 기록한다. 단계 완료 진도는 서버 전송과 동시에 로컬 아카데미 상태에도 학생·모듈별로 upsert한다.
+- Playwright로 9개 변형을 모두 검사해 상단 이름·아이디, 홈 복귀, 학원 홈 이동, 계정별 SRS 키 생성, `/api/progress`, `/api/activity`, 로컬 진도 저장이 통과했다. 각 변형의 콘솔 오류는 0개였다.
+- 모바일 390×844에서 상단 로그인 바와 두 이동 버튼이 보이고 가로 넘침이 0임을 확인했다. 다른 계정으로 세션을 변경했을 때 같은 학습 URL에서 새 아이디가 표시되는 실시간 갱신도 통과했다.
+- 교사용 아카데미 학습현황 스냅샷 검증에서 영단어 9개 과목, 완료 토픽 9개, 로그인 중 상태가 표시됐고 콘솔 오류는 없었다.
+- `node --check js/academy-learning-bridge.js`, `node --check js/elem-vocab.js`, `node --check js/middle-vocab.js`, `npm.cmd run build`가 통과했다.
+- 아카데미 구현 커밋은 `b458158 feat: improve vocabulary academy tracking`이다.
+- 사용자 미커밋 변경이 배포에 섞이지 않도록 `b458158` 전용 임시 작업트리에서 Cloudflare Pages에 배포했다. 프리뷰 URL은 `https://fea3859f.purunet-academy.pages.dev`이다.
+- 운영 `https://purunet-academy.pages.dev/`의 9개 영단어 URL을 모바일 390×844로 재검증해 로그인 아이디, 홈·학원 홈 버튼, 가로 넘침 0, 콘솔 오류 0을 확인했다. 고등 고급 페이지의 학원 홈 버튼이 운영 루트로 실제 이동하는 것도 통과했다.
