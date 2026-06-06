@@ -174,6 +174,503 @@ function stabilizeMathVisual(root) {
   }
 }
 
+let activeMathToolCleanup = null;
+let mathToolRenderId = 0;
+
+function cleanupMathTool() {
+  if (typeof activeMathToolCleanup === "function") {
+    try { activeMathToolCleanup(); } catch {}
+  }
+  activeMathToolCleanup = null;
+}
+
+function createMathToolShell(root, tool, keepFallback = false) {
+  const expression = root.querySelector(":scope > .problem-expr-text");
+  if (expression) expression.remove();
+  const fallbackHTML = root.innerHTML;
+  root.innerHTML = `<div class="math-tool-shell ${keepFallback ? "is-linked-view" : ""}" data-tool="${tool}">
+    <div class="math-tool-stage" role="img"></div>
+    <div class="math-tool-fallback">${fallbackHTML}</div>
+  </div>`;
+  if (expression) root.appendChild(expression);
+  return {
+    shell: root.querySelector(".math-tool-shell"),
+    stage: root.querySelector(".math-tool-stage"),
+    fallback: root.querySelector(".math-tool-fallback"),
+  };
+}
+
+function mathToolControls(actions) {
+  const wrap = document.createElement("div");
+  wrap.className = "math-tool-controls";
+  actions.forEach(({ symbol, label, onClick, pressed }) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "math-tool-icon-btn";
+    button.textContent = symbol;
+    button.title = label;
+    button.setAttribute("aria-label", label);
+    if (pressed !== undefined) button.setAttribute("aria-pressed", String(pressed));
+    button.addEventListener("click", () => onClick(button));
+    wrap.appendChild(button);
+  });
+  return wrap;
+}
+
+function numericDimension(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function solidSides(visual) {
+  const direct = Number(visual.sides);
+  if (Number.isFinite(direct) && direct >= 3) return Math.min(10, direct);
+  const matched = String(visual.label || "").match(/(\d+)\s*각/);
+  return matched ? Math.min(10, Math.max(3, Number(matched[1]))) : 4;
+}
+
+function threeGeometryForVisual(THREE, visual) {
+  if (visual.type === "cuboid") {
+    const width = numericDimension(visual.width, 6);
+    const depth = numericDimension(visual.depth, 4);
+    const height = numericDimension(visual.height, 3);
+    const scale = 3 / Math.max(width, depth, height);
+    return new THREE.BoxGeometry(width * scale, height * scale, depth * scale);
+  }
+  if (visual.type === "cube-stack") return null;
+
+  const sides = solidSides(visual);
+  const kind = visual.kind || "prism";
+  if (kind === "cylinder") return new THREE.CylinderGeometry(1.35, 1.35, 2.7, 48);
+  if (kind === "cone") return new THREE.ConeGeometry(1.45, 2.8, 48);
+  if (kind === "sphere") return new THREE.SphereGeometry(1.55, 40, 24);
+  if (kind === "pyramid") return new THREE.ConeGeometry(1.55, 2.7, sides);
+  return new THREE.CylinderGeometry(1.45, 1.45, 2.7, sides);
+}
+
+function addEdgesToMesh(THREE, mesh, color = 0x172033) {
+  const edges = new THREE.LineSegments(
+    new THREE.EdgesGeometry(mesh.geometry, 18),
+    new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.72 })
+  );
+  mesh.add(edges);
+}
+
+async function mountThreeMathTool(root, problem, keepFallback) {
+  const visual = problem.visual;
+  const { shell, stage, fallback } = createMathToolShell(root, "three", keepFallback);
+  const renderId = ++mathToolRenderId;
+  try {
+    const [THREE, controlsModule] = await Promise.all([
+      import("three"),
+      import("three/addons/controls/OrbitControls.js"),
+    ]);
+    const { OrbitControls } = controlsModule;
+    if (renderId !== mathToolRenderId || !stage.isConnected) return;
+
+    stage.setAttribute("aria-label", problem.question || problem.skillTitle || "회전 가능한 입체도형");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xffffff);
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.set(4.8, 3.8, 5.8);
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: false,
+      preserveDrawingBuffer: true,
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+    stage.appendChild(renderer.domElement);
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c4d6, 2.1));
+    const key = new THREE.DirectionalLight(0xffffff, 2.4);
+    key.position.set(5, 7, 4);
+    key.castShadow = true;
+    scene.add(key);
+    const fill = new THREE.DirectionalLight(0x60a5fa, 1.1);
+    fill.position.set(-5, 2, -4);
+    scene.add(fill);
+
+    const group = new THREE.Group();
+    scene.add(group);
+    const palette = [0x38bdf8, 0x22c55e, 0xf59e0b, 0x8b5cf6, 0xfb7185, 0x14b8a6];
+    let selectedMaterial = null;
+
+    if (visual.type === "cube-stack") {
+      const cols = Math.min(Number(visual.cols) || 3, 6);
+      const rows = Math.min(Number(visual.rows) || 2, 5);
+      const layers = Math.min(Number(visual.layers) || 1, 4);
+      const spacing = 0.9;
+      for (let z = 0; z < layers; z++) {
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            const material = new THREE.MeshStandardMaterial({
+              color: palette[(x + y + z) % 3],
+              roughness: 0.48,
+              metalness: 0.02,
+            });
+            const cube = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.82, 0.82), material);
+            cube.position.set(
+              (x - (cols - 1) / 2) * spacing,
+              (y - (rows - 1) / 2) * spacing,
+              (z - (layers - 1) / 2) * spacing
+            );
+            cube.castShadow = true;
+            cube.receiveShadow = true;
+            addEdgesToMesh(THREE, cube);
+            group.add(cube);
+          }
+        }
+      }
+    } else {
+      selectedMaterial = new THREE.MeshStandardMaterial({
+        color: palette[0],
+        roughness: 0.42,
+        metalness: 0.03,
+        transparent: true,
+        opacity: 0.94,
+        side: THREE.DoubleSide,
+      });
+      const geometry = threeGeometryForVisual(THREE, visual);
+      const mesh = new THREE.Mesh(geometry, selectedMaterial);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      addEdgesToMesh(THREE, mesh);
+      group.add(mesh);
+    }
+
+    const grid = new THREE.GridHelper(8, 8, 0xcbd5e1, 0xe2e8f0);
+    grid.position.y = -1.75;
+    scene.add(grid);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.075;
+    controls.enablePan = false;
+    controls.minDistance = 4;
+    controls.maxDistance = 11;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 1.25;
+    controls.target.set(0, 0, 0);
+
+    let folded = true;
+    let foldValue = 1;
+    let foldTarget = 1;
+    const controlsEl = mathToolControls([
+      {
+        symbol: "↻",
+        label: "처음 보기로 돌아가기",
+        onClick: () => {
+          camera.position.set(4.8, 3.8, 5.8);
+          controls.target.set(0, 0, 0);
+          controls.update();
+        },
+      },
+      {
+        symbol: "⟳",
+        label: "자동 회전 켜기 또는 끄기",
+        pressed: true,
+        onClick: (button) => {
+          controls.autoRotate = !controls.autoRotate;
+          button.setAttribute("aria-pressed", String(controls.autoRotate));
+        },
+      },
+    ]);
+    if (visual.type === "net-diagram") {
+      controlsEl.appendChild(mathToolControls([{
+        symbol: "⇄",
+        label: "전개도 접기 또는 펼치기",
+        pressed: true,
+        onClick: (button) => {
+          folded = !folded;
+          foldTarget = folded ? 1 : 0.08;
+          button.setAttribute("aria-pressed", String(folded));
+        },
+      }]).firstElementChild);
+    }
+    stage.appendChild(controlsEl);
+
+    if (visual.type === "net-diagram" && fallback) {
+      const faces = [...fallback.querySelectorAll("[data-net-face]")];
+      faces.forEach((face, index) => {
+        const color = `#${palette[index % palette.length].toString(16).padStart(6, "0")}`;
+        face.classList.add("net-face");
+        face.setAttribute("tabindex", "0");
+        face.setAttribute("role", "button");
+        face.setAttribute("aria-label", `${index + 1}번 면`);
+        const selectFace = () => {
+          faces.forEach((item) => item.classList.remove("is-selected"));
+          face.classList.add("is-selected");
+          face.style.fill = `${color}55`;
+          face.style.stroke = color;
+          if (selectedMaterial) selectedMaterial.color.set(color);
+        };
+        face.addEventListener("click", selectFace);
+        face.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            selectFace();
+          }
+        });
+      });
+    }
+
+    let disposed = false;
+    let animationFrame = 0;
+    const resize = () => {
+      const width = Math.max(260, stage.clientWidth);
+      const height = Math.max(240, stage.clientHeight);
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    };
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(stage);
+    resize();
+
+    const animate = () => {
+      if (disposed) return;
+      animationFrame = requestAnimationFrame(animate);
+      foldValue += (foldTarget - foldValue) * 0.09;
+      if (visual.type === "net-diagram") {
+        group.scale.y = Math.max(0.08, foldValue);
+        group.rotation.z = (1 - foldValue) * Math.PI / 2;
+      }
+      controls.update();
+      renderer.render(scene, camera);
+    };
+    animate();
+    shell.classList.add("is-enhanced");
+
+    activeMathToolCleanup = () => {
+      disposed = true;
+      cancelAnimationFrame(animationFrame);
+      resizeObserver.disconnect();
+      controls.dispose();
+      renderer.dispose();
+      scene.traverse((object) => {
+        if (object.geometry) object.geometry.dispose();
+        if (object.material) {
+          const materials = Array.isArray(object.material) ? object.material : [object.material];
+          materials.forEach((material) => material.dispose());
+        }
+      });
+    };
+  } catch (error) {
+    console.warn("Three.js 시각화를 불러오지 못해 SVG를 유지합니다.", error);
+    shell.classList.add("has-fallback");
+  }
+}
+
+function mountJSXGraphTool(root, problem) {
+  if (!window.JXG) return;
+  const visual = problem.visual;
+  const { shell, stage } = createMathToolShell(root, "jsxgraph", false);
+  const boardId = `jsx-math-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  stage.id = boardId;
+  stage.classList.add("jxgbox");
+  stage.setAttribute("aria-label", problem.question || "조작 가능한 좌표평면");
+  const point = visual.point || [0, 0];
+  const reflected = visual.reflected;
+  const bound = Math.max(5, Math.abs(point[0]), Math.abs(point[1]), ...(reflected || [0, 0]).map(Math.abs)) + 2;
+  const board = window.JXG.JSXGraph.initBoard(boardId, {
+    boundingbox: [-bound, bound, bound, -bound],
+    axis: true,
+    grid: true,
+    keepaspectratio: true,
+    showNavigation: false,
+    showCopyright: false,
+    pan: { enabled: true },
+    zoom: { enabled: true, wheel: true, pinch: true },
+  });
+  const originPoint = board.create("point", point, {
+    name: `A(${point[0]}, ${point[1]})`,
+    fixed: true,
+    size: 5,
+    fillColor: "#f59e0b",
+    strokeColor: "#b45309",
+    label: { color: "#172033", fontSize: 14 },
+  });
+  if (reflected) {
+    board.create("point", reflected, {
+      name: `A'(${reflected[0]}, ${reflected[1]})`,
+      fixed: true,
+      size: 5,
+      fillColor: "#38bdf8",
+      strokeColor: "#0369a1",
+      label: { color: "#172033", fontSize: 14 },
+    });
+    board.create("segment", [point, reflected], {
+      dash: 2,
+      strokeColor: "#64748b",
+      strokeWidth: 2,
+      fixed: true,
+    });
+  }
+  const controlsEl = mathToolControls([
+    {
+      symbol: "✥",
+      label: "점 이동 연습 켜기 또는 끄기",
+      pressed: false,
+      onClick: (button) => {
+        const movable = button.getAttribute("aria-pressed") !== "true";
+        originPoint.setAttribute({ fixed: !movable });
+        button.setAttribute("aria-pressed", String(movable));
+      },
+    },
+    {
+      symbol: "↻",
+      label: "좌표평면 처음 보기",
+      onClick: () => {
+        originPoint.setPosition(window.JXG.COORDS_BY_USER, point);
+        board.setBoundingBox([-bound, bound, bound, -bound], true);
+      },
+    },
+  ]);
+  shell.appendChild(controlsEl);
+  shell.classList.add("is-enhanced");
+  activeMathToolCleanup = () => window.JXG.JSXGraph.freeBoard(board);
+}
+
+function mountJSXLineGraphTool(root, problem) {
+  if (!window.JXG) return;
+  const visual = problem.visual;
+  const { shell, stage } = createMathToolShell(root, "jsxgraph", false);
+  const boardId = `jsx-line-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  stage.id = boardId;
+  stage.classList.add("jxgbox");
+  stage.setAttribute("aria-label", problem.question || visual.title || "조작 가능한 함수 그래프");
+  const points = (visual.points || []).map((point, index) => {
+    const numericLabel = Number(point.label);
+    return [Number.isFinite(numericLabel) ? numericLabel : index + 1, Number(point.value) || 0];
+  });
+  const xs = points.map(([x]) => x);
+  const ys = points.map(([, y]) => y);
+  const maxX = Math.max(5, ...xs) + 1;
+  const maxY = Math.max(5, ...ys) + 1;
+  const board = window.JXG.JSXGraph.initBoard(boardId, {
+    boundingbox: [-1, maxY, maxX, -1],
+    axis: true,
+    grid: true,
+    keepaspectratio: false,
+    showNavigation: false,
+    showCopyright: false,
+    pan: { enabled: true },
+    zoom: { enabled: true, wheel: true, pinch: true },
+  });
+  const curve = board.create("curve", [xs, ys], {
+    strokeColor: "#0284c7",
+    strokeWidth: 3,
+    fixed: true,
+  });
+  points.forEach(([x, y], index) => {
+    board.create("point", [x, y], {
+      name: `(${x}, ${y})`,
+      fixed: true,
+      size: 4,
+      fillColor: index === 0 ? "#f59e0b" : "#38bdf8",
+      strokeColor: "#075985",
+      label: { color: "#172033", fontSize: 12 },
+    });
+  });
+  if (points.length > 1) {
+    board.create("glider", [points[0][0], points[0][1], curve], {
+      name: "P",
+      size: 5,
+      fillColor: "#8b5cf6",
+      strokeColor: "#5b21b6",
+      label: { color: "#5b21b6", fontSize: 13 },
+    });
+  }
+  const controlsEl = mathToolControls([{
+    symbol: "↻",
+    label: "그래프 처음 보기",
+    onClick: () => board.setBoundingBox([-1, maxY, maxX, -1], true),
+  }]);
+  shell.appendChild(controlsEl);
+  shell.classList.add("is-enhanced");
+  activeMathToolCleanup = () => window.JXG.JSXGraph.freeBoard(board);
+}
+
+function mountChartTool(root, problem) {
+  if (!window.Chart) return;
+  const visual = problem.visual;
+  const { shell, stage } = createMathToolShell(root, "chartjs", false);
+  const canvas = document.createElement("canvas");
+  canvas.setAttribute("role", "img");
+  canvas.setAttribute("aria-label", problem.question || visual.title || "통계 그래프");
+  stage.appendChild(canvas);
+  const isLine = visual.type === "line-chart";
+  const isCircle = visual.type === "circle-chart";
+  const source = isLine ? visual.points || [] : visual.items || [];
+  const labels = source.map((item) => String(item.label || ""));
+  const values = source.map((item) => Number(item.value) || 0);
+  const colors = ["#38bdf8", "#22c55e", "#f59e0b", "#8b5cf6", "#fb7185", "#14b8a6"];
+  const chart = new window.Chart(canvas, {
+    type: isCircle ? "doughnut" : isLine ? "line" : "bar",
+    data: {
+      labels,
+      datasets: [{
+        label: visual.unit ? `${visual.title || "자료"} (${visual.unit})` : visual.title || "자료",
+        data: values,
+        borderColor: isLine ? "#0284c7" : colors,
+        backgroundColor: isLine ? "rgba(56, 189, 248, 0.22)" : colors.map((color) => `${color}cc`),
+        borderWidth: 2,
+        pointRadius: isLine ? 5 : 0,
+        pointHoverRadius: isLine ? 7 : 0,
+        tension: isLine ? 0.18 : 0,
+        fill: isLine,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 650 },
+      plugins: {
+        legend: { display: isCircle, position: "right", labels: { color: "#172033", boxWidth: 14 } },
+        title: { display: Boolean(visual.title), text: visual.title || "", color: "#172033", font: { size: 15, weight: "bold" } },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw}${visual.unit || ""}` } },
+      },
+      scales: isCircle ? {} : {
+        x: { ticks: { color: "#334155" }, grid: { color: "rgba(148,163,184,.18)" } },
+        y: {
+          beginAtZero: true,
+          ticks: { color: "#334155", precision: 0 },
+          grid: { color: "rgba(148,163,184,.22)" },
+        },
+      },
+    },
+  });
+  shell.classList.add("is-enhanced");
+  activeMathToolCleanup = () => chart.destroy();
+}
+
+function upgradeProfessionalVisual(problem, root) {
+  cleanupMathTool();
+  const visual = problem && problem.visual;
+  if (!visual || !root) return;
+  if (["cuboid", "cube-stack", "solid-shape"].includes(visual.type)) {
+    void mountThreeMathTool(root, problem, false);
+    return;
+  }
+  if (visual.type === "net-diagram") {
+    void mountThreeMathTool(root, problem, true);
+    return;
+  }
+  if (visual.type === "coordinate-plane") {
+    mountJSXGraphTool(root, problem);
+    return;
+  }
+  if (visual.type === "line-chart" && /function|direct.proportion/.test(problem.skillId || "")) {
+    mountJSXLineGraphTool(root, problem);
+    return;
+  }
+  if (["bar-chart", "line-chart", "circle-chart"].includes(visual.type)) {
+    mountChartTool(root, problem);
+  }
+}
+
 // ── 수직선 애니메이션 (덧셈/뺄셈) ─────────────────────────────
 function ivNumberLineAnim(problem) {
   const expr = problem.expression || "";
@@ -1128,6 +1625,79 @@ function ivNetDiagram(v, problem) {
 }
 
 // ── 비율 막대 (ratio-strip) ─────────────────────────────────
+function ivProfessionalNetDiagram(v) {
+  const label = v.label || "";
+  const sides = Math.min(8, Math.max(3, Number(v.sides) || 4));
+  const kind = v.kind || "prism";
+  const W = 480, H = 220;
+  const colors = ["#38bdf8", "#22c55e", "#f59e0b", "#8b5cf6", "#fb7185", "#14b8a6", "#6366f1", "#84cc16"];
+  const faceAttrs = (index, color) =>
+    `data-net-face="${index}" tabindex="0" role="button" aria-label="${index + 1}번 면" fill="${color}22" stroke="${color}" stroke-width="2"`;
+  const fold = (x1, y1, x2, y2) =>
+    `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6,5"/>`;
+
+  if (kind === "cylinder") {
+    const rw = 210, rh = 76, x = (W - rw) / 2, y = 72, r = 38, cx = W / 2;
+    return svgWrap(W, H, label || "원기둥 전개도", `
+      <rect x="${x}" y="${y}" width="${rw}" height="${rh}" rx="2" ${faceAttrs(0, colors[0])}/>
+      <circle cx="${cx}" cy="${y-r}" r="${r}" ${faceAttrs(1, colors[1])}/>
+      <circle cx="${cx}" cy="${y+rh+r}" r="${r}" ${faceAttrs(2, colors[2])}/>
+      ${fold(x, y, x+rw, y)}
+      ${fold(x, y+rh, x+rw, y+rh)}
+      <text x="${W/2}" y="${H-8}" text-anchor="middle" fill="#475569" font-size="12">${escapeHTML(label || "원기둥 전개도")}</text>`);
+  }
+
+  const polygonPoints = (cx, cy, radius, count, rotation = -Math.PI / 2) =>
+    Array.from({ length: count }, (_, index) => {
+      const angle = rotation + index * Math.PI * 2 / count;
+      return [cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius];
+    });
+  const pointsText = (points) => points.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+
+  if (kind === "pyramid") {
+    const cx = W / 2, cy = 104, radius = sides >= 7 ? 42 : 48;
+    const base = polygonPoints(cx, cy, radius, sides);
+    const triangles = base.map((point, index) => {
+      const next = base[(index + 1) % base.length];
+      const midX = (point[0] + next[0]) / 2;
+      const midY = (point[1] + next[1]) / 2;
+      const dx = midX - cx, dy = midY - cy;
+      const length = Math.hypot(dx, dy) || 1;
+      const apexDistance = Math.max(28, radius * 0.72);
+      const apex = [midX + dx / length * apexDistance, midY + dy / length * apexDistance];
+      return `<polygon points="${pointsText([point, next, apex])}" ${faceAttrs(index + 1, colors[(index + 1) % colors.length])}/>
+        ${fold(point[0], point[1], next[0], next[1])}`;
+    });
+    return svgWrap(W, H, label || `${sides}각뿔 전개도`, `
+      ${triangles.join("")}
+      <polygon points="${pointsText(base)}" ${faceAttrs(0, colors[0])}/>
+      <text x="${W/2}" y="${H-8}" text-anchor="middle" fill="#475569" font-size="12">${escapeHTML(label || `${sides}각뿔 전개도`)}</text>`);
+  }
+
+  const faceWidth = Math.min(54, 330 / sides);
+  const faceHeight = 72;
+  const rowWidth = faceWidth * sides;
+  const startX = (W - rowWidth) / 2;
+  const rowY = 75;
+  const sideFaces = Array.from({ length: sides }, (_, index) => {
+    const x = startX + index * faceWidth;
+    return `<rect x="${x}" y="${rowY}" width="${faceWidth}" height="${faceHeight}" rx="1" ${faceAttrs(index, colors[index % colors.length])}/>
+      ${index > 0 ? fold(x, rowY, x, rowY + faceHeight) : ""}`;
+  });
+  const baseRadius = Math.min(34, faceWidth * 0.75);
+  const topCenterX = startX + faceWidth * 1.5;
+  const bottomCenterX = startX + faceWidth * Math.min(sides - 1.5, 4.5);
+  const topBase = polygonPoints(topCenterX, rowY - baseRadius, baseRadius, sides);
+  const bottomBase = polygonPoints(bottomCenterX, rowY + faceHeight + baseRadius, baseRadius, sides, Math.PI / 2);
+  return svgWrap(W, H, label || `${sides}각기둥 전개도`, `
+    ${sideFaces.join("")}
+    <polygon points="${pointsText(topBase)}" ${faceAttrs(sides, colors[sides % colors.length])}/>
+    <polygon points="${pointsText(bottomBase)}" ${faceAttrs(sides + 1, colors[(sides + 1) % colors.length])}/>
+    ${fold(topCenterX - faceWidth / 2, rowY, topCenterX + faceWidth / 2, rowY)}
+    ${fold(bottomCenterX - faceWidth / 2, rowY + faceHeight, bottomCenterX + faceWidth / 2, rowY + faceHeight)}
+    <text x="${W/2}" y="${H-8}" text-anchor="middle" fill="#475569" font-size="12">${escapeHTML(label || `${sides}각기둥 전개도`)}</text>`);
+}
+
 function ivRatioStrip(v, problem) {
   const left = v.left||3, right = v.right||2, total = left+right;
   const lLbl = v.leftLabel||"A", rLbl = v.rightLabel||"B", unit = v.unit||"";
@@ -1862,7 +2432,7 @@ function buildElementaryVisual(problem) {
       "coin-chance":          ivCoinChance,
       "probability-bag":      ivProbabilityBag,
       "solid-shape":          ivSolidShape,
-      "net-diagram":          ivNetDiagram,
+      "net-diagram":          ivProfessionalNetDiagram,
       "ratio-strip":          ivRatioStrip,
       "circle-chart":         ivCircleChart,
       "bar-model":            ivBarModel,
@@ -3188,6 +3758,7 @@ function renderMission() {
     visualEl.appendChild(exprDiv);
   }
   stabilizeMathVisual(visualEl);
+  upgradeProfessionalVisual(p, visualEl);
   renderChoices(true);
   renderRoad();
   updateStats();

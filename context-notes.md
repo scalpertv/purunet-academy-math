@@ -1624,3 +1624,18 @@
 - 운영 배포는 `%TEMP%/purunet-math-ebook-deploy-dark-svg-20260606065359` 임시 작업트리에서 커밋된 HEAD 기준으로 진행했다. `npm.cmd ci`, `npm.cmd run build`, `npx.cmd wrangler pages deploy dist --project-name purunet-math-ebook --branch main`을 실행했고 프리뷰 URL은 `https://7131b2ab.purunet-math-ebook.pages.dev`이다.
 - 운영 `https://purunet-math-ebook.pages.dev/elementary-ai-math/`에서 1, 3, 6학년 브라우저 검증을 수행했고, 다크 배경, 흰색 SVG 보드, SVG.js 로드, SVG 잘림 없음, 교사형 풀이 카드 4개 이상, 정답 숨김, 공개 정답 노드 없음, 가로 넘침 없음, 콘솔 오류 없음이 통과했다.
 - 운영 `index.html`과 `app.js`에서 `@svgdotjs/svg.js`, `enhanceMathVisual`, `stabilizeMathVisual`, `problemMathContext`, `buildTeacherSolutionCards`, `vf-card` 반영을 확인했다.
+
+## 초등 AI 수학 문제 유형별 전문 시각화 도구 적용 (2026-06-06)
+- 요청 목표는 `/elementary-ai-math/`에서 입체도형·전개도·좌표평면·통계 그래프를 문제 성격에 맞는 전문 시각화 도구로 표시하는 것이다.
+- 기존 앱에는 수직선, 분수, 도형, 표, 그래프를 그리는 자체 SVG 생성기가 이미 많으므로 전체 렌더러를 교체하지 않는다. 기본 도형과 전개도는 SVG를 유지하고, 입체도형은 Three.js, 좌표평면은 JSXGraph, 통계 차트는 Chart.js로 자동 승격한다.
+- Desmos는 API 키와 외부 서비스 의존성이 있고 현재 초등 과정의 함수 그래프 비중이 낮아 이번 범위에서는 연결하지 않는다. 함수 그래프 문제가 실제 추가될 때 선택적으로 도입하는 편이 안정적이다.
+- 성공 기준은 대상 문제에서 전문 렌더러가 표시되고, 라이브러리 로드 실패나 미지원 문제에서는 기존 SVG가 그대로 보이며, 모바일에서도 캔버스·SVG가 잘리지 않는 것이다.
+- 공식 문서와 npm 배포 정보를 확인해 Three.js `0.184.0`, JSXGraph `1.12.2`, Chart.js `4.5.1`을 고정 버전으로 연결했다. Three.js와 OrbitControls는 같은 CDN·같은 버전을 import map으로 사용한다.
+- `upgradeProfessionalVisual`이 `visual.type`을 판별해 `cuboid`, `cube-stack`, `solid-shape`, `net-diagram`은 Three.js, `coordinate-plane`과 정비례·함수형 선그래프는 JSXGraph, 일반 막대·꺾은선·원그래프는 Chart.js로 렌더링한다.
+- Three.js 도형에는 OrbitControls 회전·확대, 자동 회전 토글, 초기화, 전개도 접기·펼치기 제어를 추가했다. 새 문제로 이동할 때 애니메이션, WebGL 자원, ResizeObserver를 정리한다.
+- 전개도 SVG는 각기둥의 옆면 띠와 합동인 두 밑면, 각뿔의 밑면과 삼각형 옆면, 원기둥의 직사각형 옆면과 두 원을 그리며 접는 선과 키보드 접근 가능한 면 선택을 제공한다. 선택한 SVG 면 색상은 3D 입체 색상과 연결된다.
+- 외부 라이브러리를 불러오지 못하면 기존 SVG가 남도록 fallback을 유지하며, 일반 SVG 문제는 기존 렌더러를 그대로 사용한다.
+- 로컬 브라우저 검증은 데스크톱 1440×1000과 모바일 390×844에서 직육면체, 전개도, 좌표평면, 정비례 그래프, 원그래프 대표 문제로 수행했다. Three.js 캔버스 비어 있음 없음, SVG 면 선택과 3D 연결, JSXGraph·Chart.js 렌더링, 정답 가림, 가로 넘침 없음, 콘솔·HTTP 오류 없음이 통과했다.
+- 각기둥·각뿔·원기둥 전개도는 모바일에서 면 수와 접는 선 수, 면 선택, 연결된 Three.js 화면을 별도로 확인했다.
+- `node --check app/public/elementary-ai-math/app.js`, `npm.cmd run verify`, `npm.cmd run onefile`은 통과했다. `npm.cmd run lint`는 기존 미해결 파일 `functions/api/auth/cross-login.ts`, `functions/api/auth/sso-token.ts`, `src/App.tsx`, `src/components/LogicFlowCard.tsx`, `src/components/Practice.tsx`의 기존 lint 오류 12건으로 실패했다.
+- 단일 HTML 산출물은 `푸르넷수학-연습.html`, `모바일 홈페이지형 전자북(26.05.17)/study.html`에 반영했고 세 파일의 SHA-256 일치를 확인했다. 모바일 `sw.js` 캐시 버전은 `v88`이다.

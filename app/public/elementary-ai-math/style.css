@@ -1192,3 +1192,145 @@ body {
     width: 100%;
   }
 }
+
+/* 문제 유형별 전문 수학 시각화 */
+.math-tool-shell {
+  position: relative;
+  width: min(100%, 860px);
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  color: #172033;
+}
+
+.math-tool-stage {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  height: clamp(260px, 34vw, 410px);
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #d9e2ef;
+  border-radius: 8px;
+}
+
+.math-tool-stage canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.math-tool-shell[data-tool="jsxgraph"] .math-tool-stage {
+  min-height: 320px;
+  touch-action: none;
+}
+
+.math-tool-shell[data-tool="chartjs"] .math-tool-stage {
+  padding: 14px;
+  min-height: 300px;
+}
+
+.math-tool-shell.is-enhanced:not(.is-linked-view) .math-tool-fallback {
+  display: none;
+}
+
+.math-tool-shell.is-linked-view {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.math-tool-shell.is-linked-view .math-tool-stage,
+.math-tool-shell.is-linked-view .math-tool-fallback {
+  min-height: 300px;
+}
+
+.math-tool-fallback {
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  border: 1px solid #d9e2ef;
+  border-radius: 8px;
+  overflow: visible;
+}
+
+.math-tool-fallback svg {
+  width: 100%;
+}
+
+.math-tool-controls {
+  position: absolute;
+  z-index: 6;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+}
+
+.math-tool-shell > .math-tool-controls {
+  top: 10px;
+  right: 10px;
+}
+
+.math-tool-shell[data-tool="jsxgraph"] > .math-tool-controls {
+  top: auto;
+  bottom: 10px;
+}
+
+.math-tool-icon-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #b9c7d8;
+  border-radius: 8px;
+  background: rgba(255,255,255,.94);
+  color: #123c69;
+  font-size: 19px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(15,23,42,.14);
+}
+
+.math-tool-icon-btn:hover,
+.math-tool-icon-btn:focus-visible,
+.math-tool-icon-btn[aria-pressed="true"] {
+  border-color: #0284c7;
+  background: #e0f2fe;
+  outline: none;
+}
+
+.math-tool-shell .JXGtext {
+  color: #172033 !important;
+  font-family: inherit !important;
+}
+
+.net-face {
+  cursor: pointer;
+  transition: fill .16s ease, stroke .16s ease, filter .16s ease;
+}
+
+.net-face:hover,
+.net-face:focus,
+.net-face.is-selected {
+  filter: drop-shadow(0 3px 4px rgba(15,23,42,.22));
+  outline: none;
+}
+
+@media (max-width: 760px) {
+  .math-tool-stage {
+    height: 280px;
+  }
+  .math-tool-shell.is-linked-view {
+    grid-template-columns: 1fr;
+  }
+  .math-tool-shell.is-linked-view .math-tool-stage,
+  .math-tool-shell.is-linked-view .math-tool-fallback {
+    min-height: 250px;
+  }
+  .math-tool-shell[data-tool="jsxgraph"] .math-tool-stage,
+  .math-tool-shell[data-tool="chartjs"] .math-tool-stage {
+    min-height: 280px;
+  }
+}

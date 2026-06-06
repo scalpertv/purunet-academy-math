@@ -1,4 +1,4 @@
-const CACHE_NAME = "codex-math-mobile-v87";
+const CACHE_NAME = "codex-math-mobile-v88";
 const ASSETS = [
   "./",
   "./index.html",
