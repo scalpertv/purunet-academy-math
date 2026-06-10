@@ -2,10 +2,10 @@
 import { NavLink } from 'react-router-dom'
 
 const NAV_ITEMS = [
-  { path: '/', icon: '🏠', label: '홈', exact: true },
-  { path: '/planner', icon: '📝', label: '플래너', exact: false },
-  { path: '/reading', icon: '📚', label: '독서', exact: false },
-  { path: '/analysis', icon: '🔎', label: '글분석', exact: false },
+  { path: '/',         icon: '🏠', label: '홈',     exact: true },
+  { path: '/planner',  icon: '📝', label: '플래너', exact: false },
+  { path: '/schedule', icon: '📅', label: '계획표', exact: false },
+  { path: '/review',   icon: '📓', label: '복습노트', exact: false },
   { path: '/dashboard', icon: '📊', label: '대시보드', exact: false },
 ] as const
 

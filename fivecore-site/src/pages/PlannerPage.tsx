@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { useAcademyData } from '../context/AcademyDataContext'
 import {
   KINDIE_ACTIVITIES,
   SUBJECTS,
@@ -48,6 +49,7 @@ function loadOrInit(date: string, grade: string): PlannerData {
 export function PlannerPage() {
   const navigate = useNavigate()
   const { isLoggedIn, openLoginModal } = useAuth()
+  const { data: academyData } = useAcademyData()
   const today = todayStr()
 
   const [savedGrade] = useState(() => localStorage.getItem(GRADE_PREF_KEY) ?? '')
@@ -180,6 +182,30 @@ export function PlannerPage() {
 
       {data.grade && (
         <div className="max-w-lg mx-auto">
+          {/* ── 아카데미 최근 학습 현황 ──────────────────── */}
+          {academyData && academyData.recentSubjects.length > 0 && (
+            <div className="px-4 pt-4">
+              <div className="card p-3 bg-blue-50 border border-blue-100">
+                <p className="text-xs font-semibold text-blue-700 mb-2">📚 최근 아카데미 학습</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {academyData.recentSubjects.slice(0, 6).map((s, i) => (
+                    <span
+                      key={i}
+                      className="text-[11px] px-2 py-0.5 bg-white border border-blue-200 rounded-full text-blue-700 font-medium"
+                    >
+                      {s.title}
+                    </span>
+                  ))}
+                </div>
+                {academyData.progress.length > 0 && (
+                  <p className="text-[10px] text-blue-500 mt-1.5">
+                    총 {academyData.progress.length}개 모듈 학습 중
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ── 종합 달성률 카드 ─────────────────────────── */}
           <div className="px-4 pt-4">
             <div className="card p-4">

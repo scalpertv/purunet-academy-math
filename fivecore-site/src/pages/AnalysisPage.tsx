@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { useAcademyData } from '../context/AcademyDataContext'
 import { GRADE_GROUPS } from '../data/grades'
 import type { GradeCode } from '../types'
 import {
@@ -145,6 +146,7 @@ function RecordCard({ record }: { record: AnalysisRecord }) {
 export function AnalysisPage() {
   const navigate = useNavigate()
   const { requireLogin } = useAuth()
+  const { data: academyData } = useAcademyData()
 
   const [grade, setGrade] = useState<string>(
     () => localStorage.getItem(ANALYSIS_GRADE_KEY) ?? ''
@@ -295,6 +297,27 @@ export function AnalysisPage() {
               </div>
             ) : (
               <>
+                {/* 최근 아카데미 학습 주제 빠른 입력 */}
+                {academyData && academyData.recentSubjects.length > 0 && (
+                  <div className="card p-3 bg-orange-50 border border-orange-100">
+                    <p className="text-xs font-semibold text-orange-700 mb-2">
+                      📚 최근 아카데미 학습 — 분석 글 주제로 바로 입력
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {academyData.recentSubjects.slice(0, 5).map((s, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setTextTitle(s.title)}
+                          className="text-[11px] px-2.5 py-1 bg-white border border-orange-200 rounded-full text-orange-700 font-medium active:scale-95 transition-all hover:bg-orange-100"
+                        >
+                          {s.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* 글 정보 입력 */}
                 <div className="card p-4 space-y-3">
                   <h3 className="font-bold text-gray-700 text-sm">글 정보</h3>

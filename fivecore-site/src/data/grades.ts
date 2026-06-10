@@ -256,13 +256,15 @@ export const CYCLE_STEPS = [
 
 /** 빠른 접근 메뉴 */
 export const QUICK_ACTIONS = [
-  { path: '/planner', icon: '📝', name: '학습 플래너', color: 'bg-blue-50 border-blue-200' },
-  { path: '/reading', icon: '⏱️', name: '속해독서', color: 'bg-green-50 border-green-200' },
-  { path: '/mindmap', icon: '🗺️', name: '마인드맵', color: 'bg-purple-50 border-purple-200' },
-  { path: '/analysis', icon: '🔎', name: '글분석', color: 'bg-yellow-50 border-yellow-200' },
-  { path: '/dashboard', icon: '📊', name: '대시보드', color: 'bg-orange-50 border-orange-200' },
-  { path: '/portfolio',  icon: '📁', name: '포트폴리오', color: 'bg-pink-50 border-pink-200' },
-  { path: '/meditation', icon: '🧘', name: '3분 묵상',   color: 'bg-teal-50 border-teal-200' },
+  { path: '/planner',  icon: '📝', name: '학습 플래너', color: 'bg-blue-50 border-blue-200' },
+  { path: '/schedule', icon: '📅', name: '학습 계획표', color: 'bg-teal-50 border-teal-200' },
+  { path: '/review',   icon: '📓', name: '복습 노트',  color: 'bg-indigo-50 border-indigo-200' },
+  { path: '/reading',  icon: '⏱️', name: '속해독서',   color: 'bg-green-50 border-green-200' },
+  { path: '/mindmap',  icon: '🗺️', name: '마인드맵',   color: 'bg-purple-50 border-purple-200' },
+  { path: '/analysis', icon: '🔎', name: '글분석',      color: 'bg-yellow-50 border-yellow-200' },
+  { path: '/dashboard', icon: '📊', name: '대시보드',   color: 'bg-orange-50 border-orange-200' },
+  { path: '/portfolio', icon: '📁', name: '포트폴리오', color: 'bg-pink-50 border-pink-200' },
+  { path: '/meditation', icon: '🧘', name: '3분 묵상',  color: 'bg-teal-50 border-teal-200' },
 ] as const
 
 export function getGradeById(id: string): GradeGroup | undefined {

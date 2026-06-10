@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { useAcademyData } from '../context/AcademyDataContext'
 import { GRADE_GROUPS } from '../data/grades'
 import type { GradeCode } from '../types'
 import {
@@ -291,6 +292,7 @@ function exportPng(svgId: string, filename: string) {
 export function MindmapPage() {
   const navigate = useNavigate()
   const { requireLogin } = useAuth()
+  const { data: academyData } = useAcademyData()
   const previewSvgId = 'mindmap-preview-svg'
 
   const [grade, setGrade] = useState<string>(
@@ -460,6 +462,27 @@ export function MindmapPage() {
                   >
                     처음부터
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* 아카데미 최근 학습 주제 — 중심 주제 빠른 입력 */}
+            {academyData && academyData.recentSubjects.length > 0 && (
+              <div className="card p-3 bg-purple-50 border border-purple-100">
+                <p className="text-xs font-semibold text-purple-700 mb-2">
+                  📚 최근 아카데미 학습 — 중심 주제로 바로 입력
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {academyData.recentSubjects.slice(0, 5).map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setCenterTopic(s.title.slice(0, 20))}
+                      className="text-[11px] px-2.5 py-1 bg-white border border-purple-200 rounded-full text-purple-700 font-medium active:scale-95 transition-all hover:bg-purple-100"
+                    >
+                      {s.title}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
