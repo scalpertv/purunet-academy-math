@@ -1,5 +1,6 @@
 // 5차원 자기주도학습 사이트 루트 컴포넌트 — 라우팅 정의
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './auth/AuthContext'
 import { Layout } from './components/Layout'
 import { LandingPage } from './pages/LandingPage'
 import { GuidePage } from './pages/GuidePage'
@@ -14,6 +15,7 @@ import { MeditationPage } from './pages/MeditationPage'
 
 function App() {
   return (
+    <AuthProvider>
     <BrowserRouter>
       <Layout>
         <Routes>
@@ -30,6 +32,7 @@ function App() {
         </Routes>
       </Layout>
     </BrowserRouter>
+    </AuthProvider>
   )
 }
 

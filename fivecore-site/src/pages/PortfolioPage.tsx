@@ -1,6 +1,7 @@
 // 포트폴리오 보관함 페이지 — 학기별 성장 기록 편집·내보내기·인쇄
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 import { GRADE_GROUPS, DIMENSIONS } from '../data/grades'
 import { loadReadingLog } from '../data/reading'
 import { loadMindmaps } from '../data/mindmap'
@@ -305,6 +306,7 @@ const SECTIONS: { key: SectionKey; icon: string; label: string }[] = [
 
 export function PortfolioPage() {
   const navigate = useNavigate()
+  const { isLoggedIn } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [semester, setSemester] = useState<string>(
@@ -314,10 +316,12 @@ export function PortfolioPage() {
   const [activeSection, setActiveSection] = useState<SectionKey>('cover')
   const [bestSubTab, setBestSubTab] = useState<'planner' | 'mindmap' | 'analysis'>('planner')
 
-  // 자동 저장
+  // 자동 저장 (로그인 상태일 때만)
   useEffect(() => {
-    savePortfolio({ ...portfolio, updatedAt: new Date().toISOString() })
-  }, [portfolio])
+    if (isLoggedIn) {
+      savePortfolio({ ...portfolio, updatedAt: new Date().toISOString() })
+    }
+  }, [portfolio, isLoggedIn])
 
   // 학기 변경 시 포트폴리오 로드
   useEffect(() => {

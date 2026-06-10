@@ -1,6 +1,7 @@
 // 3분 묵상 가이드 + 신체 기록 + 주간 현황 + 부모/교사 코멘트 페이지
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 import { GRADE_GROUPS } from '../data/grades'
 import {
   EMOTION_COLORS,
@@ -78,7 +79,7 @@ function TimerRing({ elapsed, duration, color }: { elapsed: number; duration: nu
 // ════════════════════════════════════════════════════
 // 탭 1 — 묵상 타이머
 // ════════════════════════════════════════════════════
-function MeditationTimer({ grade, onGradeChange }: { grade: GradeCode; onGradeChange: (g: GradeCode) => void }) {
+function MeditationTimer({ grade, onGradeChange, requireLogin }: { grade: GradeCode; onGradeChange: (g: GradeCode) => void; requireLogin: (action: () => void) => void }) {
   const steps = getMeditationSteps(grade)
   const [phase, setPhase] = useState<'idle' | 'running' | 'paused' | 'completed'>('idle')
   const [stepIdx, setStepIdx] = useState(0)
@@ -219,7 +220,7 @@ function MeditationTimer({ grade, onGradeChange }: { grade: GradeCode; onGradeCh
             처음으로
           </button>
           <button
-            onClick={handleSave}
+            onClick={() => requireLogin(handleSave)}
             className="flex-2 flex-grow-[2] py-3 rounded-2xl bg-green-600 text-white font-bold text-sm active:scale-95"
           >
             기록 저장
@@ -639,7 +640,7 @@ function WeeklyBodyChart({ grade }: { grade: GradeCode }) {
 // ════════════════════════════════════════════════════
 // 탭 4 — 부모/교사 코멘트 (PIN 잠금)
 // ════════════════════════════════════════════════════
-function CommentSection() {
+function CommentSection({ requireLogin }: { requireLogin: (action: () => void) => void }) {
   const [pinState, setPinState] = useState<'locked' | 'setup' | 'unlocked'>(() => {
     return getPin() ? 'locked' : 'setup'
   })
@@ -763,7 +764,7 @@ function CommentSection() {
           onChange={(e) => setNewText(e.target.value)}
         />
         <button
-          onClick={handleSaveComment}
+          onClick={() => requireLogin(handleSaveComment)}
           className="w-full py-2.5 rounded-2xl bg-teal-600 text-white font-bold text-sm active:scale-95"
         >
           저장
@@ -836,6 +837,7 @@ const TABS: { key: TabKey; icon: string; label: string }[] = [
 
 export function MeditationPage() {
   const navigate = useNavigate()
+  const { requireLogin } = useAuth()
   const [activeTab, setActiveTab] = useState<TabKey>('timer')
   const [grade, setGrade] = useState<GradeCode>(
     () => (localStorage.getItem(MEDITATION_GRADE_KEY) as GradeCode | null) ?? 'elem46'
@@ -881,10 +883,10 @@ export function MeditationPage() {
           ))}
         </div>
 
-        {activeTab === 'timer'   && <MeditationTimer grade={grade} onGradeChange={handleGradeChange} />}
+        {activeTab === 'timer'   && <MeditationTimer grade={grade} onGradeChange={handleGradeChange} requireLogin={requireLogin} />}
         {activeTab === 'body'    && <BodyLog grade={grade} />}
         {activeTab === 'weekly'  && <WeeklyBodyChart grade={grade} />}
-        {activeTab === 'comment' && <CommentSection />}
+        {activeTab === 'comment' && <CommentSection requireLogin={requireLogin} />}
       </div>
     </div>
   )

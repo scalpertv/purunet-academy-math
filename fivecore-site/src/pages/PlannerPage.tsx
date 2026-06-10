@@ -1,6 +1,7 @@
 // 디지털 학습 플래너 — 목표 설정·실행·성찰·달성률 자동 계산
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 import {
   KINDIE_ACTIVITIES,
   SUBJECTS,
@@ -46,19 +47,20 @@ function loadOrInit(date: string, grade: string): PlannerData {
 // ──────────────────────────────────────────────────────
 export function PlannerPage() {
   const navigate = useNavigate()
+  const { isLoggedIn, openLoginModal } = useAuth()
   const today = todayStr()
 
   const [savedGrade] = useState(() => localStorage.getItem(GRADE_PREF_KEY) ?? '')
   const [data, setData] = useState<PlannerData>(() => loadOrInit(today, savedGrade))
   const [tab, setTab] = useState<'today' | 'history'>('today')
 
-  // 자동 저장
+  // 자동 저장 (로그인 상태일 때만)
   useEffect(() => {
-    if (data.grade) {
+    if (data.grade && isLoggedIn) {
       localStorage.setItem(PLANNER_KEY(data.date), JSON.stringify(data))
       localStorage.setItem(GRADE_PREF_KEY, data.grade)
     }
-  }, [data])
+  }, [data, isLoggedIn])
 
   const update = useCallback((partial: Partial<PlannerData>) => {
     setData((prev) => ({ ...prev, ...partial }))
@@ -277,7 +279,10 @@ export function PlannerPage() {
 
               {/* 저장 완료 안내 */}
               <div className="text-center pb-2">
-                <p className="text-xs text-gray-400">변경할 때마다 자동 저장됩니다.</p>
+                {isLoggedIn
+                  ? <p className="text-xs text-gray-400">변경할 때마다 자동 저장됩니다.</p>
+                  : <button onClick={openLoginModal} className="text-xs text-amber-600 underline">로그인하면 자동 저장됩니다.</button>
+                }
               </div>
             </div>
           )}

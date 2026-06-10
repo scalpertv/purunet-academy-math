@@ -1,6 +1,7 @@
 // 속해독서 타이머 페이지 — 읽기 타이머 + CPM 계산 + 독서 기록 관리
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 import { GRADE_GROUPS } from '../data/grades'
 import type { GradeCode } from '../types'
 import {
@@ -241,6 +242,7 @@ function MonthlyStatsCard({ log }: { log: ReadingRecord[] }) {
 // ── 메인 페이지 ───────────────────────────────────────
 export function ReadingPage() {
   const navigate = useNavigate()
+  const { requireLogin } = useAuth()
 
   const [grade, setGrade] = useState<string>(() => localStorage.getItem(READING_GRADE_KEY) ?? '')
   const [tab, setTab] = useState<'timer' | 'log'>('timer')
@@ -533,7 +535,7 @@ export function ReadingPage() {
                     다시 읽기
                   </button>
                   <button
-                    onClick={handleSave}
+                    onClick={() => requireLogin(handleSave)}
                     className="flex-1 py-3 rounded-2xl bg-green-600 text-white font-bold text-sm active:scale-95 transition-all"
                   >
                     기록 저장

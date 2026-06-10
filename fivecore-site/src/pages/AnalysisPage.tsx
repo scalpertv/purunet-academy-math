@@ -1,6 +1,7 @@
 // 글분석 도구 페이지 — 학년군/언어별 분석 틀 폼 + 기록 관리
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 import { GRADE_GROUPS } from '../data/grades'
 import type { GradeCode } from '../types'
 import {
@@ -143,6 +144,7 @@ function RecordCard({ record }: { record: AnalysisRecord }) {
 // ── 메인 페이지 ───────────────────────────────────────
 export function AnalysisPage() {
   const navigate = useNavigate()
+  const { requireLogin } = useAuth()
 
   const [grade, setGrade] = useState<string>(
     () => localStorage.getItem(ANALYSIS_GRADE_KEY) ?? ''
@@ -367,7 +369,7 @@ export function AnalysisPage() {
                     초기화
                   </button>
                   <button
-                    onClick={handleSave}
+                    onClick={() => requireLogin(handleSave)}
                     disabled={!hasAnyAnswer && !textTitle}
                     className="flex-1 py-3 rounded-2xl bg-orange-500 text-white font-bold text-sm disabled:opacity-40 active:scale-95 transition-all"
                   >

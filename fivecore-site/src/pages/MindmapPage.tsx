@@ -1,6 +1,7 @@
 // 마인드맵 도구 페이지 — SVG 렌더러 + 가지 편집기 + 저장 갤러리
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 import { GRADE_GROUPS } from '../data/grades'
 import type { GradeCode } from '../types'
 import {
@@ -289,6 +290,7 @@ function exportPng(svgId: string, filename: string) {
 // ── 메인 페이지 ───────────────────────────────────────
 export function MindmapPage() {
   const navigate = useNavigate()
+  const { requireLogin } = useAuth()
   const previewSvgId = 'mindmap-preview-svg'
 
   const [grade, setGrade] = useState<string>(
@@ -540,7 +542,7 @@ export function MindmapPage() {
                 PNG 저장
               </button>
               <button
-                onClick={handleSave}
+                onClick={() => requireLogin(handleSave)}
                 disabled={branches.length === 0 && !centerTopic}
                 className="flex-1 py-3 rounded-2xl bg-purple-600 text-white font-bold text-sm disabled:opacity-40 active:scale-95 transition-all"
               >
