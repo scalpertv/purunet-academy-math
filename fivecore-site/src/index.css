@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900;
+    overscroll-behavior: none;
+    /* iOS 노치/홈 인디케이터 safe-area */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  /* 5차원 배지 공통 스타일 */
+  .dim-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  /* 카드 공통 스타일 */
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100;
+  }
+
+  /* 버튼 공통 스타일 */
+  .btn-primary {
+    @apply bg-blue-600 text-white py-3 px-6 rounded-xl font-semibold text-sm
+           active:scale-95 transition-transform duration-100 w-full;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-700 py-3 px-6 rounded-xl font-semibold text-sm
+           active:scale-95 transition-transform duration-100;
+  }
+
+  /* 페이지 헤더 공통 */
+  .page-header {
+    @apply px-4 py-5 text-white;
+  }
+
+  /* 페이지 컨텐츠 영역 */
+  .page-content {
+    @apply px-4 pb-24 max-w-lg mx-auto;
+  }
+
+  /* 폼 입력 필드 공통 */
+  .input-field {
+    @apply w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800
+           placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400
+           focus:border-transparent bg-gray-50;
+  }
+
+  /* iOS safe-area 하단 여백 (NavBar) */
+  .safe-area-pb {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  /* 가로 스크롤 숨김 */
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}

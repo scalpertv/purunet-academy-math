@@ -1,0 +1,22 @@
+{
+  "name": "5차원 자기주도학습",
+  "short_name": "5차원학습",
+  "description": "원동연 박사 5차원 전면교육 기반 자기주도학습 — 6세~고등",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "lang": "ko",
+  "categories": ["education"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
