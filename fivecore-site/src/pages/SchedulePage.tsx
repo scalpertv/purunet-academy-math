@@ -207,7 +207,7 @@ function DayPanel({
 // ── 메인 페이지 ───────────────────────────────────────────
 export function SchedulePage() {
   const navigate = useNavigate()
-  const { data: academyData, syncSchedule } = useAcademyData()
+  const { data: academyData, syncSchedule, academyContext } = useAcademyData()
 
   const [weekKey, setWeekKey] = useState(() => getWeekKey())
   const [schedule, setSchedule] = useState<WeekSchedule>(() => loadWeekSchedule(getWeekKey()))
@@ -310,6 +310,23 @@ export function SchedulePage() {
             className="w-full text-sm bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 placeholder-gray-300"
           />
         </div>
+
+        {/* 현재 학습 중인 모듈 컨텍스트 배너 */}
+        {academyContext && academyContext.title && (
+          <div className="card p-3 bg-amber-50 border border-amber-200 flex items-center gap-3">
+            <span className="text-xl flex-shrink-0">📖</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-amber-800">지금 학습 중</p>
+              <p className="text-sm font-semibold text-amber-900 truncate">{academyContext.title}</p>
+            </div>
+            <button
+              onClick={() => quickAddFromAcademy(academyContext.title, activeDay)}
+              className="flex-shrink-0 text-xs px-3 py-1.5 bg-amber-500 text-white font-semibold rounded-xl active:scale-95 transition-all"
+            >
+              오늘 계획에 추가 →
+            </button>
+          </div>
+        )}
 
         {/* 아카데미 빠른 추가 */}
         {academyData && academyData.recentSubjects.length > 0 && (

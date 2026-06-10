@@ -50,12 +50,19 @@ export interface AcademyLearningData {
   remoteNotes?: ReviewNote[]
 }
 
+export interface AcademyContext {
+  subject: string
+  title: string
+  moduleId: string
+}
+
 interface AcademyDataContextType {
   data: AcademyLearningData | null
   isLoading: boolean
   refresh: () => void
   syncSchedule: (schedule: WeekSchedule) => Promise<void>
   syncReviewNote: (note: ReviewNote) => Promise<void>
+  academyContext: AcademyContext | null
 }
 
 const AcademyDataContext = createContext<AcademyDataContextType | null>(null)
@@ -84,6 +91,7 @@ export function AcademyDataProvider({ children }: { children: ReactNode }) {
   const { user, isLoggedIn, loginFromAcademy } = useAuth()
   const [data, setData] = useState<AcademyLearningData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [academyContext, setAcademyContext] = useState<AcademyContext | null>(null)
 
   const fetchData = useCallback(async (currentUser: AcademyUser) => {
     setIsLoading(true)
@@ -132,14 +140,27 @@ export function AcademyDataProvider({ children }: { children: ReactNode }) {
     await postJson(REVIEW_SYNC_URL, { student_id: user.id, note })
   }, [user])
 
-  // iframe에서 PURUNET_ACADEMY_SESSION postMessage 수신
+  // iframe에서 아카데미 postMessage 수신 (세션 + 컨텍스트)
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
       if (event.origin !== ACADEMY_ORIGIN) return
-      const msg = event.data as { type?: string; user?: AcademyUser | null }
+      const msg = event.data as {
+        type?: string
+        user?: AcademyUser | null
+        subject?: string
+        title?: string
+        moduleId?: string
+      }
       if (msg?.type === 'PURUNET_ACADEMY_SESSION' && msg.user) {
         loginFromAcademy(msg.user)
         event.source?.postMessage?.({ type: 'FIVECORE_READY' }, { targetOrigin: ACADEMY_ORIGIN })
+      }
+      if (msg?.type === 'ACADEMY_CONTEXT' && msg.title) {
+        setAcademyContext({
+          subject: msg.subject || '',
+          title: msg.title || '',
+          moduleId: msg.moduleId || '',
+        })
       }
     }
     window.addEventListener('message', handleMessage)
@@ -154,7 +175,7 @@ export function AcademyDataProvider({ children }: { children: ReactNode }) {
   }, [isLoggedIn, user, fetchData])
 
   return (
-    <AcademyDataContext.Provider value={{ data, isLoading, refresh, syncSchedule, syncReviewNote }}>
+    <AcademyDataContext.Provider value={{ data, isLoading, refresh, syncSchedule, syncReviewNote, academyContext }}>
       {children}
     </AcademyDataContext.Provider>
   )

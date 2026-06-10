@@ -157,7 +157,7 @@ function NoteEditor({
 // ── 메인 페이지 ───────────────────────────────────────────
 export function ReviewPage() {
   const navigate = useNavigate()
-  const { data: academyData, syncReviewNote } = useAcademyData()
+  const { data: academyData, syncReviewNote, academyContext } = useAcademyData()
 
   const [notes, setNotes] = useState<ReviewNote[]>(() => loadReviewNotes())
   const [editing, setEditing] = useState<ReviewNote | null>(null)
@@ -221,6 +221,30 @@ export function ReviewPage() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 pt-4 space-y-4">
+        {/* 현재 학습 중인 모듈 컨텍스트 배너 */}
+        {academyContext && academyContext.title && !editing && (
+          <div className="card p-3 bg-amber-50 border border-amber-200 flex items-center gap-3">
+            <span className="text-xl flex-shrink-0">📖</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-amber-800">지금 학습 중</p>
+              <p className="text-sm font-semibold text-amber-900 truncate">{academyContext.title}</p>
+            </div>
+            <button
+              onClick={() => {
+                const note = makeReviewNote(
+                  academyContext.subject.includes('math') || academyContext.subject.includes('수학') ? '수학' :
+                  academyContext.subject.includes('english') || academyContext.subject.includes('영어') ? '영어' : '기타'
+                )
+                setEditing({ ...note, title: academyContext.title + ' 복습', subject: note.subject })
+                setTimeout(() => document.getElementById('review-editor')?.scrollIntoView({ behavior: 'smooth' }), 50)
+              }}
+              className="flex-shrink-0 text-xs px-3 py-1.5 bg-amber-500 text-white font-semibold rounded-xl active:scale-95 transition-all"
+            >
+              바로 작성 →
+            </button>
+          </div>
+        )}
+
         {/* 아카데미 빠른 생성 */}
         {academyData && academyData.recentSubjects.length > 0 && !editing && (
           <div className="card p-3 bg-indigo-50 border border-indigo-100">
