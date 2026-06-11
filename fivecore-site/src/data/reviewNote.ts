@@ -1,6 +1,12 @@
 // 복습 노트 — 데이터 구조, localStorage 헬퍼
+import type { MindMapBranch } from './mindmap'
 
 export const REVIEW_SUBJECTS = ['국어', '수학', '영어', '사회', '과학', '독서', '기타']
+
+export interface ReviewNoteMindmap {
+  centerTopic: string
+  branches: MindMapBranch[]
+}
 
 export interface ReviewNote {
   id: string
@@ -8,6 +14,8 @@ export interface ReviewNote {
   subject: string
   title: string
   content: string
+  noteType?: 'text' | 'mindmap'
+  mindmapData?: ReviewNoteMindmap
   isStarred: boolean
   createdAt: string
   updatedAt: string
