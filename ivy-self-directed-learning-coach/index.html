@@ -1,0 +1,2212 @@
+<!DOCTYPE html>
+<!-- 담쟁이 자기주도 학습코칭 사이트 메인 진입점 v20260611c -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>담쟁이 자기주도 학습코칭</title>
+<style>
+:root {
+  --ivy-dark: #1b5e20;
+  --ivy-mid: #2e7d32;
+  --ivy-bright: #43a047;
+  --ivy-light: #7bc67b;
+  --ivy-pale: #c8e6c8;
+  --ivy-bg: #f0f8f0;
+  --ivy-card: #ffffff;
+  --text-dark: #1a1a1a;
+  --text-mid: #444;
+  --text-light: #777;
+  --border: #d0e8d0;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 24px rgba(0,0,0,0.13);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Malgun Gothic', '맑은 고딕', -apple-system, sans-serif;
+  background: var(--ivy-bg);
+  color: var(--text-dark);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+header {
+  background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 50%, #43a047 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+.header-inner {
+  position: relative;
+  z-index: 2;
+  padding: 28px 24px 0;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.logo-circle {
+  width: 52px; height: 52px;
+  background: rgba(255,255,255,0.2);
+  border: 2px solid rgba(255,255,255,0.5);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; flex-shrink: 0;
+}
+.header-titles h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+.header-titles p {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+.header-vine {
+  position: absolute;
+  right: -20px; top: -20px;
+  width: 200px; height: 200px;
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+/* ── NAV TABS ── */
+nav {
+  display: flex;
+  gap: 0;
+  padding: 0;
+  position: relative;
+  z-index: 2;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+nav::-webkit-scrollbar { display: none; }
+.tab-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  padding: 14px 18px 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s, background 0.2s;
+  position: relative;
+  font-family: inherit;
+  border-bottom: 3px solid transparent;
+}
+.tab-btn:hover { color: white; background: rgba(255,255,255,0.08); }
+.tab-btn.active {
+  color: white;
+  border-bottom: 3px solid #a5d6a7;
+}
+.tab-btn .tab-icon { margin-right: 6px; font-size: 1rem; }
+
+/* ── MAIN CONTENT ── */
+main {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px 16px 80px;
+}
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── SECTION HEADER ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.section-icon {
+  width: 40px; height: 40px;
+  background: var(--ivy-mid);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.section-header h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--ivy-dark);
+}
+.section-header p {
+  font-size: 0.82rem;
+  color: var(--text-light);
+  margin-top: 1px;
+}
+
+/* ── CARD ── */
+.card {
+  background: var(--ivy-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ivy-dark);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── FORM ELEMENTS ── */
+input[type="text"], input[type="number"], input[type="date"],
+textarea, select {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: var(--text-dark);
+  background: white;
+  transition: border-color 0.2s;
+  outline: none;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--ivy-bright);
+  box-shadow: 0 0 0 3px rgba(67,160,71,0.12);
+}
+textarea { resize: vertical; min-height: 80px; }
+label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-mid);
+  margin-bottom: 5px;
+  margin-top: 12px;
+}
+label:first-child { margin-top: 0; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 9px 18px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.btn-primary {
+  background: var(--ivy-mid);
+  color: white;
+}
+.btn-primary:hover { background: var(--ivy-dark); transform: translateY(-1px); }
+.btn-secondary {
+  background: var(--ivy-pale);
+  color: var(--ivy-dark);
+}
+.btn-secondary:hover { background: var(--ivy-light); }
+.btn-danger {
+  background: #ffebee;
+  color: #c62828;
+}
+.btn-danger:hover { background: #ffcdd2; }
+.btn-sm { padding: 6px 12px; font-size: 0.82rem; }
+.btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+/* ── GRID ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 600px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════
+   1. 자기주도 플래너
+═══════════════════════════════ */
+.planner-week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.planner-week-nav h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ivy-dark);
+}
+.week-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 16px;
+}
+@media (max-width: 600px) {
+  .week-days { grid-template-columns: repeat(4, 1fr); }
+}
+.day-card {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.day-card:hover, .day-card.selected {
+  border-color: var(--ivy-bright);
+  background: var(--ivy-pale);
+}
+.day-card.today { border-color: var(--ivy-mid); background: #e8f5e9; }
+.day-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-light);
+  margin-bottom: 2px;
+}
+.day-num {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--ivy-dark);
+}
+.day-dot {
+  width: 6px; height: 6px;
+  background: var(--ivy-bright);
+  border-radius: 50%;
+  margin: 3px auto 0;
+  display: none;
+}
+.day-dot.has-tasks { display: block; }
+
+.planner-detail { animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.subject-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--ivy-bg);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+}
+.subject-row input[type="checkbox"] {
+  width: 18px; height: 18px;
+  accent-color: var(--ivy-mid);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.subject-row .subj-name { flex: 1; border: none; background: transparent; font-size: 0.9rem; }
+.subject-row .subj-name:focus { outline: none; background: white; border-radius: 4px; padding: 2px 6px; }
+.subject-row .subj-time {
+  width: 70px;
+  font-size: 0.82rem;
+  text-align: center;
+  padding: 5px 8px;
+}
+.subject-row .subj-del {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.subject-row .subj-del:hover { color: #c62828; background: #ffebee; }
+.subject-row.done .subj-name { text-decoration: line-through; color: var(--text-light); }
+
+.daily-summary {
+  background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+  border: 1.5px solid var(--ivy-pale);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-top: 10px;
+}
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.summary-label { font-size: 0.82rem; color: var(--text-mid); font-weight: 600; }
+.summary-val { font-size: 0.9rem; font-weight: 700; color: var(--ivy-dark); }
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--ivy-pale);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ivy-mid), var(--ivy-bright));
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+/* ═══════════════════════════════
+   2. 자기주도 글분석
+═══════════════════════════════ */
+.analysis-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 700px) { .analysis-layout { grid-template-columns: 1fr; } }
+
+.analysis-input-col .card { height: 100%; }
+.keyword-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--ivy-bg);
+  margin-bottom: 8px;
+}
+.chip {
+  background: var(--ivy-pale);
+  color: var(--ivy-dark);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: default;
+}
+.chip .chip-del {
+  cursor: pointer;
+  opacity: 0.6;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+.chip .chip-del:hover { opacity: 1; }
+
+.analysis-result-box {
+  background: var(--ivy-bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-size: 0.88rem;
+  min-height: 80px;
+  white-space: pre-wrap;
+  color: var(--text-mid);
+}
+
+.saved-analyses { margin-top: 20px; }
+.analysis-item {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.analysis-item:hover { border-color: var(--ivy-bright); box-shadow: var(--shadow); }
+.analysis-item-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--ivy-dark);
+  margin-bottom: 3px;
+}
+.analysis-item-meta { font-size: 0.78rem; color: var(--text-light); }
+
+/* ═══════════════════════════════
+   3. 자기주도 속해독서
+═══════════════════════════════ */
+.reading-timer-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+  border: 1.5px solid var(--ivy-pale);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+.timer-display {
+  font-size: 2.2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ivy-dark);
+  letter-spacing: 2px;
+}
+.timer-controls { display: flex; gap: 8px; }
+
+.speed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ivy-pale);
+  color: var(--ivy-dark);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.question-item {
+  background: var(--ivy-bg);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border-left: 3px solid var(--ivy-bright);
+}
+.question-num {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ivy-mid);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.reading-records { margin-top: 20px; }
+.record-card {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.record-info { flex: 1; }
+.record-title { font-weight: 700; font-size: 0.9rem; color: var(--ivy-dark); }
+.record-meta { font-size: 0.78rem; color: var(--text-light); margin-top: 2px; }
+.record-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.stat-pill {
+  background: var(--ivy-pale);
+  color: var(--ivy-dark);
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════
+   4. 통합노트 (Cornell Style)
+═══════════════════════════════ */
+.cornell-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  grid-template-rows: auto auto;
+  gap: 0;
+  border: 2px solid var(--ivy-mid);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: white;
+}
+@media (max-width: 600px) {
+  .cornell-layout { grid-template-columns: 1fr; }
+}
+.cornell-header {
+  grid-column: 1 / -1;
+  background: var(--ivy-mid);
+  color: white;
+  padding: 10px 14px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.cornell-header input {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: white;
+  border-radius: 6px;
+  flex: 1;
+  min-width: 120px;
+}
+.cornell-header input::placeholder { color: rgba(255,255,255,0.6); }
+.cornell-header input:focus { background: rgba(255,255,255,0.3); border-color: white; box-shadow: none; }
+.cornell-keywords {
+  border-right: 2px solid var(--ivy-mid);
+  padding: 14px 12px;
+  background: #f9fdf9;
+}
+.cornell-keywords-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ivy-mid);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.cornell-keywords textarea {
+  border: none;
+  background: transparent;
+  resize: none;
+  font-size: 0.85rem;
+  min-height: 180px;
+  padding: 0;
+  color: var(--ivy-dark);
+}
+.cornell-keywords textarea:focus { box-shadow: none; border: none; background: transparent; }
+.cornell-notes {
+  padding: 14px;
+}
+.cornell-notes-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ivy-mid);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.cornell-notes textarea {
+  border: none;
+  background: transparent;
+  resize: none;
+  font-size: 0.9rem;
+  min-height: 180px;
+  padding: 0;
+  line-height: 1.8;
+}
+.cornell-notes textarea:focus { box-shadow: none; border: none; background: transparent; }
+.cornell-summary {
+  grid-column: 1 / -1;
+  border-top: 2px solid var(--ivy-mid);
+  padding: 12px 14px;
+}
+.cornell-summary-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ivy-mid);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.cornell-summary textarea {
+  border: none;
+  background: transparent;
+  resize: none;
+  min-height: 60px;
+  font-size: 0.9rem;
+  padding: 0;
+  font-weight: 600;
+  color: var(--ivy-dark);
+}
+.cornell-summary textarea:focus { box-shadow: none; border: none; background: transparent; }
+
+.saved-notes { margin-top: 20px; }
+.note-item {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.note-item:hover { border-color: var(--ivy-bright); }
+.note-item-title { font-weight: 700; font-size: 0.9rem; color: var(--ivy-dark); }
+.note-item-meta { font-size: 0.78rem; color: var(--text-light); margin-top: 2px; }
+.note-item-actions { display: flex; gap: 6px; }
+
+/* ═══════════════════════════════
+   5. 복습 노트
+═══════════════════════════════ */
+.review-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  align-items: center;
+}
+.review-filter {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.filter-btn {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text-mid);
+  transition: all 0.15s;
+}
+.filter-btn.active, .filter-btn:hover {
+  background: var(--ivy-mid);
+  color: white;
+  border-color: var(--ivy-mid);
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 4px;
+}
+.review-card {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: box-shadow 0.15s, transform 0.15s;
+  cursor: pointer;
+  position: relative;
+}
+.review-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.review-card-flip {
+  position: relative;
+  min-height: 160px;
+}
+.review-card-front, .review-card-back {
+  padding: 16px;
+  min-height: 120px;
+}
+.review-card-front {
+  background: white;
+}
+.review-card-back {
+  background: #e8f5e9;
+  display: none;
+}
+.review-card.flipped .review-card-front { display: none; }
+.review-card.flipped .review-card-back { display: block; }
+
+.card-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  opacity: 0.6;
+}
+.card-front-label { color: var(--ivy-mid); }
+.card-back-label { color: var(--ivy-dark); }
+.card-content {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  line-height: 1.5;
+}
+.review-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  background: #fafafa;
+}
+.status-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 2px 10px;
+}
+.status-learning { background: #fff3e0; color: #e65100; }
+.status-review { background: #e3f2fd; color: #1565c0; }
+.status-done { background: #e8f5e9; color: #1b5e20; }
+.card-actions { display: flex; gap: 4px; }
+.card-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: var(--text-light);
+}
+.card-action-btn:hover { background: var(--ivy-pale); color: var(--ivy-dark); }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-light);
+}
+.empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
+.empty-state p { font-size: 0.9rem; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  display: none;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 500px;
+  padding: 24px;
+  position: relative;
+  animation: modalIn 0.2s ease;
+}
+@keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: none; } }
+.modal-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ivy-dark);
+  margin-bottom: 16px;
+}
+.modal-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--text-light);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+.modal-close:hover { background: var(--ivy-bg); color: var(--text-dark); }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--ivy-dark);
+  color: white;
+  padding: 10px 22px;
+  border-radius: 24px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  z-index: 2000;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+  pointer-events: none;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── FOOTER ── */
+footer {
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.78rem;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+}
+.academy-home-btn {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  border: 1.5px solid rgba(255,255,255,0.5);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s;
+}
+.academy-home-btn:hover {
+  background: rgba(255,255,255,0.32);
+  border-color: rgba(255,255,255,0.85);
+}
+
+/* ── 속해독서 교재 ── */
+.rmethod {
+  background: var(--ivy-bg);
+  border-left: 3px solid var(--ivy-bright);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+.rmethod strong { display:block; font-size:0.88rem; color:var(--ivy-dark); margin-bottom:4px; }
+.rmethod ul { padding-left:14px; margin:0; }
+.rmethod li { font-size:0.82rem; color:var(--text-mid); line-height:1.75; }
+.ptag {
+  display:inline-flex; align-items:center; background:var(--ivy-pale); color:var(--ivy-dark);
+  border-radius:12px; padding:3px 12px; font-size:0.8rem; font-weight:600; margin:2px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner" style="position:relative;">
+    <a href="https://purunet-academy.pages.dev/" target="_blank" rel="noopener noreferrer" class="academy-home-btn">🏫 아카데미홈 바로가기</a>
+    <div class="header-top">
+      <div class="logo-circle">🌿</div>
+      <div class="header-titles">
+        <h1>담쟁이 자기주도 학습코칭</h1>
+        <p>스스로 계획하고 · 분석하고 · 기록하는 공부 습관</p>
+      </div>
+    </div>
+    <svg class="header-vine" viewBox="0 0 200 200" fill="none">
+      <path d="M10,180 Q50,120 90,90 Q130,60 170,20" stroke="white" stroke-width="3" fill="none"/>
+      <circle cx="50" cy="130" r="12" fill="white"/>
+      <circle cx="90" cy="90" r="15" fill="white"/>
+      <circle cx="130" cy="55" r="10" fill="white"/>
+      <path d="M50,130 Q30,110 20,90" stroke="white" stroke-width="2" fill="none"/>
+      <path d="M90,90 Q110,70 120,50" stroke="white" stroke-width="2" fill="none"/>
+    </svg>
+    <nav id="mainNav">
+      <button class="tab-btn" onclick="showPanel('routine',this)">
+        <span class="tab-icon">🌿</span>학습 루틴
+      </button>
+      <button class="tab-btn active" onclick="showPanel('planner',this)">
+        <span class="tab-icon">📅</span>자기주도 플래너
+      </button>
+      <button class="tab-btn" onclick="showPanel('analysis',this)">
+        <span class="tab-icon">🔍</span>자기주도 글분석
+      </button>
+      <button class="tab-btn" onclick="showPanel('reading',this)">
+        <span class="tab-icon">📖</span>자기주도 속해독서
+      </button>
+      <button class="tab-btn" onclick="showPanel('note',this)">
+        <span class="tab-icon">📝</span>통합노트
+      </button>
+      <button class="tab-btn" onclick="showPanel('review',this)">
+        <span class="tab-icon">🃏</span>복습 노트
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- ══════════════════════ 1. 자기주도 플래너 ══════════════════════ -->
+  <div class="panel active" id="panel-planner">
+    <div class="section-header">
+      <div class="section-icon">📅</div>
+      <div>
+        <h2>자기주도 플래너</h2>
+        <p>오늘의 학습 목표를 직접 계획하고 체크해요.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="planner-week-nav">
+        <button class="btn btn-secondary btn-sm" onclick="changeWeek(-1)">◀ 이전 주</button>
+        <h3 id="weekLabel"></h3>
+        <button class="btn btn-secondary btn-sm" onclick="changeWeek(1)">다음 주 ▶</button>
+      </div>
+      <div class="week-days" id="weekDays"></div>
+    </div>
+
+    <div class="card planner-detail" id="plannerDetail">
+      <div class="card-title">
+        <span>📋</span>
+        <span id="selectedDateLabel">오늘의 학습 계획</span>
+      </div>
+      <div id="subjectList"></div>
+      <div class="btn-group">
+        <button class="btn btn-secondary btn-sm" onclick="addSubject()">+ 과목 추가</button>
+      </div>
+      <div class="daily-summary" id="dailySummary">
+        <div class="summary-row">
+          <span class="summary-label">오늘의 목표 달성률</span>
+          <span class="summary-val" id="progressPercent">0%</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">완료 / 전체</span>
+          <span class="summary-val" id="progressCount">0 / 0</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      </div>
+      <label style="margin-top:14px;">오늘의 한마디</label>
+      <textarea id="dailyMemo" placeholder="오늘 공부하면서 느낀 점이나 다짐을 적어보세요." rows="2" oninput="savePlannerNote()"></textarea>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ 2. 자기주도 글분석 ══════════════════════ -->
+  <div class="panel" id="panel-analysis">
+    <div class="section-header">
+      <div class="section-icon">🔍</div>
+      <div>
+        <h2>자기주도 글분석</h2>
+        <p>텍스트를 읽고 핵심 주제, 키워드, 요약을 직접 분석해요.</p>
+      </div>
+    </div>
+
+    <div class="analysis-layout">
+      <div class="analysis-input-col">
+        <div class="card">
+          <div class="card-title"><span>📄</span> 원문 입력</div>
+          <label>글 제목</label>
+          <input type="text" id="analysisTitle" placeholder="예: 광합성의 원리">
+          <label>원문 붙여넣기</label>
+          <textarea id="analysisText" placeholder="분석할 글을 여기에 붙여넣으세요." rows="10"></textarea>
+          <div id="wordCountInfo" style="font-size:0.78rem;color:var(--text-light);margin-top:6px;text-align:right;"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-title"><span>🏷️</span> 핵심 키워드</div>
+          <div class="keyword-chips" id="keywordChips"></div>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="keywordInput" placeholder="키워드 입력 후 Enter" style="flex:1;">
+            <button class="btn btn-secondary btn-sm" onclick="addKeyword()">추가</button>
+          </div>
+        </div>
+        <div class="card" style="margin-top:14px;">
+          <div class="card-title"><span>💡</span> 핵심 주제</div>
+          <textarea id="analysisTopic" placeholder="이 글의 핵심 주제는 무엇인가요?" rows="3"></textarea>
+        </div>
+        <div class="card" style="margin-top:14px;">
+          <div class="card-title"><span>📝</span> 단락 요약</div>
+          <textarea id="analysisSummary" placeholder="각 단락의 내용을 간략하게 요약하세요." rows="4"></textarea>
+        </div>
+        <div class="card" style="margin-top:14px;">
+          <div class="card-title"><span>💭</span> 나의 생각</div>
+          <textarea id="analysisOpinion" placeholder="이 글을 읽고 느낀 점이나 의문점을 자유롭게 적어보세요." rows="4"></textarea>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="saveAnalysis()">💾 분석 저장</button>
+          <button class="btn btn-secondary" onclick="clearAnalysis()">🗑️ 초기화</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="saved-analyses">
+      <div class="card-title" style="margin-bottom:12px;"><span>📚</span> 저장된 글분석</div>
+      <div id="analysisList"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ 3. 자기주도 속해독서 ══════════════════════ -->
+  <div class="panel" id="panel-reading">
+    <div class="section-header">
+      <div class="section-icon">📖</div>
+      <div>
+        <h2>자기주도 속해독서</h2>
+        <p>독서 시간을 측정하고 이해도 문제를 스스로 만들어요.</p>
+      </div>
+    </div>
+
+    <!-- 교재 지문 선택 -->
+    <div class="card" style="background:linear-gradient(135deg,#f1f8e9,#e8f5e9);">
+      <div class="card-title"><span>📋</span> 속해독서 교재 지문 (상권 1~47번)</div>
+      <p style="font-size:0.82rem;color:var(--text-light);margin-bottom:8px;">지문을 선택하면 제목과 글자 수가 자동으로 입력됩니다.</p>
+      <select id="passageSelect" onchange="applyPassage(this.value)">
+        <option value="">-- 지문 선택 --</option>
+      </select>
+      <div id="passageInfo" style="display:none;margin-top:8px;">
+        <span class="ptag" id="passageNumTag"></span>
+        <span class="ptag" id="passageCharTag"></span>
+      </div>
+    </div>
+
+    <!-- 속해독서법 안내 -->
+    <div class="card">
+      <div class="card-title" id="methodHeader" onclick="toggleSokhaeMethod()" style="cursor:pointer;user-select:none;">
+        <span>⚡</span> 지력 속해독서법 안내
+        <span id="methodToggleBtn" style="margin-left:auto;font-size:0.8rem;color:var(--ivy-mid);">▼ 펼치기</span>
+      </div>
+      <div id="methodContent" style="display:none;margin-top:10px;">
+        <div class="rmethod"><strong>(1) 바른 자세</strong><ul>
+          <li>모든 독서의 기본은 자세부터 바르게 갖는 것</li>
+          <li>자세가 바르면 내용도 바르게 들어온다</li>
+        </ul></div>
+        <div class="rmethod"><strong>(2) 3초 호흡</strong><ul>
+          <li>마음을 안정된 상태로 만들어 준다</li>
+          <li>산소공급을 원활히 하고 편안한 마음을 갖게 해준다</li>
+        </ul></div>
+        <div class="rmethod"><strong>(3) 묵독 방지</strong><ul>
+          <li>속으로 따라 읽는 버릇을 방지하기 위해 혀를 고정시키고 입을 콱 다물기</li>
+          <li>상상훈련 중에도 혀를 움직이지 않는다</li>
+        </ul></div>
+        <div class="rmethod"><strong>(4) 안구 훈련</strong><ul>
+          <li>얼굴의 콧날선과 책의 제본선(세로 중심선)을 일치시킨다</li>
+          <li>책과 눈의 거리는 30~40cm를 유지한다</li>
+          <li>머리를 고정시키며 입술을 움직이지 않게 한다</li>
+        </ul></div>
+        <div class="rmethod"><strong>(5) 사선 치기 /</strong><ul>
+          <li>처음에는 한 단어씩 연습 (답답함은 자연스럽게 해소됨)</li>
+          <li>두 단어 혹은 세 단어씩 늘려 나간다</li>
+          <li>글자 사이에 사선(/)을 이해되는 범위로 치며 읽는다</li>
+        </ul></div>
+        <div style="margin-top:12px;">
+          <button class="btn btn-secondary btn-sm" onclick="openEyeModal()">👁️ 안구 훈련표 열기</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>📚</span> 독서 정보</div>
+      <div class="grid-2">
+        <div>
+          <label>책 / 글 제목</label>
+          <input type="text" id="bookTitle" placeholder="예: 수학의 정석 3-1">
+        </div>
+        <div>
+          <label>총 글자 수 (어림)</label>
+          <input type="number" id="wordCount" placeholder="예: 2000" min="1">
+        </div>
+      </div>
+    </div>
+
+    <div class="reading-timer-box">
+      <div>
+        <div style="font-size:0.8rem;font-weight:700;color:var(--ivy-mid);margin-bottom:4px;">독서 타이머</div>
+        <div class="timer-display" id="timerDisplay">00:00</div>
+        <div id="readingSpeed" style="display:none;" class="speed-badge">
+          📊 <span id="speedVal">-</span> 글자/분
+        </div>
+      </div>
+      <div class="timer-controls">
+        <button class="btn btn-primary" id="timerStartBtn" onclick="timerStart()">▶ 시작</button>
+        <button class="btn btn-secondary" id="timerStopBtn" onclick="timerStop()" disabled>⏹ 정지</button>
+        <button class="btn btn-secondary" onclick="timerReset()">↺ 리셋</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>❓</span> 이해도 확인 질문</div>
+      <div id="questionList"></div>
+      <div class="btn-group">
+        <button class="btn btn-secondary btn-sm" onclick="addQuestion()">+ 질문 추가</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>⭐</span> 독서 평가</div>
+      <div class="grid-2">
+        <div>
+          <label>이해도 (1~5)</label>
+          <select id="readingComprehension">
+            <option value="5">⭐⭐⭐⭐⭐ 완전히 이해</option>
+            <option value="4">⭐⭐⭐⭐ 거의 이해</option>
+            <option value="3" selected>⭐⭐⭐ 보통</option>
+            <option value="2">⭐⭐ 조금 이해</option>
+            <option value="1">⭐ 어려웠음</option>
+          </select>
+        </div>
+        <div>
+          <label>복습 필요도</label>
+          <select id="readingReview">
+            <option value="high">🔴 꼭 복습 필요</option>
+            <option value="mid" selected>🟡 나중에 복습</option>
+            <option value="low">🟢 괜찮음</option>
+          </select>
+        </div>
+      </div>
+      <label>한줄 감상</label>
+      <input type="text" id="readingMemo" placeholder="이 글에서 가장 중요한 내용 한 줄로 요약">
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="saveReading()">💾 독서 기록 저장</button>
+      </div>
+    </div>
+
+    <div class="reading-records">
+      <div class="card-title" style="margin-bottom:12px;"><span>📖</span> 독서 기록</div>
+      <div id="readingList"></div>
+    </div>
+
+    <!-- 속도 향상 그래프 -->
+    <div class="reading-records" style="margin-top:4px;">
+      <div class="card-title" style="margin-bottom:12px;"><span>📈</span> 나의 속도 향상 그래프</div>
+      <div class="card" style="padding:16px;">
+        <div id="speedChartContainer"></div>
+        <div style="font-size:0.75rem;color:var(--text-light);margin-top:6px;text-align:center;">최근 기록 기준 · 분당 글자 수 추이</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ 4. 통합노트 ══════════════════════ -->
+  <div class="panel" id="panel-note">
+    <div class="section-header">
+      <div class="section-icon">📝</div>
+      <div>
+        <h2>통합노트</h2>
+        <p>코넬 노트 방식으로 핵심 키워드와 내용, 요약을 함께 기록해요.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cornell-layout">
+        <div class="cornell-header">
+          <input type="text" id="noteTitle" placeholder="노트 제목 (예: 수학 - 함수의 극한)">
+          <input type="text" id="noteSubject" placeholder="과목" style="max-width:100px;">
+          <input type="date" id="noteDate">
+        </div>
+        <div class="cornell-keywords">
+          <div class="cornell-keywords-label">🔑 핵심 키워드</div>
+          <textarea id="noteKeywords" placeholder="핵심 개념, 용어, 공식 등을 적어요."></textarea>
+        </div>
+        <div class="cornell-notes">
+          <div class="cornell-notes-label">✍️ 학습 내용</div>
+          <textarea id="noteContent" placeholder="수업 내용, 중요 개념, 예제 등을 상세히 기록하세요."></textarea>
+        </div>
+        <div class="cornell-summary">
+          <div class="cornell-summary-label">📌 핵심 요약</div>
+          <textarea id="noteSummary" placeholder="전체 내용을 2~3문장으로 요약하세요."></textarea>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="saveNote()">💾 노트 저장</button>
+        <button class="btn btn-secondary" onclick="clearNote()">🗑️ 초기화</button>
+      </div>
+    </div>
+
+    <div class="saved-notes">
+      <div class="card-title" style="margin-bottom:12px;"><span>🗂️</span> 저장된 노트</div>
+      <div id="noteList"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ 5. 복습 노트 ══════════════════════ -->
+  <div class="panel" id="panel-review">
+    <div class="section-header">
+      <div class="section-icon">🃏</div>
+      <div>
+        <h2>복습 노트</h2>
+        <p>플래시카드로 중요 내용을 반복 복습해요.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>➕</span> 복습 카드 추가</div>
+      <div class="grid-2">
+        <div>
+          <label>앞면 (질문 / 개념)</label>
+          <textarea id="cardFront" placeholder="예: 광합성이란?" rows="3"></textarea>
+        </div>
+        <div>
+          <label>뒷면 (답 / 설명)</label>
+          <textarea id="cardBack" placeholder="예: 빛 에너지를 이용해 포도당을 만드는 과정" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-top:8px;">
+        <div>
+          <label>과목 태그</label>
+          <input type="text" id="cardSubject" placeholder="예: 생물, 수학, 영어">
+        </div>
+        <div>
+          <label>상태</label>
+          <select id="cardStatus">
+            <option value="learning">🟠 학습중</option>
+            <option value="review">🔵 복습중</option>
+            <option value="done">🟢 완료</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="addReviewCard()">➕ 카드 추가</button>
+      </div>
+    </div>
+
+    <div class="review-controls">
+      <div class="review-filter">
+        <button class="filter-btn active" onclick="filterCards('all', this)">전체</button>
+        <button class="filter-btn" onclick="filterCards('learning', this)">학습중</button>
+        <button class="filter-btn" onclick="filterCards('review', this)">복습중</button>
+        <button class="filter-btn" onclick="filterCards('done', this)">완료</button>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="shuffleCards()" style="margin-left:auto;">🔀 섞기</button>
+      <button class="btn btn-secondary btn-sm" onclick="flipAllCards()">🔄 전체 뒤집기</button>
+    </div>
+
+    <div class="cards-grid" id="reviewCardGrid"></div>
+  </div>
+
+  <!-- ══════════════════════ 학습 루틴 ══════════════════════ -->
+  <div class="panel" id="panel-routine">
+    <div class="section-header">
+      <div class="section-icon">🌿</div>
+      <div>
+        <h2>담쟁이 학습 루틴</h2>
+        <p>상위 1%의 꿈, 학습무기를 준비하라 — 1강. 학습바인더와 상위 1%</p>
+      </div>
+    </div>
+
+    <div class="card" style="background:linear-gradient(135deg,#fff9c4,#fff3e0);border:2px solid #ffe082;">
+      <p style="font-size:14px;line-height:1.9;color:#5d4037;">
+        방법의 차이가 결과를 결정합니다. 열심히 공부하는 것만으로는 부족합니다.
+        <strong style="color:#e65100;">좋은 도구와 학습패턴</strong>을 갖춰야 우리가 꿈꾸는 곳까지 올라갈 수 있습니다.
+        같은 실력이라도 <strong style="color:#e65100;">수영복의 종류에 따라 메달이 결정</strong>되듯, 도구의 차이가 결과를 결정합니다.
+      </p>
+    </div>
+
+    <!-- 섹션 1 -->
+    <div style="display:flex;align-items:center;gap:12px;margin:32px 0 16px;">
+      <div style="background:#1b5e20;color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;">1</div>
+      <h3 style="font-size:1.2rem;font-weight:700;color:#1b5e20;border-bottom:2px solid #7bc67b;padding-bottom:4px;">공부의 시작과 끝을 알라</h3>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>학습 5단계 흐름</span></div>
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0;margin-top:8px;">
+        <div style="background:#2d6a2d;color:white;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;text-align:center;flex:1;min-width:70px;">전체<br>보기</div>
+        <div style="color:#4a9e4a;font-size:20px;font-weight:700;padding:0 6px;flex-shrink:0;">›</div>
+        <div style="background:#388e3c;color:white;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;text-align:center;flex:1;min-width:70px;">교과서<br>읽기</div>
+        <div style="color:#4a9e4a;font-size:20px;font-weight:700;padding:0 6px;flex-shrink:0;">›</div>
+        <div style="background:#43a047;color:white;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;text-align:center;flex:1;min-width:70px;">노트<br>정리</div>
+        <div style="color:#4a9e4a;font-size:20px;font-weight:700;padding:0 6px;flex-shrink:0;">›</div>
+        <div style="background:#66bb6a;color:white;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;text-align:center;flex:1;min-width:70px;">문제<br>풀이</div>
+        <div style="color:#4a9e4a;font-size:20px;font-weight:700;padding:0 6px;flex-shrink:0;">›</div>
+        <div style="background:#81c784;color:white;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;text-align:center;flex:1;min-width:70px;">반복<br>풀이</div>
+      </div>
+    </div>
+    <div class="card">
+      <h4 style="font-size:1rem;font-weight:700;color:#1b5e20;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #c8e6c8;">왜 공부의 시작과 끝을 알아야 하는가</h4>
+      <p style="font-size:13.5px;color:#444;line-height:1.9;margin-bottom:10px;">공부를 잘하는 학생의 특징은 <strong>공부의 시작과 끝을 안다</strong>는 것입니다. 즉 학습의 패턴을 알고 있는 학생이 우등생이 된다는 의미입니다.</p>
+      <div style="background:#e8f5e9;border-left:4px solid #4a9e4a;padding:12px 18px;border-radius:0 10px 10px 0;font-size:14px;font-weight:600;color:#1b5e20;margin:14px 0;font-style:italic;">"답의 절반은 목차에 있다" — 전체의 흐름을 잡으면 공부의 절반은 끝납니다.</div>
+      <p style="font-size:13.5px;color:#444;line-height:1.9;margin-bottom:10px;"><strong>전체보기</strong>에서 숲을 본 다음 나무를 봐야 합니다. 전체를 볼 수 없으면 부분간의 연결고리를 찾을 수 없고, 열심히 공부한 것들이 산발적인 지식이 되어 얼마 지나지 않아 망각의 지평으로 사라집니다.</p>
+      <p style="font-size:13.5px;color:#444;line-height:1.9;margin-bottom:10px;"><strong>교과서 읽기</strong>는 최소 5번 이상 해야 합니다. <strong>노트 정리</strong>의 목적은 암기와 반복학습에 있습니다. 교과서 내용이 정리되면 <strong>나의 약점(오답 10% 이내)</strong>을 찾아서 반복학습으로 완벽하게 해결해야 합니다.</p>
+    </div>
+
+    <!-- 섹션 2 -->
+    <div style="display:flex;align-items:center;gap:12px;margin:32px 0 16px;">
+      <div style="background:#1b5e20;color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;">2</div>
+      <h3 style="font-size:1.2rem;font-weight:700;color:#1b5e20;border-bottom:2px solid #7bc67b;padding-bottom:4px;">나만의 노트를 만들어라</h3>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>4가지 관리 도구</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px;">
+        <div style="border-radius:12px;overflow:hidden;display:flex;">
+          <div style="padding:14px 16px;font-size:14px;font-weight:700;color:white;min-width:100px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.4;background:#c62828;">리더십<br>플래너</div>
+          <div style="background:#f5f5f5;padding:14px 16px;font-size:13px;color:#444;display:flex;align-items:center;flex:1;font-weight:600;">📅 시간관리 도구</div>
+        </div>
+        <div style="border-radius:12px;overflow:hidden;display:flex;">
+          <div style="padding:14px 16px;font-size:14px;font-weight:700;color:white;min-width:100px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.4;background:#2e7d32;">핵심정리<br>노트</div>
+          <div style="background:#f5f5f5;padding:14px 16px;font-size:13px;color:#444;display:flex;align-items:center;flex:1;font-weight:600;">📚 교과관리 도구</div>
+        </div>
+        <div style="border-radius:12px;overflow:hidden;display:flex;">
+          <div style="padding:14px 16px;font-size:14px;font-weight:700;color:white;min-width:100px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.4;background:#6a1b9a;">복습<br>노트</div>
+          <div style="background:#f5f5f5;padding:14px 16px;font-size:13px;color:#444;display:flex;align-items:center;flex:1;font-weight:600;">🔁 수업관리 도구</div>
+        </div>
+        <div style="border-radius:12px;overflow:hidden;display:flex;">
+          <div style="padding:14px 16px;font-size:14px;font-weight:700;color:white;min-width:100px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.4;background:#1565c0;">오답<br>노트</div>
+          <div style="background:#f5f5f5;padding:14px 16px;font-size:13px;color:#444;display:flex;align-items:center;flex:1;font-weight:600;">✏️ 시험관리 도구</div>
+        </div>
+      </div>
+      <div style="background:#e8f5e9;border-left:4px solid #4a9e4a;padding:12px 18px;border-radius:0 10px 10px 0;font-size:14px;font-weight:600;color:#1b5e20;margin-top:16px;font-style:italic;">상위권 학생들의 대부분의 특징은 통합된 자신만의 노트를 가지고 있다는 것입니다.</div>
+    </div>
+
+    <!-- 섹션 3 -->
+    <div style="display:flex;align-items:center;gap:12px;margin:32px 0 16px;">
+      <div style="background:#1b5e20;color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;">3</div>
+      <h3 style="font-size:1.2rem;font-weight:700;color:#1b5e20;border-bottom:2px solid #7bc67b;padding-bottom:4px;">공부의 절대시간을 확보하라</h3>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <div style="background:linear-gradient(135deg,#a5d6a7,#81c784);width:160px;height:80px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;font-weight:700;color:#1b5e20;padding:8px;clip-path:polygon(0 0,100% 0,80% 100%,20% 100%);">상위 1%<br>중학생(고등학생)<br>자기주도학습 시간은?</div>
+          <div style="color:#2e7d32;font-size:28px;margin:4px 0;">▼</div>
+          <div style="background:white;border:2px solid #4a9e4a;border-radius:10px;padding:14px 20px;text-align:center;font-size:13px;font-weight:700;color:#2d6a2d;line-height:1.8;min-width:160px;">학기: <strong>3시간</strong> (고등 6시간)<br>방학: <strong>6시간</strong> (고등 12시간)</div>
+        </div>
+        <div style="flex:1;font-size:14px;color:#444;line-height:1.9;">
+          <p style="margin-bottom:10px;">2005년 한국교육개발원의 조사에 따르면 고교생 상위 10%안에 드는 74.3%가 <strong>하루 3시간</strong> 정도를 집중적으로 공부한다고 답했습니다.</p>
+          <div style="background:#e8f5e9;border-left:4px solid #4a9e4a;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;color:#1b5e20;font-weight:600;">혼자 공부하는 시간의 많고 적음에 따라 성적이 달라질 수 있습니다.<br>먼저 3시간을 어떻게 보낼 지 <strong>계획</strong>을 짜고,<br>각 과목을 공부하는 데 반드시 <strong>30분 단위의 계획</strong>을 세워야 합니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 섹션 4 -->
+    <div style="display:flex;align-items:center;gap:12px;margin:32px 0 16px;">
+      <div style="background:#1b5e20;color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;">4</div>
+      <h3 style="font-size:1.2rem;font-weight:700;color:#1b5e20;border-bottom:2px solid #7bc67b;padding-bottom:4px;">5·4·3 시스템</h3>
+    </div>
+    <div style="background:linear-gradient(135deg,#1b5e20,#2e7d32);color:white;text-align:center;padding:18px;border-radius:14px;font-size:1.4rem;font-weight:800;letter-spacing:2px;margin-bottom:16px;">4 · <span style="color:#a5d6a7;">5</span> · 4 · <span style="color:#a5d6a7;">3</span> 시스템</div>
+
+    <div class="card">
+      <div class="card-title"><span>② 4가지 학습노트 PLAN → SEE</span></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);border-radius:14px;overflow:hidden;margin-top:8px;">
+        <div style="padding:18px 14px;text-align:center;color:white;background:#c62828;">
+          <div style="font-size:10px;letter-spacing:1px;opacity:.85;margin-bottom:4px;">P L A N</div>
+          <div style="font-size:10px;opacity:.8;">준비 계획</div>
+          <div style="background:rgba(255,255,255,.25);border-radius:8px;padding:6px;font-size:13px;font-weight:700;margin:8px 0 4px;">플래너</div>
+          <div style="font-size:11px;opacity:.9;">목표, 계획수립</div>
+        </div>
+        <div style="padding:18px 14px;text-align:center;color:white;background:#2e7d32;">
+          <div style="font-size:10px;letter-spacing:1px;opacity:.85;margin-bottom:4px;">L E S S O N</div>
+          <div style="font-size:10px;opacity:.8;">배우는 과정</div>
+          <div style="background:rgba(255,255,255,.25);border-radius:8px;padding:6px;font-size:13px;font-weight:700;margin:8px 0 4px;">복습노트</div>
+          <div style="font-size:11px;opacity:.9;">학교 수업</div>
+        </div>
+        <div style="padding:18px 14px;text-align:center;color:white;background:#6a1b9a;">
+          <div style="font-size:10px;letter-spacing:1px;opacity:.85;margin-bottom:4px;">D O</div>
+          <div style="font-size:10px;opacity:.8;">익히는 과정</div>
+          <div style="background:rgba(255,255,255,.25);border-radius:8px;padding:6px;font-size:13px;font-weight:700;margin:8px 0 4px;">정리노트</div>
+          <div style="font-size:11px;opacity:.9;">스스로 학습</div>
+        </div>
+        <div style="padding:18px 14px;text-align:center;color:white;background:#00838f;">
+          <div style="font-size:10px;letter-spacing:1px;opacity:.85;margin-bottom:4px;">T E S T</div>
+          <div style="font-size:10px;opacity:.8;">예비·실제 시험</div>
+          <div style="background:rgba(255,255,255,.25);border-radius:8px;padding:6px;font-size:13px;font-weight:700;margin:8px 0 4px;">오답노트</div>
+          <div style="font-size:11px;opacity:.9;">자신감, 즐거움</div>
+        </div>
+      </div>
+      <div style="background:#e65100;color:white;text-align:center;padding:12px;font-size:13px;font-weight:700;border-radius:10px;margin-top:10px;">🔄 SEE — 시련을 통해 배우는 피드백<br><span style="font-size:11px;opacity:.9;">결과분석 / 새 출발</span></div>
+    </div>
+
+    <!-- 섹션 5 코칭 5P -->
+    <div style="display:flex;align-items:center;gap:12px;margin:32px 0 16px;">
+      <div style="background:#1b5e20;color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;">5</div>
+      <h3 style="font-size:1.2rem;font-weight:700;color:#1b5e20;border-bottom:2px solid #7bc67b;padding-bottom:4px;">코칭체크 5P</h3>
+    </div>
+    <div class="card">
+      <div style="display:flex;gap:20px;flex-wrap:wrap;">
+        <div style="background:#f9fbe7;border:2px solid #aed581;border-radius:12px;padding:20px 24px;min-width:180px;">
+          <ul style="list-style:none;">
+            <li style="padding:6px 0;font-size:14px;font-weight:600;border-bottom:1px dashed #c5e1a5;color:#2d6a2d;">Plan <span style="color:#888;font-size:12px;margin-left:6px;">계획</span></li>
+            <li style="padding:6px 0;font-size:14px;font-weight:600;border-bottom:1px dashed #c5e1a5;color:#2d6a2d;">Preparation <span style="color:#888;font-size:12px;margin-left:6px;">준비</span></li>
+            <li style="padding:6px 0;font-size:14px;font-weight:600;border-bottom:1px dashed #c5e1a5;color:#2d6a2d;">Practice <span style="color:#888;font-size:12px;margin-left:6px;">연습</span></li>
+            <li style="padding:6px 0;font-size:14px;font-weight:600;border-bottom:1px dashed #c5e1a5;color:#2d6a2d;">Pen-paper <span style="color:#888;font-size:12px;margin-left:6px;">기록</span></li>
+            <li style="padding:6px 0;font-size:14px;font-weight:600;color:#2d6a2d;">Performance <span style="color:#888;font-size:12px;margin-left:6px;">성과</span></li>
+          </ul>
+        </div>
+        <div style="flex:1;min-width:200px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="border-radius:50%;width:90px;height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:white;font-weight:700;font-size:14px;margin:0 auto;background:linear-gradient(135deg,#e53935,#c62828);">계획<small style="font-size:10px;opacity:.9;margin-top:2px;display:block;">Plan</small></div>
+          <div style="border-radius:50%;width:90px;height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:white;font-weight:700;font-size:14px;margin:0 auto;background:linear-gradient(135deg,#43a047,#2e7d32);">준비<small style="font-size:10px;opacity:.9;margin-top:2px;display:block;">Preparation</small></div>
+          <div style="border-radius:50%;width:90px;height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:white;font-weight:700;font-size:14px;margin:0 auto;background:linear-gradient(135deg,#1e88e5,#1565c0);">기록<small style="font-size:10px;opacity:.9;margin-top:2px;display:block;">Pen-paper</small></div>
+          <div style="border-radius:50%;width:90px;height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:white;font-weight:700;font-size:14px;margin:0 auto;background:linear-gradient(135deg,#fb8c00,#e65100);">연습<small style="font-size:10px;opacity:.9;margin-top:2px;display:block;">Practice</small></div>
+        </div>
+      </div>
+      <div style="margin-top:18px;padding:16px;background:#e8f5e9;border-radius:10px;font-size:13px;color:#1b5e20;line-height:1.8;">
+        <strong>학습바인더</strong>는 이 5P를 실천하는 도구입니다. 계획을 세우고(Plan), 준비하며(Preparation), 직접 연습하고(Practice), 기록으로 남기며(Pen-paper), 결과로 성과를 만들어냅니다(Performance). 학습바인더를 통해 상위 1%의 꿈은 반드시 이루어집니다.
+      </div>
+    </div>
+
+    <!-- 핵심 정리 -->
+    <div class="card" style="border-left:5px solid #e65100;margin-top:8px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-weight:700;color:#e65100;margin-bottom:8px;font-size:14px;">공부의 3가지 핵심 원칙</div>
+          <div style="font-size:13px;line-height:2;color:#444;">① 공부의 <strong>시작과 끝</strong>을 알라<br>② <strong>나만의 노트</strong>를 만들어라<br>③ 공부의 <strong>절대시간</strong>을 확보하라</div>
+        </div>
+        <div>
+          <div style="font-weight:700;color:#1b5e20;margin-bottom:8px;font-size:14px;">4가지 학습 도구</div>
+          <div style="font-size:13px;line-height:2;color:#444;">🔴 리더십 플래너 — 시간관리<br>🟢 핵심정리노트 — 교과관리<br>🟣 복습노트 — 수업관리<br>🔵 오답노트 — 시험관리</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  🌿 담쟁이 자기주도 학습코칭 — 모든 데이터는 이 브라우저에만 저장됩니다.
+</footer>
+
+<div id="toast"></div>
+
+<!-- ── 안구 훈련표 모달 ── -->
+<div class="modal-overlay" id="eyeTrainingModal">
+  <div class="modal" style="max-width:560px;">
+    <button class="modal-close" onclick="closeModal('eyeTrainingModal')">✕</button>
+    <div class="modal-title">👁️ 안구 훈련표</div>
+    <div style="overflow-x:auto;"><div id="eyeTableContent"></div></div>
+    <p style="font-size:0.78rem;color:var(--text-light);margin-top:10px;line-height:1.6;">
+      양쪽 끝의 ●에서 ●으로 눈을 빠르게 좌우로 이동시키며 훈련하세요.<br>
+      ○ 한 줄을 1회로 계산합니다. 1분 동안 몇 회를 했는지 기록하세요.
+    </p>
+  </div>
+</div>
+
+<!-- ── 분석 보기 모달 ── -->
+<div class="modal-overlay" id="analysisViewModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('analysisViewModal')">✕</button>
+    <div class="modal-title" id="analysisViewTitle"></div>
+    <div id="analysisViewContent"></div>
+    <div class="btn-group">
+      <button class="btn btn-danger btn-sm" onclick="deleteCurrentAnalysis()">🗑️ 삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 노트 보기 모달 ── -->
+<div class="modal-overlay" id="noteViewModal">
+  <div class="modal" style="max-width:700px;">
+    <button class="modal-close" onclick="closeModal('noteViewModal')">✕</button>
+    <div class="modal-title" id="noteViewTitle"></div>
+    <div id="noteViewContent"></div>
+    <div class="btn-group">
+      <button class="btn btn-secondary btn-sm" onclick="loadNoteForEdit()">✏️ 편집</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCurrentNote()">🗑️ 삭제</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 유틸 ──
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function fmtDate(d) {
+  const days = ['일','월','화','수','목','금','토'];
+  return `${d.getMonth()+1}/${d.getDate()} (${days[d.getDay()]})`;
+}
+function isoDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function load(key, def) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; }
+}
+function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+// ── TAB 전환 ──
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'reading') renderSpeedChart();
+}
+
+// ══════════════════════════════════
+// 1. 자기주도 플래너
+// ══════════════════════════════════
+let currentWeekOffset = 0;
+let selectedDate = isoDate(new Date());
+
+function getWeekDates(offset) {
+  const today = new Date();
+  const dow = today.getDay();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - dow + 1 + offset * 7);
+  return Array.from({length: 7}, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  });
+}
+
+function renderWeek() {
+  const dates = getWeekDates(currentWeekOffset);
+  const today = isoDate(new Date());
+  document.getElementById('weekLabel').textContent =
+    `${dates[0].getMonth()+1}월 ${dates[0].getDate()}일 ~ ${dates[6].getMonth()+1}월 ${dates[6].getDate()}일`;
+  const dayNames = ['월','화','수','목','금','토','일'];
+  const cont = document.getElementById('weekDays');
+  cont.innerHTML = '';
+  dates.forEach((d, i) => {
+    const key = isoDate(d);
+    const plan = load('planner_' + key, { subjects: [], memo: '' });
+    const hasTasks = plan.subjects.length > 0;
+    const div = document.createElement('div');
+    div.className = 'day-card' + (key === today ? ' today' : '') + (key === selectedDate ? ' selected' : '');
+    div.innerHTML = `<div class="day-name">${dayNames[i]}</div>
+      <div class="day-num">${d.getDate()}</div>
+      <div class="day-dot${hasTasks ? ' has-tasks' : ''}"></div>`;
+    div.onclick = () => selectDay(key);
+    cont.appendChild(div);
+  });
+}
+
+function changeWeek(dir) { currentWeekOffset += dir; renderWeek(); }
+
+function selectDay(dateKey) {
+  selectedDate = dateKey;
+  renderWeek();
+  renderPlannerDetail();
+  document.getElementById('selectedDateLabel').textContent = `📋 ${dateKey} 학습 계획`;
+}
+
+function renderPlannerDetail() {
+  const plan = load('planner_' + selectedDate, { subjects: [], memo: '' });
+  const list = document.getElementById('subjectList');
+  list.innerHTML = '';
+  plan.subjects.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'subject-row' + (s.done ? ' done' : '');
+    row.innerHTML = `
+      <input type="checkbox" ${s.done ? 'checked' : ''} onchange="toggleSubject(${i})">
+      <input class="subj-name" type="text" value="${s.name || ''}" placeholder="과목/내용" onblur="updateSubjectName(${i}, this.value)">
+      <input class="subj-time" type="text" value="${s.time || ''}" placeholder="시간" onblur="updateSubjectTime(${i}, this.value)">
+      <button class="subj-del" onclick="deleteSubject(${i})">✕</button>`;
+    list.appendChild(row);
+  });
+  document.getElementById('dailyMemo').value = plan.memo || '';
+  updateProgress();
+}
+
+function addSubject() {
+  const plan = load('planner_' + selectedDate, { subjects: [], memo: '' });
+  plan.subjects.push({ name: '', time: '', done: false });
+  save('planner_' + selectedDate, plan);
+  renderPlannerDetail();
+  renderWeek();
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('.subj-name');
+    if (inputs.length) inputs[inputs.length-1].focus();
+  }, 50);
+}
+
+function toggleSubject(i) {
+  const plan = load('planner_' + selectedDate, { subjects: [], memo: '' });
+  plan.subjects[i].done = !plan.subjects[i].done;
+  save('planner_' + selectedDate, plan);
+  renderPlannerDetail();
+}
+
+function updateSubjectName(i, val) {
+  const plan = load('planner_' + selectedDate, { subjects: [], memo: '' });
+  plan.subjects[i].name = val;
+  save('planner_' + selectedDate, plan);
+  renderWeek();
+}
+
+function updateSubjectTime(i, val) {
+  const plan = load('planner_' + selectedDate, { subjects: [], memo: '' });
+  plan.subjects[i].time = val;
+  save('planner_' + selectedDate, plan);
+}
+
+function deleteSubject(i) {
+  const plan = load('planner_' + selectedDate, { subjects: [], memo: '' });
+  plan.subjects.splice(i, 1);
+  save('planner_' + selectedDate, plan);
+  renderPlannerDetail();
+  renderWeek();
+}
+
+function savePlannerNote() {
+  const plan = load('planner_' + selectedDate, { subjects: [], memo: '' });
+  plan.memo = document.getElementById('dailyMemo').value;
+  save('planner_' + selectedDate, plan);
+}
+
+function updateProgress() {
+  const plan = load('planner_' + selectedDate, { subjects: [], memo: '' });
+  const total = plan.subjects.length;
+  const done = plan.subjects.filter(s => s.done).length;
+  const pct = total === 0 ? 0 : Math.round(done / total * 100);
+  document.getElementById('progressPercent').textContent = pct + '%';
+  document.getElementById('progressCount').textContent = `${done} / ${total}`;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+// ══════════════════════════════════
+// 2. 자기주도 글분석
+// ══════════════════════════════════
+let keywords = [];
+let currentAnalysisId = null;
+
+document.getElementById('keywordInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); addKeyword(); }
+});
+
+document.getElementById('analysisText').addEventListener('input', function() {
+  const len = this.value.replace(/\s/g, '').length;
+  document.getElementById('wordCountInfo').textContent = len > 0 ? `📊 글자 수: ${this.value.length}자 (공백 제외: ${len}자)` : '';
+});
+
+function renderKeywords() {
+  const cont = document.getElementById('keywordChips');
+  cont.innerHTML = '';
+  keywords.forEach((k, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.innerHTML = `${k}<span class="chip-del" onclick="removeKeyword(${i})">✕</span>`;
+    cont.appendChild(chip);
+  });
+}
+
+function addKeyword() {
+  const inp = document.getElementById('keywordInput');
+  const val = inp.value.trim();
+  if (!val) return;
+  if (!keywords.includes(val)) { keywords.push(val); renderKeywords(); }
+  inp.value = '';
+}
+
+function removeKeyword(i) { keywords.splice(i, 1); renderKeywords(); }
+
+function saveAnalysis() {
+  const title = document.getElementById('analysisTitle').value.trim();
+  if (!title) { toast('❗ 글 제목을 입력하세요.'); return; }
+  const list = load('analyses', []);
+  const item = {
+    id: currentAnalysisId || Date.now(),
+    title,
+    text: document.getElementById('analysisText').value,
+    keywords: [...keywords],
+    topic: document.getElementById('analysisTopic').value,
+    summary: document.getElementById('analysisSummary').value,
+    opinion: document.getElementById('analysisOpinion').value,
+    date: new Date().toLocaleDateString('ko-KR')
+  };
+  const idx = list.findIndex(a => a.id === item.id);
+  if (idx >= 0) list[idx] = item; else list.unshift(item);
+  save('analyses', list);
+  currentAnalysisId = item.id;
+  renderAnalysisList();
+  toast('✅ 글분석이 저장되었습니다.');
+}
+
+function clearAnalysis() {
+  if (!confirm('작성 중인 내용을 초기화할까요?')) return;
+  ['analysisTitle','analysisText','analysisTopic','analysisSummary','analysisOpinion'].forEach(id =>
+    document.getElementById(id).value = '');
+  keywords = []; renderKeywords();
+  currentAnalysisId = null;
+  document.getElementById('wordCountInfo').textContent = '';
+}
+
+function renderAnalysisList() {
+  const list = load('analyses', []);
+  const cont = document.getElementById('analysisList');
+  if (list.length === 0) {
+    cont.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><p>저장된 글분석이 없습니다.</p></div>';
+    return;
+  }
+  cont.innerHTML = list.map(a => `
+    <div class="analysis-item" onclick="viewAnalysis(${a.id})">
+      <div class="analysis-item-title">${a.title}</div>
+      <div class="analysis-item-meta">📅 ${a.date} · 키워드: ${a.keywords.slice(0,3).join(', ')}${a.keywords.length>3?'...':''}</div>
+    </div>`).join('');
+}
+
+function viewAnalysis(id) {
+  const list = load('analyses', []);
+  const item = list.find(a => a.id === id);
+  if (!item) return;
+  currentAnalysisId = id;
+  document.getElementById('analysisViewTitle').textContent = '🔍 ' + item.title;
+  document.getElementById('analysisViewContent').innerHTML = `
+    <div style="margin-bottom:10px;"><strong>📅 날짜:</strong> ${item.date}</div>
+    <div style="margin-bottom:8px;"><strong>🏷️ 키워드:</strong> ${item.keywords.map(k => `<span class="chip" style="display:inline-flex;margin:2px;">${k}</span>`).join('')}</div>
+    <div style="margin-bottom:8px;"><strong>💡 핵심 주제:</strong><br><span style="color:var(--text-mid)">${item.topic || '-'}</span></div>
+    <div style="margin-bottom:8px;"><strong>📝 단락 요약:</strong><br><span style="color:var(--text-mid);white-space:pre-wrap">${item.summary || '-'}</span></div>
+    <div><strong>💭 나의 생각:</strong><br><span style="color:var(--text-mid);white-space:pre-wrap">${item.opinion || '-'}</span></div>`;
+  openModal('analysisViewModal');
+}
+
+function deleteCurrentAnalysis() {
+  if (!currentAnalysisId || !confirm('이 글분석을 삭제할까요?')) return;
+  const list = load('analyses', []).filter(a => a.id !== currentAnalysisId);
+  save('analyses', list);
+  renderAnalysisList();
+  closeModal('analysisViewModal');
+  toast('🗑️ 삭제되었습니다.');
+}
+
+// ══════════════════════════════════
+// 3. 자기주도 속해독서
+// ══════════════════════════════════
+let timerInterval = null;
+let timerSeconds = 0;
+let timerRunning = false;
+let questions = [];
+
+function timerStart() {
+  if (timerRunning) return;
+  timerRunning = true;
+  document.getElementById('timerStartBtn').disabled = true;
+  document.getElementById('timerStopBtn').disabled = false;
+  timerInterval = setInterval(() => {
+    timerSeconds++;
+    updateTimerDisplay();
+    calcSpeed();
+  }, 1000);
+}
+
+function timerStop() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  document.getElementById('timerStartBtn').disabled = false;
+  document.getElementById('timerStopBtn').disabled = true;
+  calcSpeed();
+}
+
+function timerReset() {
+  timerStop();
+  timerSeconds = 0;
+  updateTimerDisplay();
+  document.getElementById('readingSpeed').style.display = 'none';
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+  const s = (timerSeconds % 60).toString().padStart(2, '0');
+  document.getElementById('timerDisplay').textContent = `${m}:${s}`;
+}
+
+function calcSpeed() {
+  const wc = parseInt(document.getElementById('wordCount').value);
+  if (!wc || timerSeconds === 0) return;
+  const cpm = Math.round(wc / (timerSeconds / 60));
+  document.getElementById('speedVal').textContent = cpm;
+  document.getElementById('readingSpeed').style.display = 'inline-flex';
+}
+
+function addQuestion() {
+  questions.push({ q: '', a: '' });
+  renderQuestions();
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('.q-input');
+    if (inputs.length) inputs[inputs.length-1].focus();
+  }, 50);
+}
+
+function renderQuestions() {
+  const cont = document.getElementById('questionList');
+  if (questions.length === 0) {
+    cont.innerHTML = '<p style="color:var(--text-light);font-size:0.85rem;padding:8px 0;">질문을 추가해보세요.</p>';
+    return;
+  }
+  cont.innerHTML = questions.map((q, i) => `
+    <div class="question-item">
+      <div class="question-num">Q${i+1}</div>
+      <input class="q-input" type="text" value="${q.q}" placeholder="질문 입력..." onblur="updateQuestion(${i},'q',this.value)" style="margin-bottom:6px;">
+      <input type="text" value="${q.a}" placeholder="답 / 핵심 포인트" onblur="updateQuestion(${i},'a',this.value)">
+      <button class="btn btn-danger btn-sm" style="margin-top:6px;" onclick="deleteQuestion(${i})">삭제</button>
+    </div>`).join('');
+}
+
+function updateQuestion(i, field, val) { questions[i][field] = val; }
+function deleteQuestion(i) { questions.splice(i, 1); renderQuestions(); }
+
+function saveReading() {
+  const title = document.getElementById('bookTitle').value.trim();
+  if (!title) { toast('❗ 책/글 제목을 입력하세요.'); return; }
+  const list = load('readings', []);
+  list.unshift({
+    id: Date.now(),
+    title,
+    wordCount: document.getElementById('wordCount').value,
+    time: timerSeconds,
+    timeStr: document.getElementById('timerDisplay').textContent,
+    cpm: timerSeconds > 0 && document.getElementById('wordCount').value
+      ? Math.round(parseInt(document.getElementById('wordCount').value) / (timerSeconds / 60)) : 0,
+    comprehension: document.getElementById('readingComprehension').value,
+    review: document.getElementById('readingReview').value,
+    memo: document.getElementById('readingMemo').value,
+    questions: [...questions],
+    date: new Date().toLocaleDateString('ko-KR')
+  });
+  save('readings', list);
+  renderReadingList();
+  renderSpeedChart();
+  toast('✅ 독서 기록이 저장되었습니다.');
+}
+
+function renderReadingList() {
+  const list = load('readings', []);
+  const cont = document.getElementById('readingList');
+  if (list.length === 0) {
+    cont.innerHTML = '<div class="empty-state"><div class="empty-icon">📖</div><p>아직 독서 기록이 없습니다.</p></div>';
+    return;
+  }
+  const reviewMap = { high: '🔴 꼭 복습', mid: '🟡 나중에', low: '🟢 괜찮음' };
+  cont.innerHTML = list.map(r => `
+    <div class="record-card">
+      <div class="record-info">
+        <div class="record-title">${r.title}</div>
+        <div class="record-meta">📅 ${r.date} · ⏱ ${r.timeStr}</div>
+        <div class="record-stats">
+          ${r.cpm ? `<span class="stat-pill">📊 ${r.cpm}자/분</span>` : ''}
+          <span class="stat-pill">${'⭐'.repeat(parseInt(r.comprehension))}</span>
+          <span class="stat-pill">${reviewMap[r.review]||''}</span>
+          ${r.memo ? `<span class="stat-pill">💬 ${r.memo.slice(0,15)}...</span>` : ''}
+        </div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteReading(${r.id})" style="flex-shrink:0;">삭제</button>
+    </div>`).join('');
+}
+
+function deleteReading(id) {
+  if (!confirm('이 독서 기록을 삭제할까요?')) return;
+  save('readings', load('readings', []).filter(r => r.id !== id));
+  renderReadingList();
+  toast('🗑️ 삭제되었습니다.');
+}
+
+// ══════════════════════════════════
+// 4. 통합노트
+// ══════════════════════════════════
+let currentNoteId = null;
+
+function saveNote() {
+  const title = document.getElementById('noteTitle').value.trim();
+  if (!title) { toast('❗ 노트 제목을 입력하세요.'); return; }
+  const list = load('notes', []);
+  const item = {
+    id: currentNoteId || Date.now(),
+    title,
+    subject: document.getElementById('noteSubject').value,
+    date: document.getElementById('noteDate').value || isoDate(new Date()),
+    keywords: document.getElementById('noteKeywords').value,
+    content: document.getElementById('noteContent').value,
+    summary: document.getElementById('noteSummary').value,
+    savedAt: new Date().toLocaleDateString('ko-KR')
+  };
+  const idx = list.findIndex(n => n.id === item.id);
+  if (idx >= 0) list[idx] = item; else list.unshift(item);
+  save('notes', list);
+  currentNoteId = item.id;
+  renderNoteList();
+  toast('✅ 노트가 저장되었습니다.');
+}
+
+function clearNote() {
+  if (!confirm('작성 중인 노트를 초기화할까요?')) return;
+  ['noteTitle','noteSubject','noteKeywords','noteContent','noteSummary'].forEach(id =>
+    document.getElementById(id).value = '');
+  document.getElementById('noteDate').value = isoDate(new Date());
+  currentNoteId = null;
+}
+
+function renderNoteList() {
+  const list = load('notes', []);
+  const cont = document.getElementById('noteList');
+  if (list.length === 0) {
+    cont.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><p>저장된 노트가 없습니다.</p></div>';
+    return;
+  }
+  cont.innerHTML = list.map(n => `
+    <div class="note-item" onclick="viewNote(${n.id})">
+      <div>
+        <div class="note-item-title">${n.subject ? `[${n.subject}] ` : ''}${n.title}</div>
+        <div class="note-item-meta">📅 ${n.date} · ${n.savedAt}</div>
+      </div>
+      <div class="note-item-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-secondary btn-sm" onclick="viewNote(${n.id})">보기</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteNoteById(${n.id})">삭제</button>
+      </div>
+    </div>`).join('');
+}
+
+function viewNote(id) {
+  const list = load('notes', []);
+  const n = list.find(n => n.id === id);
+  if (!n) return;
+  currentNoteId = id;
+  document.getElementById('noteViewTitle').textContent = `📝 ${n.title}`;
+  document.getElementById('noteViewContent').innerHTML = `
+    <div style="display:grid;grid-template-columns:140px 1fr;border:2px solid var(--ivy-mid);border-radius:8px;overflow:hidden;margin-bottom:10px;">
+      <div style="background:#f9fdf9;border-right:2px solid var(--ivy-mid);padding:12px;">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--ivy-mid);text-transform:uppercase;margin-bottom:6px;">🔑 키워드</div>
+        <div style="font-size:0.85rem;white-space:pre-wrap;color:var(--ivy-dark);">${n.keywords || '-'}</div>
+      </div>
+      <div style="padding:12px;">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--ivy-mid);text-transform:uppercase;margin-bottom:6px;">✍️ 내용</div>
+        <div style="font-size:0.9rem;white-space:pre-wrap;line-height:1.7;">${n.content || '-'}</div>
+      </div>
+      <div style="grid-column:1/-1;border-top:2px solid var(--ivy-mid);padding:12px;">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--ivy-mid);text-transform:uppercase;margin-bottom:4px;">📌 요약</div>
+        <div style="font-size:0.9rem;white-space:pre-wrap;font-weight:600;color:var(--ivy-dark);">${n.summary || '-'}</div>
+      </div>
+    </div>`;
+  openModal('noteViewModal');
+}
+
+function loadNoteForEdit() {
+  const list = load('notes', []);
+  const n = list.find(n => n.id === currentNoteId);
+  if (!n) return;
+  document.getElementById('noteTitle').value = n.title;
+  document.getElementById('noteSubject').value = n.subject || '';
+  document.getElementById('noteDate').value = n.date;
+  document.getElementById('noteKeywords').value = n.keywords || '';
+  document.getElementById('noteContent').value = n.content || '';
+  document.getElementById('noteSummary').value = n.summary || '';
+  closeModal('noteViewModal');
+  showPanel('note', document.querySelector('[onclick="showPanel(\'note\',this)"]'));
+  toast('✏️ 노트를 편집 모드로 불러왔습니다.');
+}
+
+function deleteNoteById(id) {
+  if (!confirm('이 노트를 삭제할까요?')) return;
+  save('notes', load('notes', []).filter(n => n.id !== id));
+  renderNoteList();
+  toast('🗑️ 삭제되었습니다.');
+}
+
+function deleteCurrentNote() {
+  if (!currentNoteId || !confirm('이 노트를 삭제할까요?')) return;
+  deleteNoteById(currentNoteId);
+  closeModal('noteViewModal');
+}
+
+// ══════════════════════════════════
+// 5. 복습 노트
+// ══════════════════════════════════
+let reviewFilter = 'all';
+
+function addReviewCard() {
+  const front = document.getElementById('cardFront').value.trim();
+  const back = document.getElementById('cardBack').value.trim();
+  if (!front) { toast('❗ 앞면 내용을 입력하세요.'); return; }
+  const list = load('reviewCards', []);
+  list.unshift({
+    id: Date.now(),
+    front, back,
+    subject: document.getElementById('cardSubject').value.trim(),
+    status: document.getElementById('cardStatus').value,
+    date: new Date().toLocaleDateString('ko-KR'),
+    flipped: false
+  });
+  save('reviewCards', list);
+  document.getElementById('cardFront').value = '';
+  document.getElementById('cardBack').value = '';
+  renderReviewCards();
+  toast('✅ 카드가 추가되었습니다.');
+}
+
+function renderReviewCards() {
+  const all = load('reviewCards', []);
+  const list = reviewFilter === 'all' ? all : all.filter(c => c.status === reviewFilter);
+  const cont = document.getElementById('reviewCardGrid');
+  if (list.length === 0) {
+    cont.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🃏</div><p>카드가 없습니다. 위에서 추가해보세요.</p></div>';
+    return;
+  }
+  const statusLabel = { learning: '🟠 학습중', review: '🔵 복습중', done: '🟢 완료' };
+  const statusClass = { learning: 'status-learning', review: 'status-review', done: 'status-done' };
+  cont.innerHTML = list.map(c => `
+    <div class="review-card${c.flipped ? ' flipped' : ''}" id="rc-${c.id}">
+      <div class="review-card-flip" onclick="flipCard(${c.id})">
+        <div class="review-card-front">
+          <div class="card-label card-front-label">앞면 · ${c.subject || '미분류'}</div>
+          <div class="card-content">${c.front}</div>
+        </div>
+        <div class="review-card-back">
+          <div class="card-label card-back-label">뒷면</div>
+          <div class="card-content">${c.back || '(뒷면 없음)'}</div>
+        </div>
+      </div>
+      <div class="review-card-footer">
+        <span class="status-badge ${statusClass[c.status]}">${statusLabel[c.status]}</span>
+        <div class="card-actions">
+          <select class="card-action-btn" onchange="changeCardStatus(${c.id},this.value)" style="font-size:0.75rem;border:none;background:transparent;cursor:pointer;" onclick="event.stopPropagation()">
+            <option value="learning" ${c.status==='learning'?'selected':''}>학습중</option>
+            <option value="review" ${c.status==='review'?'selected':''}>복습중</option>
+            <option value="done" ${c.status==='done'?'selected':''}>완료</option>
+          </select>
+          <button class="card-action-btn" onclick="event.stopPropagation();deleteCard(${c.id})">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function flipCard(id) {
+  const list = load('reviewCards', []);
+  const c = list.find(c => c.id === id);
+  if (c) { c.flipped = !c.flipped; save('reviewCards', list); renderReviewCards(); }
+}
+
+function changeCardStatus(id, status) {
+  const list = load('reviewCards', []);
+  const c = list.find(c => c.id === id);
+  if (c) { c.status = status; save('reviewCards', list); renderReviewCards(); }
+}
+
+function deleteCard(id) {
+  if (!confirm('이 카드를 삭제할까요?')) return;
+  save('reviewCards', load('reviewCards', []).filter(c => c.id !== id));
+  renderReviewCards();
+  toast('🗑️ 삭제되었습니다.');
+}
+
+function filterCards(filter, btn) {
+  reviewFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderReviewCards();
+}
+
+function shuffleCards() {
+  const list = load('reviewCards', []);
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  save('reviewCards', list);
+  renderReviewCards();
+  toast('🔀 카드를 섞었습니다.');
+}
+
+function flipAllCards() {
+  const list = load('reviewCards', []);
+  const anyFlipped = list.some(c => c.flipped);
+  list.forEach(c => c.flipped = !anyFlipped);
+  save('reviewCards', list);
+  renderReviewCards();
+}
+
+// ══════════════════════════════════════════════════════
+// 속해독서 교재 (상권 47지문)
+// ══════════════════════════════════════════════════════
+const SOKHAE = [
+  {n:1,t:'내가 진 빚',c:1101},{n:2,t:'유전자 조작 식품이 무서운 이유',c:1106},
+  {n:3,t:'윤리 사상의 역할',c:1104},{n:4,t:'젓갈',c:1115},
+  {n:5,t:'엄청나게 큰 입을 가진 뚱뚱보',c:1122},{n:6,t:'눈에 바친 자비심',c:1122},
+  {n:7,t:'솜씨 없는 목수',c:1127},{n:8,t:'함바 칼레, 네가 하는 일이 잘 되길',c:1131},
+  {n:9,t:'밝은 마음, 밝은 말씨',c:1134},{n:10,t:'윤리 사상은 시대의 아들이다',c:1139},
+  {n:11,t:'수필',c:1140},{n:12,t:'불고기와 마늘',c:1140},
+  {n:13,t:'커피의 기원',c:1148},{n:14,t:'달래',c:1155},
+  {n:15,t:'국민의 소득과 유행',c:1159},{n:16,t:'만주는 우리 땅',c:1159},
+  {n:17,t:'3D업종과 외국인 노동자 문제',c:1167},{n:18,t:'문화 이해를 위한 태도',c:1173},
+  {n:19,t:'별이 된 삼 남매',c:1179},{n:20,t:'한국인과 아르헨티노의 인생관',c:1190},
+  {n:21,t:'솔개 떴다, 병아리 감춰라',c:1193},{n:22,t:'하늘을 나는 씨앗',c:1197},
+  {n:23,t:'여름엔 하늘을 자주 봐야 한다',c:1197},{n:24,t:'사랑을 실현한 성자 슈바이처',c:1198},
+  {n:25,t:'북한의 민속 명절',c:1198},{n:26,t:'바코드의 세계',c:903},
+  {n:27,t:'이산가족 상당수 상봉 후 후유증',c:912},{n:28,t:'금속이라는 깃발을 달고',c:916},
+  {n:29,t:'모든 책임은 내가 진다',c:925},{n:30,t:"소를 몰 때 왜 '이랴이랴' 할까",c:930},
+  {n:31,t:'뜨거운 개, 핫도그',c:934},{n:32,t:'700살 은행나무 옮기기',c:938},
+  {n:33,t:'한국의 의생활',c:943},{n:34,t:'소나기',c:948},
+  {n:35,t:'안전띠',c:956},{n:36,t:'효자는 장수한다',c:960},
+  {n:37,t:'모깃불 피우고 개구리 노래를 들으며',c:960},{n:38,t:'자각돌',c:962},
+  {n:39,t:'웃음',c:967},{n:40,t:'얼굴',c:971},
+  {n:41,t:'우리 가슴에 던진 볼',c:975},{n:42,t:'족패천하',c:980},
+  {n:43,t:'고향',c:981},{n:44,t:'명절 문화 새롭게 만들기',c:994},
+  {n:45,t:'여름철 피부 건강',c:995},{n:46,t:'꿈에 만난 지혜로운 사람',c:996},
+  {n:47,t:'펄 벅이 한국에 보내는 애정의 선물',c:997}
+];
+
+function initSokhaeSelect() {
+  const sel = document.getElementById('passageSelect');
+  if (!sel || sel.options.length > 1) return;
+  SOKHAE.forEach((p, i) => {
+    const o = document.createElement('option');
+    o.value = i;
+    o.textContent = p.n + '. ' + p.t + ' (' + p.c + '자)';
+    sel.appendChild(o);
+  });
+}
+
+function applyPassage(idx) {
+  if (idx === '') { document.getElementById('passageInfo').style.display = 'none'; return; }
+  const p = SOKHAE[parseInt(idx)];
+  document.getElementById('bookTitle').value = p.t;
+  document.getElementById('wordCount').value = p.c;
+  document.getElementById('passageNumTag').textContent = '📖 ' + p.n + '번 지문';
+  document.getElementById('passageCharTag').textContent = '📝 ' + p.c + '자';
+  document.getElementById('passageInfo').style.display = 'block';
+  calcSpeed();
+  toast('✅ ' + p.n + '번 지문이 선택되었습니다.');
+}
+
+function toggleSokhaeMethod() {
+  const c = document.getElementById('methodContent');
+  const btn = document.getElementById('methodToggleBtn');
+  const show = c.style.display === 'none';
+  c.style.display = show ? 'block' : 'none';
+  btn.textContent = show ? '▲ 접기' : '▼ 펼치기';
+}
+
+function openEyeModal() {
+  const cont = document.getElementById('eyeTableContent');
+  if (!cont.innerHTML) {
+    const COLS = 21;
+    let html = '<table style="border-collapse:collapse;width:100%;text-align:center;">';
+    html += '<thead><tr style="background:var(--ivy-pale);">';
+    html += '<td colspan="7" style="padding:5px 4px;font-size:0.8rem;font-weight:700;color:var(--ivy-dark);">1차. 분당: ___회</td>';
+    html += '<td colspan="7" style="padding:5px 4px;font-size:0.8rem;font-weight:700;color:var(--ivy-dark);">2차. 분당: ___회</td>';
+    html += '<td colspan="7" style="padding:5px 4px;font-size:0.8rem;font-weight:700;color:var(--ivy-dark);">3차. 분당: ___회</td>';
+    html += '</tr></thead><tbody>';
+    for (let r = 0; r < 16; r++) {
+      html += '<tr' + (r % 2 === 0 ? '' : ' style="background:#f0f9f0;"') + '>';
+      const isBulletRow = r % 2 === 1;
+      for (let c = 0; c < COLS; c++) {
+        const isBullet = isBulletRow && (c === 0 || c === COLS - 1);
+        html += '<td style="width:22px;height:22px;font-size:1rem;color:' + (isBullet ? '#1b5e20' : '#aaa') + ';">' + (isBullet ? '●' : '○') + '</td>';
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+    cont.innerHTML = html;
+  }
+  openModal('eyeTrainingModal');
+}
+
+function renderSpeedChart() {
+  const container = document.getElementById('speedChartContainer');
+  if (!container) return;
+  const list = load('readings', []).filter(r => r.cpm > 0).slice(-26);
+  if (list.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📈</div><p>독서 기록을 저장하면 속도 향상 그래프가 표시됩니다.</p></div>';
+    return;
+  }
+  const maxCpm = Math.max(...list.map(r => r.cpm), 500);
+  const chartH = 110;
+  let html = '<div style="display:flex;align-items:flex-end;gap:3px;height:' + chartH + 'px;">';
+  list.forEach(function(r) {
+    const pct = Math.max((r.cpm / (maxCpm * 1.1)) * 100, 2);
+    const color = r.cpm < 400 ? '#ef9a9a' : r.cpm < 700 ? '#ffe082' : '#a5d6a7';
+    html += '<div style="display:flex;flex-direction:column;align-items:center;flex:1;height:100%;justify-content:flex-end;" title="' + r.title + ': ' + r.cpm + '자/분">';
+    html += '<div style="font-size:0.62rem;color:#666;line-height:1;margin-bottom:1px;">' + r.cpm + '</div>';
+    html += '<div style="background:' + color + ';width:100%;height:' + pct + '%;border-radius:3px 3px 0 0;min-height:4px;"></div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-light);margin-top:4px;border-top:1px solid #eee;padding-top:4px;">';
+  html += '<span>← 이전 기록</span><span>최근 기록 →</span>';
+  html += '</div>';
+  html += '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:0.75rem;">';
+  html += '<span>🔴 ~400자/분</span><span>🟡 400~700자/분</span><span>🟢 700자/분~</span>';
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// ── 초기화 ──
+(function init() {
+  renderWeek();
+  renderPlannerDetail();
+  renderAnalysisList();
+  renderReadingList();
+  renderNoteList();
+  renderReviewCards();
+  renderQuestions();
+  initSokhaeSelect();
+  renderSpeedChart();
+
+  // 오늘 날짜 기본값
+  document.getElementById('noteDate').value = isoDate(new Date());
+
+  // URL 해시로 탭 자동 선택 (#routine, #planner, #analysis, #reading, #note, #review)
+  var hash = window.location.hash.replace('#', '');
+  var validPanels = ['routine', 'planner', 'analysis', 'reading', 'note', 'review'];
+  if (hash && validPanels.includes(hash)) {
+    var btn = document.querySelector('[onclick="showPanel(\'' + hash + '\',this)"]');
+    if (btn) showPanel(hash, btn);
+  }
+})();
+</script>
+</body>
+</html>
