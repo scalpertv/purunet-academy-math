@@ -1028,6 +1028,53 @@ footer {
       <p style="font-size:0.82rem;color:var(--text-light);margin-bottom:8px;">지문을 선택하면 제목과 글자 수가 자동으로 입력됩니다.</p>
       <select id="passageSelect" onchange="applyPassage(this.value)">
         <option value="">-- 지문 선택 --</option>
+        <option value="0">1. 내가 진 빚 (1101자)</option>
+        <option value="1">2. 유전자 조작 식품이 무서운 이유 (1106자)</option>
+        <option value="2">3. 윤리 사상의 역할 (1104자)</option>
+        <option value="3">4. 젓갈 (1115자)</option>
+        <option value="4">5. 엄청나게 큰 입을 가진 뚱뚱보 (1122자)</option>
+        <option value="5">6. 눈에 바친 자비심 (1122자)</option>
+        <option value="6">7. 솜씨 없는 목수 (1127자)</option>
+        <option value="7">8. 함바 칼레, 네가 하는 일이 잘 되길 (1131자)</option>
+        <option value="8">9. 밝은 마음, 밝은 말씨 (1134자)</option>
+        <option value="9">10. 윤리 사상은 시대의 아들이다 (1139자)</option>
+        <option value="10">11. 수필 (1140자)</option>
+        <option value="11">12. 불고기와 마늘 (1140자)</option>
+        <option value="12">13. 커피의 기원 (1148자)</option>
+        <option value="13">14. 달래 (1155자)</option>
+        <option value="14">15. 국민의 소득과 유행 (1159자)</option>
+        <option value="15">16. 만주는 우리 땅 (1159자)</option>
+        <option value="16">17. 3D업종과 외국인 노동자 문제 (1167자)</option>
+        <option value="17">18. 문화 이해를 위한 태도 (1173자)</option>
+        <option value="18">19. 별이 된 삼 남매 (1179자)</option>
+        <option value="19">20. 한국인과 아르헨티노의 인생관 (1190자)</option>
+        <option value="20">21. 솔개 떴다, 병아리 감춰라 (1193자)</option>
+        <option value="21">22. 하늘을 나는 씨앗 (1197자)</option>
+        <option value="22">23. 여름엔 하늘을 자주 봐야 한다 (1197자)</option>
+        <option value="23">24. 사랑을 실현한 성자 슈바이처 (1198자)</option>
+        <option value="24">25. 북한의 민속 명절 (1198자)</option>
+        <option value="25">26. 바코드의 세계 (903자)</option>
+        <option value="26">27. 이산가족 상당수 상봉 후 후유증 (912자)</option>
+        <option value="27">28. 금속이라는 깃발을 달고 (916자)</option>
+        <option value="28">29. 모든 책임은 내가 진다 (925자)</option>
+        <option value="29">30. 소를 몰 때 왜 '이랴이랴' 할까 (930자)</option>
+        <option value="30">31. 뜨거운 개, 핫도그 (934자)</option>
+        <option value="31">32. 700살 은행나무 옮기기 (938자)</option>
+        <option value="32">33. 한국의 의생활 (943자)</option>
+        <option value="33">34. 소나기 (948자)</option>
+        <option value="34">35. 안전띠 (956자)</option>
+        <option value="35">36. 효자는 장수한다 (960자)</option>
+        <option value="36">37. 모깃불 피우고 개구리 노래를 들으며 (960자)</option>
+        <option value="37">38. 자각돌 (962자)</option>
+        <option value="38">39. 웃음 (967자)</option>
+        <option value="39">40. 얼굴 (971자)</option>
+        <option value="40">41. 우리 가슴에 던진 볼 (975자)</option>
+        <option value="41">42. 족패천하 (980자)</option>
+        <option value="42">43. 고향 (981자)</option>
+        <option value="43">44. 명절 문화 새롭게 만들기 (994자)</option>
+        <option value="44">45. 여름철 피부 건강 (995자)</option>
+        <option value="45">46. 꿈에 만난 지혜로운 사람 (996자)</option>
+        <option value="46">47. 펄 벅이 한국에 보내는 애정의 선물 (997자)</option>
       </select>
       <div id="passageInfo" style="display:none;margin-top:8px;">
         <span class="ptag" id="passageNumTag"></span>
@@ -2100,14 +2147,7 @@ const SOKHAE = [
 ];
 
 function initSokhaeSelect() {
-  const sel = document.getElementById('passageSelect');
-  if (!sel || sel.options.length > 1) return;
-  SOKHAE.forEach((p, i) => {
-    const o = document.createElement('option');
-    o.value = i;
-    o.textContent = p.n + '. ' + p.t + ' (' + p.c + '자)';
-    sel.appendChild(o);
-  });
+  // 옵션이 HTML에 하드코딩되어 있으므로 별도 초기화 불필요
 }
 
 function applyPassage(idx) {
