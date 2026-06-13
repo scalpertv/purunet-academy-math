@@ -68,3 +68,15 @@
 - 기능 커밋은 `3cb2306 feat: 글분석 초급 A 교재 추가`이다.
 - Cloudflare Pages 프리뷰 `https://780ea3a2.ivy-self-directed-learning-coach.pages.dev`와 운영 `https://ivy-self-directed-learning-coach.pages.dev/#analysis`에 배포했다.
 - 운영 재검증에서 프리뷰·운영 모두 HTTP 200, 교재 버튼 51개, 데이터 51개, `analysis-beginner-a.js` HTTP 200과 34,995바이트, 모바일 가로 넘침 0, 페이지·콘솔·네트워크 오류 0을 확인했다.
+
+## 글분석 상호작용형 5차원 학습 화면 설계
+
+- 5차원 자기주도학습의 초4~6 국어 분석 틀에서 글의 목적, 문단별 핵심어, 문단 요약, 글의 구조, 전체 주제문, 사실과 의견, 주장과 근거, 비판적 읽기, 나의 반응을 가져온다.
+- 초급 A 교재에는 모든 항목을 한 번에 노출하지 않고 `표시하며 읽기 → 국어 구조 분석 → 마인드맵 → 내 문장 완성`의 4단계로 나눈다.
+- 표시 읽기는 낱말 단위 사선·핵심어·모르는 말과 문장 단위 주제문장·중요문장 표시를 지원한다. 원문 자체는 수정하지 않고 표시 상태를 별도 데이터로 저장한다.
+- 마인드맵은 5차원 페이지의 600×510 SVG 방사형 구조를 단일 HTML 환경에 맞게 재구현한다. 중심 주제와 최대 6개 색상 가지, 가지별 세부 항목을 편집할 수 있게 한다.
+- 기존 `analyses` 데이터는 유지하고 `purpose`, `textStructure`, `factOpinion`, `claimEvidence`, `critical`, `annotations`, `mindmap`, `selfChecks`를 선택 필드로 추가한다.
+- 단계 진행률은 필수 입력과 표시 활동의 실제 완료 여부로 계산하며, 저장 여부와 별개로 학생이 다음 행동을 알 수 있는 코치 메시지를 실시간 제공한다.
+- 로컬 Playwright에서 표시 3개, 자동 생성 마인드맵 가지 5개, 학습 완성도 83점과 서술형 미리보기를 확인했다.
+- 390×844 모바일 화면에서 문서 너비가 390px로 유지되어 가로 넘침이 없었고 페이지 오류도 발생하지 않았다.
+- `index.html` 인라인 JavaScript 문법 검사, `analysis-beginner-a.js`의 `node --check`, 대상 파일 `git diff --check`가 통과했다.
