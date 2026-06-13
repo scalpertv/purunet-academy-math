@@ -1735,3 +1735,12 @@
 - 커밋 전용 임시 작업트리의 `npm.cmd run build`는 기존 수학 번들 진입 파일 `scripts/.math-entry.tsx`를 esbuild가 찾지 못하는 문제로 실패했다. 같은 변경을 포함한 사용자 작업트리 빌드는 통과했고 이번 수정은 정적 독서논술 JS와 문서뿐이므로 커밋 전용 작업트리에서 `npm.cmd run deploy`를 실행했다.
 - Cloudflare Pages 배포 프리뷰는 `https://d4996d6e.purunet-academy.pages.dev`이다.
 - 운영 `https://purunet-academy.pages.dev/reading-essay-app`에서 HTTP 200, `추천도서 DB 50권 · 학습 콘텐츠 20권`, 활성 20개, 준비 중 30개를 확인했다. 20권 전체의 6단계 메뉴와 300자 이상 지문, 모바일 가로 넘침 0, 콘솔 오류 0이 통과했다.
+## 푸르넷 5학년 6월 웹 전자책 PDF 변환 (2026-06-13)
+- 요청 URL은 `https://mme.epurunet.co.kr/data/ksp/sam/zocbo/h/26purunet5_06/windows/epub/index.html`이다.
+- 브라우저 인쇄보다 원본 페이지 이미지 또는 문서 자원을 직접 수집하는 방식을 우선한다. 이 방식이 화면 UI를 제외하고 페이지 순서와 해상도를 보존하기 쉽다.
+- 결과물은 현재 작업 폴더에 단일 PDF로 저장하고 페이지 수와 파일 열림 여부를 검증한다.
+- EPUB `content.opf`에서 전체 127페이지와 1232×1716 기준 크기를 확인했다.
+- 각 페이지의 `content/images/pageNNNNN/backgnd.png`에 글자와 도형이 모두 포함되어 있어 원본 PNG를 페이지 순서대로 결합했다.
+- 결과 파일은 `푸르넷_5학년_6월_개념북.pdf`이며 크기는 50,786,843바이트다.
+- PyMuPDF 재열기에서 127페이지, 암호화 없음, 첫·64·127페이지 이미지 포함과 정상 렌더링을 확인했다.
+- SHA-256은 `44306394541b303b092c1ed813c69c75040aa3d8ee3a3abc43f677fe438fbaed`이다.
