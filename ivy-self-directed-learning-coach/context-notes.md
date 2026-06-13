@@ -80,3 +80,6 @@
 - 로컬 Playwright에서 표시 3개, 자동 생성 마인드맵 가지 5개, 학습 완성도 83점과 서술형 미리보기를 확인했다.
 - 390×844 모바일 화면에서 문서 너비가 390px로 유지되어 가로 넘침이 없었고 페이지 오류도 발생하지 않았다.
 - `index.html` 인라인 JavaScript 문법 검사, `analysis-beginner-a.js`의 `node --check`, 대상 파일 `git diff --check`가 통과했다.
+- 기능 커밋은 `3449305 feat: 글분석 상호작용 학습 화면 고도화`이다.
+- Cloudflare Pages 미리보기 `https://94f931c8.ivy-self-directed-learning-coach.pages.dev`와 운영 `https://ivy-self-directed-learning-coach.pages.dev/#analysis`에 배포했다.
+- 미리보기와 운영 Playwright 재검증에서 HTTP 200, 4단계, 교재 지문 51개, 자동 마인드맵 가지 5개, 모바일 문서 너비 390px, 페이지 오류 0건을 확인했다.
