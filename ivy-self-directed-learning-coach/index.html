@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<!-- 담쟁이 자기주도 학습코칭 사이트 메인 진입점 v20260613b -->
+<!-- 담쟁이 자기주도 학습코칭 사이트 메인 진입점 v20260613c -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2619,6 +2619,12 @@ function logoutIvy() {
   toast('로그아웃되었습니다.');
 }
 
+// 지도자 과정 iframe의 학습 상태를 기존 로컬·클라우드 저장 흐름에 연결합니다.
+window.addEventListener('message', function(event) {
+  if (event.origin !== location.origin || !event.data || event.data.type !== 'ivy-instructor-state') return;
+  save('ivyInstructorState', event.data.state || {});
+});
+
 // ── 클라우드 데이터 저장 (fire-and-forget) ──
 function _cloudSave(key, val) {
   if (!_ivySession || !_ivySession.account || _ivySession.account.id === 'guest') return;
@@ -2638,6 +2644,15 @@ function _cloudLoad() {
       if (data.ok && data.entries && data.entries.length > 0) {
         data.entries.forEach(function(entry) {
           localStorage.setItem(entry.key, JSON.stringify(entry.payload));
+          if (entry.key === 'ivyInstructorState') {
+            var instructorFrame = document.querySelector('.instructor-frame iframe');
+            if (instructorFrame && instructorFrame.contentWindow) {
+              instructorFrame.contentWindow.postMessage({
+                type: 'ivy-instructor-hydrate',
+                state: entry.payload
+              }, location.origin);
+            }
+          }
         });
         renderReadingList();
         renderNoteList();

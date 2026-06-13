@@ -8,3 +8,14 @@
 - 교사 세션을 주입한 Playwright 검증에서 메인 7개 메뉴와 지도자 과정 3개 메뉴를 모두 전환했다. 1440·1024·768·390·320px 메인 화면과 1100·600·390·320px 지도자 화면의 가로 넘침은 모두 0이었다.
 - 기능 커밋은 `1241f20`이며 Cloudflare Pages 프리뷰 `https://c9ac76a8.ivy-self-directed-learning-coach.pages.dev`와 운영 `https://ivy-self-directed-learning-coach.pages.dev`에 배포했다.
 - 운영 Playwright에서 1440·390·320px의 메인 7개 메뉴와 지도자 과정 3개 메뉴를 다시 검증했다. 가로 넘침과 페이지 오류는 모두 0이었다.
+
+## 지도자 과정 상호작용형 교육 채널 설계
+
+- 기존 15강 본문과 워크북은 보존하고 JavaScript로 학습 도구를 덧붙여 콘텐츠 중복과 대규모 마크업 수정을 피한다.
+- 지도자 과정 상태는 `ivyInstructorState` 키에 완료 강의, 강의별 메모, 워크북 체크, 퀴즈 기록, 실천 기록을 구조화해 저장한다.
+- iframe은 같은 출처이므로 로컬 저장 후 부모 페이지에 `ivy-instructor-state` 메시지를 보내 기존 `save()`와 `/api/save` 비동기 클라우드 저장을 재사용한다.
+- 최신 교육 플랫폼의 모바일 우선, 짧은 학습 단위, 학습자 선택, 즉시 피드백, 명확한 진도 표시 원칙을 적용한다.
+- Playwright로 데스크톱 전체 흐름을 검증했다. 15개 강의, 검색 5건, 완료 필터, 메모 자동 저장, 즉시 채점, 실천 기록, 새로고침 복원, iframe 가로 넘침 0을 확인했다.
+- 390px와 320px 모바일 화면에서 대시보드와 검색 도구가 한 열로 전환되고 가로 넘침이 0인 것을 확인했다.
+- `index.html`과 `instructor.html`의 인라인 JavaScript 파싱과 `git diff --check`는 통과했다.
+- 프로젝트에 `package.json`이 없어 `npm run lint`, `npm run verify`, `npm run onefile`은 모두 `ENOENT`로 실행할 수 없다.
