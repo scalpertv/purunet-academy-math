@@ -49,3 +49,5 @@
 - Playwright로 기존 데이터 호환, 일일·주간·목표·피드백 입력, 50% 달성률 계산과 새로고침 복원을 확인했다.
 - 1440·768·390·320px에서 가로 넘침과 페이지 오류는 모두 0이었고 숨은 전역 알림의 투명도도 0으로 확인했다.
 - `index.html` 인라인 JavaScript 파싱과 `git diff --check`는 통과했다. `package.json`이 없어 npm 3개 검증 명령은 `ENOENT`로 실행되지 않았다.
+- 기능 커밋 `b0d86e1`을 프리뷰 `https://ad62259e.ivy-self-directed-learning-coach.pages.dev`와 운영 `https://ivy-self-directed-learning-coach.pages.dev/#planner`에 `v20260613e`로 배포했다.
+- 운영 Playwright에서 4개 플래너 메뉴, 입력 저장과 새로고침 복원을 확인했으며 1440·390·320px의 가로 넘침과 페이지 오류는 모두 0이었다.
