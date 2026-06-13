@@ -65,3 +65,6 @@
 - 로컬 Playwright 검증에서 51개 버튼, 마지막 지문 선택, 교재 원문 복사, 추가 필드 저장, `sourceId` 저장, 새로고침 후 완료 표시 복원을 확인했다.
 - 1440×1000과 390×844 화면의 가로 넘침은 모두 0이고 페이지·콘솔 오류도 0이었다.
 - `analysis-beginner-a.js`와 `index.html` 인라인 JavaScript의 `node --check`, 대상 파일 `git diff --check`, 51개 ID·본문 자동 검사가 통과했다.
+- 기능 커밋은 `3cb2306 feat: 글분석 초급 A 교재 추가`이다.
+- Cloudflare Pages 프리뷰 `https://780ea3a2.ivy-self-directed-learning-coach.pages.dev`와 운영 `https://ivy-self-directed-learning-coach.pages.dev/#analysis`에 배포했다.
+- 운영 재검증에서 프리뷰·운영 모두 HTTP 200, 교재 버튼 51개, 데이터 51개, `analysis-beginner-a.js` HTTP 200과 34,995바이트, 모바일 가로 넘침 0, 페이지·콘솔·네트워크 오류 0을 확인했다.
