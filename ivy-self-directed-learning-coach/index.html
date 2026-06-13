@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<!-- 담쟁이 자기주도 학습코칭 사이트 메인 진입점 v20260612a -->
+<!-- 담쟁이 자기주도 학습코칭 사이트 메인 진입점 v20260613b -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1043,6 +1043,279 @@ footer {
 .login-field input { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 0.9rem; font-family: inherit; outline: none; box-sizing: border-box; }
 .login-field input:focus { border-color: var(--ivy-mid); }
 #loginError { color: #c62828; font-size: 0.82rem; margin-bottom: 10px; display: none; }
+
+/* ── 2026 반응형 학습 대시보드 ── */
+:root {
+  --surface-soft: rgba(255,255,255,0.78);
+  --surface-line: rgba(27,94,32,0.13);
+  --focus-ring: 0 0 0 4px rgba(67,160,71,0.16);
+}
+body {
+  background:
+    radial-gradient(circle at 8% 8%, rgba(165,214,167,0.28), transparent 28rem),
+    radial-gradient(circle at 92% 34%, rgba(200,230,201,0.38), transparent 24rem),
+    #f5f8f4;
+}
+header {
+  overflow: hidden;
+  box-shadow: 0 14px 40px rgba(14,69,24,0.16);
+}
+.header-inner {
+  max-width: 1180px;
+  padding: 24px 24px 18px;
+}
+.header-top {
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.brand-cluster {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.logo-circle {
+  width: 58px;
+  height: 58px;
+  background: rgba(255,255,255,0.17);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18), 0 10px 26px rgba(0,0,0,0.12);
+}
+.header-kicker {
+  display: inline-flex;
+  margin-bottom: 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #d8f3d9;
+}
+.header-titles h1 {
+  font-size: clamp(1.35rem, 2.5vw, 2rem);
+  letter-spacing: -0.045em;
+}
+.header-titles p { font-size: 0.9rem; }
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.academy-home-btn {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  border-radius: 12px;
+  padding: 9px 14px;
+  background: rgba(255,255,255,0.13);
+  backdrop-filter: blur(10px);
+}
+.nav-toggle {
+  display: none;
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 9px 13px;
+  border: 1px solid rgba(255,255,255,0.42);
+  border-radius: 12px;
+  color: #fff;
+  background: rgba(255,255,255,0.13);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+nav#mainNav {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+  gap: 8px;
+  overflow: visible;
+}
+#mainNav .tab-btn {
+  min-width: 0;
+  min-height: 62px;
+  padding: 9px 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 13px;
+  color: rgba(255,255,255,0.82);
+  background: rgba(255,255,255,0.07);
+  font-size: 0.76rem;
+  line-height: 1.25;
+  white-space: normal;
+  word-break: keep-all;
+}
+#mainNav .tab-btn:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,0.42);
+  background: rgba(255,255,255,0.14);
+  transform: translateY(-2px);
+}
+#mainNav .tab-btn.active {
+  color: var(--ivy-dark);
+  border-color: #fff;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.14);
+}
+#mainNav .tab-icon {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.learning-context {
+  max-width: 1180px;
+  margin: 18px auto 0;
+  padding: 0 16px;
+}
+.learning-context-inner {
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid var(--surface-line);
+  border-radius: 18px;
+  background: var(--surface-soft);
+  box-shadow: 0 10px 32px rgba(40,79,45,0.08);
+  backdrop-filter: blur(14px);
+}
+.context-copy { min-width: 0; }
+.context-label {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--ivy-mid);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+}
+.context-copy strong {
+  display: block;
+  color: var(--ivy-dark);
+  font-size: 1.03rem;
+}
+.context-copy p {
+  margin-top: 3px;
+  color: var(--text-light);
+  font-size: 0.8rem;
+}
+.context-tip {
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  border-radius: 999px;
+  color: var(--ivy-dark);
+  background: var(--ivy-pale);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+main {
+  max-width: 1180px;
+  padding: 18px 16px 80px;
+}
+.panel.active { animation: panelRise 0.32s ease both; }
+@keyframes panelRise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.section-header {
+  padding: 18px 20px;
+  border: 1px solid var(--surface-line);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(238,248,238,0.88));
+  box-shadow: 0 10px 30px rgba(40,79,45,0.07);
+}
+.section-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  box-shadow: 0 8px 18px rgba(46,125,50,0.2);
+}
+.section-header h2 { font-size: 1.42rem; letter-spacing: -0.035em; }
+.section-header p { font-size: 0.86rem; }
+.card {
+  border: 1px solid rgba(27,94,32,0.09);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(40,79,45,0.075);
+}
+.card, .analysis-item, .note-item, .review-card, .record-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card:hover {
+  border-color: rgba(67,160,71,0.22);
+  box-shadow: 0 16px 36px rgba(40,79,45,0.1);
+}
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.instructor-frame {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--surface-line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 34px rgba(40,79,45,0.09);
+}
+.instructor-frame iframe {
+  width: 100%;
+  height: 82vh;
+  min-height: 680px;
+  display: block;
+  border: 0;
+}
+@media (max-width: 760px) {
+  .header-inner { padding: 16px 14px 14px; }
+  .header-top { align-items: flex-start; margin-bottom: 0; }
+  .logo-circle { width: 46px; height: 46px; font-size: 20px; }
+  .header-titles h1 { font-size: 1.22rem; }
+  .header-titles p { font-size: 0.77rem; }
+  .header-kicker { font-size: 0.64rem; }
+  .academy-home-btn { display: none; }
+  .nav-toggle { display: inline-flex; align-items: center; }
+  nav#mainNav {
+    max-height: 0;
+    margin-top: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: max-height 0.28s ease, opacity 0.2s ease, transform 0.2s ease, margin 0.2s ease;
+  }
+  nav#mainNav.is-open {
+    max-height: 620px;
+    margin-top: 14px;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  #mainNav .tab-btn {
+    min-height: 50px;
+    flex-direction: row;
+    padding: 8px 10px;
+    justify-content: flex-start;
+    text-align: left;
+    font-size: 0.76rem;
+  }
+  #mainNav .tab-icon { min-width: 24px; text-align: center; }
+  .learning-context { margin-top: 12px; padding: 0 10px; }
+  .learning-context-inner { padding: 13px 14px; border-radius: 15px; }
+  .context-tip { display: none; }
+  main { padding: 12px 10px 64px; }
+  .section-header { padding: 14px; margin-bottom: 12px; border-radius: 15px; }
+  .section-icon { width: 42px; height: 42px; border-radius: 13px; }
+  .section-header h2 { font-size: 1.16rem; }
+  .card { padding: 15px; border-radius: 15px; }
+  .instructor-frame iframe { min-height: 720px; height: 84vh; }
+}
+@media (max-width: 420px) {
+  #academyAuthBar { padding: 6px 10px; font-size: 0.72rem; }
+  .brand-cluster { gap: 10px; }
+  .header-titles p { max-width: 210px; }
+  .header-actions { gap: 6px; }
+  .nav-toggle { padding: 8px 10px; font-size: 0.76rem; }
+  #mainNav .tab-btn { font-size: 0.72rem; }
+}
 </style>
 </head>
 <body>
@@ -1075,12 +1348,18 @@ footer {
 
 <header>
   <div class="header-inner" style="position:relative;">
-    <a href="https://purunet-academy.pages.dev/" target="_blank" rel="noopener noreferrer" class="academy-home-btn">🏫 아카데미홈 바로가기</a>
     <div class="header-top">
-      <div class="logo-circle">🌿</div>
-      <div class="header-titles">
-        <h1>담쟁이 자기주도 학습코칭</h1>
-        <p>스스로 계획하고 · 분석하고 · 기록하는 공부 습관</p>
+      <div class="brand-cluster">
+        <div class="logo-circle">🌿</div>
+        <div class="header-titles">
+          <span class="header-kicker">SELF-DIRECTED LEARNING STUDIO</span>
+          <h1>담쟁이 자기주도 학습코칭</h1>
+          <p>계획하고, 이해하고, 기록하며 스스로 성장하는 학습 공간</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a href="https://purunet-academy.pages.dev/" target="_blank" rel="noopener noreferrer" class="academy-home-btn" aria-label="푸르넷 아카데미 홈 열기">🏫 아카데미 홈</a>
+        <button class="nav-toggle" id="navToggle" type="button" aria-controls="mainNav" aria-expanded="false" onclick="toggleMainNav()">☰ 메뉴</button>
       </div>
     </div>
     <svg class="header-vine" viewBox="0 0 200 200" fill="none">
@@ -1091,31 +1370,42 @@ footer {
       <path d="M50,130 Q30,110 20,90" stroke="white" stroke-width="2" fill="none"/>
       <path d="M90,90 Q110,70 120,50" stroke="white" stroke-width="2" fill="none"/>
     </svg>
-    <nav id="mainNav">
-      <button class="tab-btn" onclick="showPanel('routine',this)">
+    <nav id="mainNav" aria-label="학습 도구 메뉴">
+      <button class="tab-btn" data-panel="routine" aria-selected="false" onclick="showPanel('routine',this)">
         <span class="tab-icon">🌿</span>학습 루틴
       </button>
-      <button class="tab-btn active" onclick="showPanel('planner',this)">
+      <button class="tab-btn active" data-panel="planner" aria-selected="true" onclick="showPanel('planner',this)">
         <span class="tab-icon">📅</span>자기주도 플래너
       </button>
-      <button class="tab-btn" onclick="showPanel('analysis',this)">
+      <button class="tab-btn" data-panel="analysis" aria-selected="false" onclick="showPanel('analysis',this)">
         <span class="tab-icon">🔍</span>자기주도 글분석
       </button>
-      <button class="tab-btn" onclick="showPanel('reading',this)">
+      <button class="tab-btn" data-panel="reading" aria-selected="false" onclick="showPanel('reading',this)">
         <span class="tab-icon">📖</span>자기주도 속해독서
       </button>
-      <button class="tab-btn" onclick="showPanel('note',this)">
+      <button class="tab-btn" data-panel="note" aria-selected="false" onclick="showPanel('note',this)">
         <span class="tab-icon">📝</span>통합노트
       </button>
-      <button class="tab-btn" onclick="showPanel('review',this)">
+      <button class="tab-btn" data-panel="review" aria-selected="false" onclick="showPanel('review',this)">
         <span class="tab-icon">🃏</span>복습 노트
       </button>
-      <button id="tab-instructor" class="tab-btn" onclick="showPanel('instructor',this)" style="display:none">
+      <button id="tab-instructor" class="tab-btn" data-panel="instructor" aria-selected="false" onclick="showPanel('instructor',this)" style="display:none">
         <span class="tab-icon">📚</span>지도자 과정
       </button>
     </nav>
   </div>
 </header>
+
+<div class="learning-context" aria-live="polite">
+  <div class="learning-context-inner">
+    <div class="context-copy">
+      <span class="context-label">NOW LEARNING</span>
+      <strong id="contextTitle">자기주도 플래너</strong>
+      <p id="contextDescription">오늘 할 일을 작게 나누고 완료하며 학습 리듬을 만드세요.</p>
+    </div>
+    <span class="context-tip">메뉴를 선택하면 필요한 도구만 보여요</span>
+  </div>
+</div>
 
 <main>
   <!-- ══════════════════════ 1. 자기주도 플래너 ══════════════════════ -->
@@ -1525,8 +1815,8 @@ footer {
         <p>교사 전용 — 담쟁이 자기주도 학습코칭 지도자 과정 전체 내용</p>
       </div>
     </div>
-    <div style="width:100%;border:1.5px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;">
-      <iframe src="/instructor.html" style="width:100%;height:82vh;border:none;display:block;" title="지도자 과정"></iframe>
+    <div class="instructor-frame">
+      <iframe src="/instructor.html" title="지도자 과정"></iframe>
     </div>
   </div>
 
@@ -1774,13 +2064,48 @@ function save(key, val) {
 }
 
 // ── TAB 전환 ──
+const panelMeta = {
+  routine: ['담쟁이 학습 루틴', '공부의 시작과 끝을 이해하고 나만의 학습 패턴을 만드세요.'],
+  planner: ['자기주도 플래너', '오늘 할 일을 작게 나누고 완료하며 학습 리듬을 만드세요.'],
+  analysis: ['자기주도 글분석', '핵심어와 중심 내용을 찾아 읽은 글을 내 지식으로 바꾸세요.'],
+  reading: ['자기주도 속해독서', '읽기 속도와 이해도를 함께 확인하며 집중 독서를 훈련하세요.'],
+  note: ['통합노트', '핵심 개념, 내용, 요약을 한 화면에서 연결해 정리하세요.'],
+  review: ['복습 노트', '플래시카드와 반복 복습으로 배운 내용을 오래 기억하세요.'],
+  instructor: ['지도자 과정', '강의 과정과 실천 워크북을 탐색하며 코칭 역량을 높이세요.']
+};
+
+function toggleMainNav(forceOpen) {
+  const nav = document.getElementById('mainNav');
+  const toggle = document.getElementById('navToggle');
+  if (!nav || !toggle) return;
+  const open = typeof forceOpen === 'boolean' ? forceOpen : !nav.classList.contains('is-open');
+  nav.classList.toggle('is-open', open);
+  toggle.setAttribute('aria-expanded', String(open));
+  toggle.textContent = open ? '✕ 닫기' : '☰ 메뉴';
+}
+
 function showPanel(id, btn) {
+  const panel = document.getElementById('panel-' + id);
+  if (!panel || !btn) return;
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('panel-' + id).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+  });
+  panel.classList.add('active');
   btn.classList.add('active');
+  btn.setAttribute('aria-selected', 'true');
+  const meta = panelMeta[id] || [btn.textContent.trim(), '선택한 학습 도구를 이용하세요.'];
+  document.getElementById('contextTitle').textContent = meta[0];
+  document.getElementById('contextDescription').textContent = meta[1];
+  history.replaceState(null, '', '#' + id);
+  if (window.innerWidth <= 760) toggleMainNav(false);
   if (id === 'reading') renderSpeedChart();
 }
+
+window.addEventListener('resize', function() {
+  if (window.innerWidth > 760) toggleMainNav(false);
+});
 
 // ══════════════════════════════════
 // 1. 자기주도 플래너
@@ -3044,10 +3369,10 @@ function renderSpeedChart() {
 
   // URL 해시로 탭 자동 선택 (#routine, #planner, #analysis, #reading, #note, #review)
   var hash = window.location.hash.replace('#', '');
-  var validPanels = ['routine', 'planner', 'analysis', 'reading', 'note', 'review'];
+  var validPanels = ['routine', 'planner', 'analysis', 'reading', 'note', 'review', 'instructor'];
   if (hash && validPanels.includes(hash)) {
-    var btn = document.querySelector('[onclick="showPanel(\'' + hash + '\',this)"]');
-    if (btn) showPanel(hash, btn);
+    var btn = document.querySelector('[data-panel="' + hash + '"]');
+    if (btn && btn.style.display !== 'none') showPanel(hash, btn);
   }
 })();
 </script>
