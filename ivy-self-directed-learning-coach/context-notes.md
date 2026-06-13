@@ -96,3 +96,6 @@
 - 로컬 Playwright에서 A 51개, B 52개, B 52번 본문, 분석 시작, `sourceLevel: B` 저장, A 0/51·B 1/52 진도 분리를 확인했다.
 - 390×844 모바일 화면에서 문서 너비가 390px로 유지되었고 페이지 오류는 0건이었다.
 - `analysis-beginner-b.js`와 인라인 JavaScript 문법 검사, 52개 ID·번호·본문·글자 수 무결성 검사, 대상 파일 `git diff --check`가 통과했다.
+- 기능 커밋은 `f7b3c2b feat: 글분석 초급 B 교재 추가`이다.
+- Cloudflare Pages 미리보기 `https://5ccd3bbd.ivy-self-directed-learning-coach.pages.dev`와 운영 `https://ivy-self-directed-learning-coach.pages.dev/#analysis`에 배포했다.
+- 미리보기와 운영 재검증에서 HTTP 200, A 51개, B 52개, B 52번 본문·분석 시작, B 데이터 파일 HTTP 200, 모바일 문서 너비 390px, 페이지 오류 0건을 확인했다.
