@@ -2286,6 +2286,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
               <button class="analysis-workbook-tab active" type="button" role="tab" aria-selected="true" data-analysis-workbook-level="A" onclick="selectAnalysisWorkbookLevel('A')">초급 A</button>
               <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="B" onclick="selectAnalysisWorkbookLevel('B')">초급 B</button>
               <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="C" onclick="selectAnalysisWorkbookLevel('C')">초급 C</button>
+              <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="D" onclick="selectAnalysisWorkbookLevel('D')">초급 D</button>
             </div>
           </div>
           <div class="analysis-progress">
@@ -3025,6 +3026,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 <script src="analysis-beginner-a.js"></script>
 <script src="analysis-beginner-b.js"></script>
 <script src="analysis-beginner-c.js"></script>
+<script src="analysis-beginner-d.js"></script>
 <script>
 // ── 유틸 ──
 function toast(msg) {
@@ -3527,7 +3529,8 @@ let currentAnalysisId = null;
 const analysisWorkbookSets = {
   A: Array.isArray(window.IVY_BEGINNER_A_PASSAGES) ? window.IVY_BEGINNER_A_PASSAGES : [],
   B: Array.isArray(window.IVY_BEGINNER_B_PASSAGES) ? window.IVY_BEGINNER_B_PASSAGES : [],
-  C: Array.isArray(window.IVY_BEGINNER_C_PASSAGES) ? window.IVY_BEGINNER_C_PASSAGES : []
+  C: Array.isArray(window.IVY_BEGINNER_C_PASSAGES) ? window.IVY_BEGINNER_C_PASSAGES : [],
+  D: Array.isArray(window.IVY_BEGINNER_D_PASSAGES) ? window.IVY_BEGINNER_D_PASSAGES : []
 };
 let selectedAnalysisWorkbookLevel = 'A';
 let analysisWorkbookPassages = analysisWorkbookSets[selectedAnalysisWorkbookLevel];
