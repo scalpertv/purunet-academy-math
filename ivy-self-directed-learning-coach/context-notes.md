@@ -19,3 +19,6 @@
 - 390px와 320px 모바일 화면에서 대시보드와 검색 도구가 한 열로 전환되고 가로 넘침이 0인 것을 확인했다.
 - `index.html`과 `instructor.html`의 인라인 JavaScript 파싱과 `git diff --check`는 통과했다.
 - 프로젝트에 `package.json`이 없어 `npm run lint`, `npm run verify`, `npm run onefile`은 모두 `ENOENT`로 실행할 수 없다.
+- 기능 커밋은 `380d973`이며 프리뷰 `https://219e61a0.ivy-self-directed-learning-coach.pages.dev`와 운영 `https://ivy-self-directed-learning-coach.pages.dev`에 `v20260613c`를 배포했다.
+- 운영 Playwright에서 검색 5건, 진도·메모 새로고침 복원, 퀴즈와 실천 기록, 데스크톱·390px·320px 가로 넘침 0, 페이지 오류 0을 확인했다.
+- 기존 Pages Functions 번들은 배포되지만 `/api/load`와 `/api/save`가 SPA의 `index.html`로 응답하는 프로젝트 라우팅 문제가 있어 D1 왕복 검증은 완료하지 못했다. 브라우저 로컬 저장과 부모 페이지 연동은 정상 동작한다.
