@@ -33,3 +33,5 @@
 - Playwright에서 15강·워크북 6개 전환, 이전·다음 이동, 검색 3건, 완료 필터, 메모와 체크 새로고침 복원을 확인했다.
 - 1440·768·390·320px 직접 화면과 1440·390·320px 메인 iframe에서 가로 넘침과 페이지 오류가 모두 0이었다.
 - 프로젝트에 `package.json`이 없어 `npm run lint`, `npm run verify`, `npm run onefile`은 `ENOENT`로 실행되지 않았다.
+- 기능 커밋 `aa6ebf3`을 프리뷰 `https://db208cbe.ivy-self-directed-learning-coach.pages.dev`와 운영 `https://ivy-self-directed-learning-coach.pages.dev/#instructor`에 `v20260613d`로 배포했다.
+- 운영 주소에서 15강과 워크북 6개 전환을 재검증했고 1440·390·320px 직접 화면과 1440·390px 메인 iframe의 가로 넘침과 페이지 오류는 모두 0이었다.
