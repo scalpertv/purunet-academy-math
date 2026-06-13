@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<!-- 지도자 과정 교사 전용 인터랙티브 학습 가이드 -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>담쟁이 자기주도 학습코칭 — 지도자 과정</title>
+<style>
+:root {
+  --ivy-dark: #1b5e20;
+  --ivy-mid: #2e7d32;
+  --ivy-bright: #43a047;
+  --ivy-light: #7bc67b;
+  --ivy-pale: #c8e6c8;
+  --ivy-bg: #f0f8f0;
+  --text-dark: #1a1a1a;
+  --text-mid: #444;
+  --text-light: #777;
+  --border: #d0e8d0;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Malgun Gothic','맑은 고딕',-apple-system,sans-serif;
+  background: var(--ivy-bg);
+  color: var(--text-dark);
+  line-height: 1.7;
+}
+
+/* HEADER */
+.page-header {
+  background: linear-gradient(135deg,#1b5e20 0%,#2e7d32 60%,#43a047 100%);
+  color: white;
+  padding: 28px 24px 0;
+}
+.page-header-inner { max-width: 900px; margin: 0 auto; }
+.page-header h1 { font-size: 1.5rem; font-weight: 800; }
+.page-header p { font-size: 0.85rem; opacity: 0.8; margin-top: 4px; }
+.header-nav {
+  display: flex; gap: 0; margin-top: 20px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.header-nav::-webkit-scrollbar { display: none; }
+.hn-btn {
+  background: transparent; border: none; color: rgba(255,255,255,0.75);
+  padding: 12px 16px; font-size: 0.83rem; font-weight: 600;
+  cursor: pointer; white-space: nowrap; font-family: inherit;
+  border-bottom: 3px solid transparent;
+}
+.hn-btn:hover { color: white; }
+.hn-btn.active { color: white; border-bottom: 3px solid #a5d6a7; }
+
+/* MAIN */
+main { max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
+.part { display: none; }
+.part.active { display: block; }
+
+/* OVERVIEW CARD */
+.overview-card {
+  background: white; border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 24px; margin-bottom: 20px;
+  border-left: 5px solid var(--ivy-mid);
+}
+.overview-card h2 { font-size: 1.15rem; color: var(--ivy-dark); margin-bottom: 12px; }
+.tag-grid {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;
+}
+.tag {
+  background: var(--ivy-pale); color: var(--ivy-dark);
+  border-radius: 20px; padding: 4px 12px; font-size: 0.8rem; font-weight: 600;
+}
+
+/* LECTURE LIST */
+.lecture-list { display: flex; flex-direction: column; gap: 10px; }
+
+/* ACCORDION */
+.accordion {
+  background: white; border-radius: var(--radius);
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.acc-header {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px; cursor: pointer;
+  transition: background 0.15s;
+  user-select: none;
+}
+.acc-header:hover { background: #f9fdf9; }
+.acc-num {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--ivy-mid); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; font-weight: 700; flex-shrink: 0;
+}
+.acc-title { flex: 1; font-size: 0.95rem; font-weight: 700; color: var(--ivy-dark); }
+.acc-sub { font-size: 0.78rem; color: var(--text-light); margin-top: 2px; }
+.acc-arrow {
+  font-size: 0.85rem; color: var(--text-light);
+  transition: transform 0.2s; flex-shrink: 0;
+}
+.accordion.open .acc-arrow { transform: rotate(180deg); }
+.acc-body {
+  display: none; padding: 0 18px 20px;
+  border-top: 1px solid var(--border);
+}
+.accordion.open .acc-body { display: block; }
+
+/* CONTENT STYLES */
+.section-title {
+  font-size: 1rem; font-weight: 700; color: var(--ivy-dark);
+  margin: 18px 0 8px; display: flex; align-items: center; gap: 8px;
+}
+.section-title::before {
+  content: ''; display: inline-block;
+  width: 4px; height: 18px; background: var(--ivy-mid); border-radius: 2px;
+}
+p { margin-bottom: 10px; font-size: 0.9rem; color: var(--text-mid); }
+ul, ol { padding-left: 20px; margin-bottom: 10px; }
+li { font-size: 0.9rem; color: var(--text-mid); margin-bottom: 4px; }
+
+/* HIGHLIGHT BOX */
+.highlight {
+  background: #f1f8f1; border-left: 4px solid var(--ivy-light);
+  border-radius: 8px; padding: 14px 16px; margin: 12px 0;
+  font-size: 0.88rem;
+}
+.highlight strong { color: var(--ivy-dark); }
+
+/* QUOTE */
+.quote {
+  background: #fff9e6; border-left: 4px solid #ffc107;
+  border-radius: 8px; padding: 14px 16px; margin: 12px 0;
+  font-size: 0.88rem; font-style: italic; color: #5d4037;
+}
+
+/* GRID TABLE */
+.grid-table {
+  width: 100%; border-collapse: collapse; margin: 12px 0;
+  font-size: 0.82rem;
+}
+.grid-table th {
+  background: var(--ivy-mid); color: white;
+  padding: 8px 10px; text-align: left; font-weight: 700;
+}
+.grid-table td {
+  padding: 8px 10px; border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.grid-table tr:nth-child(even) td { background: #f9fdf9; }
+
+/* PRACTICE BOX */
+.practice {
+  background: #e8f5e9; border: 1.5px solid var(--ivy-light);
+  border-radius: 10px; padding: 14px 16px; margin: 14px 0;
+}
+.practice-title {
+  font-size: 0.82rem; font-weight: 700; color: var(--ivy-dark);
+  margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+}
+
+/* DIAMOND CARD */
+.diamond-grid {
+  display: grid; grid-template-columns: repeat(auto-fill,minmax(150px,1fr));
+  gap: 10px; margin: 14px 0;
+}
+.diamond-item {
+  background: var(--ivy-pale); border-radius: 10px;
+  padding: 12px; text-align: center;
+}
+.diamond-item .di-icon { font-size: 1.5rem; margin-bottom: 6px; }
+.diamond-item .di-title { font-size: 0.82rem; font-weight: 700; color: var(--ivy-dark); }
+.diamond-item .di-desc { font-size: 0.76rem; color: var(--text-mid); margin-top: 4px; }
+
+/* STEP FLOW */
+.step-flow {
+  display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+  margin: 12px 0;
+}
+.step-box {
+  background: var(--ivy-mid); color: white;
+  padding: 8px 14px; border-radius: 8px; font-size: 0.8rem;
+  font-weight: 700; text-align: center;
+}
+.step-arrow { color: var(--ivy-light); font-size: 1.1rem; font-weight: 700; }
+
+/* NOTE TABLE - 5*4*3 system */
+.system-table {
+  width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 12px 0;
+}
+.system-table th {
+  background: var(--ivy-dark); color: white; padding: 8px; text-align: center;
+}
+.system-table td {
+  border: 1px solid var(--border); padding: 8px; vertical-align: top;
+}
+.system-table .step-label {
+  background: var(--ivy-mid); color: white; font-weight: 700;
+  text-align: center; padding: 6px;
+}
+
+/* WORKBOOK SECTION */
+.wb-section {
+  background: white; border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 22px; margin-bottom: 16px;
+}
+.wb-title {
+  font-size: 1rem; font-weight: 700; color: var(--ivy-dark);
+  border-bottom: 2px solid var(--ivy-pale); padding-bottom: 10px;
+  margin-bottom: 14px; display: flex; align-items: center; gap: 10px;
+}
+.wb-title .wn { font-size: 1.2rem; }
+
+/* BADGE */
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 0.73rem; font-weight: 700;
+}
+.badge-green { background: #c8e6c8; color: #1b5e20; }
+.badge-orange { background: #ffe0b2; color: #e65100; }
+.badge-blue { background: #bbdefb; color: #0d47a1; }
+
+/* CHECKLIST INTERACTIVE */
+.check-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+}
+.check-item:last-child { border-bottom: none; }
+.check-box {
+  width: 20px; height: 20px; border: 2px solid var(--ivy-mid);
+  border-radius: 4px; flex-shrink: 0; display: flex;
+  align-items: center; justify-content: center; margin-top: 1px;
+  transition: background 0.15s;
+}
+.check-item.checked .check-box { background: var(--ivy-mid); color: white; }
+.check-text { font-size: 0.88rem; color: var(--text-mid); }
+.check-item.checked .check-text { text-decoration: line-through; color: var(--text-light); }
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .page-header h1 { font-size: 1.2rem; }
+  .diamond-grid { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <h1>📚 담쟁이 자기주도 학습코칭 — 지도자 과정</h1>
+    <p>교사 전용 자료 · 상위 1%의 꿈, 학습무기를 준비하라!</p>
+    <nav class="header-nav">
+      <button class="hn-btn active" onclick="showPart('overview',this)">📋 전체 개요</button>
+      <button class="hn-btn" onclick="showPart('part1',this)">📖 1부 — 강의 과정 (15강)</button>
+      <button class="hn-btn" onclick="showPart('part2',this)">✏️ 2부 — 워크북</button>
+    </nav>
+  </div>
+</div>
+
+<main>
+
+<!-- ===== 전체 개요 ===== -->
+<div class="part active" id="part-overview">
+
+  <div class="overview-card">
+    <h2>🎯 담쟁이 자기주도 학습코칭이란</h2>
+    <p>사람의 능력을 구성하는 요소인 <strong>지력·심력·체력·자기관리능력·인간관계능력</strong> 등 기본 능력을 전면적으로 교육하여 개인의 능력을 최대로 끌어올리는 것을 기본으로 합니다.</p>
+    <div class="diamond-grid">
+      <div class="diamond-item"><div class="di-icon">🧠</div><div class="di-title">지력</div><div class="di-desc">참과 거짓을 분별하는 힘</div></div>
+      <div class="diamond-item"><div class="di-icon">💚</div><div class="di-title">심력</div><div class="di-desc">지식을 내 것으로 만드는 마음의 힘</div></div>
+      <div class="diamond-item"><div class="di-icon">💪</div><div class="di-title">체력</div><div class="di-desc">바른 삶을 실천하는 몸의 힘</div></div>
+      <div class="diamond-item"><div class="di-icon">⏰</div><div class="di-title">자기관리력</div><div class="di-desc">능력을 가치 있는 곳에 사용하는 힘</div></div>
+      <div class="diamond-item"><div class="di-icon">🤝</div><div class="di-title">인간관계력</div><div class="di-desc">공동체의식으로 남을 섬기는 힘</div></div>
+    </div>
+  </div>
+
+  <div class="overview-card">
+    <h2>📚 1부 강의 과정 (15강)</h2>
+    <table class="grid-table">
+      <tr><th>강</th><th>주제</th><th>핵심 키워드</th></tr>
+      <tr><td>1강</td><td>O.T 및 전인적 학습코칭의 원론</td><td>달란트, 실력, 원리중심</td></tr>
+      <tr><td>2강</td><td>학습동기의 심력관리</td><td>삶의 목표, 반응력, 정서력</td></tr>
+      <tr><td>3강</td><td>학습동기의 지력관리</td><td>속해독서, 글분석, 정보처리</td></tr>
+      <tr><td>4강</td><td>학습동기의 자기관리능력</td><td>시간·재정·언어·태도 관리</td></tr>
+      <tr><td>5강</td><td>학습동기의 체력관리</td><td>건강 5원칙, 척추·관절 운동</td></tr>
+      <tr><td>6강</td><td>학습동기의 인간관계능력</td><td>자존감, 가족·동료·사회관계</td></tr>
+      <tr><td>7강</td><td>학습바인더와 상위1%의 꿈</td><td>5×4×3 시스템, 통합노트</td></tr>
+      <tr><td>8강</td><td>효과적인 교과 읽기법</td><td>전체보기, 목차정리</td></tr>
+      <tr><td>9강</td><td>노트의 목적 — 반복학습과 기억학습</td><td>통합노트, 4가지 노트</td></tr>
+      <tr><td>10강</td><td>도식화와 연상법으로 기억력 키우기</td><td>이미지화, 가지치기</td></tr>
+      <tr><td>11강</td><td>최상위권의 비밀 — 오답노트와 수첩활용</td><td>오답정리, 반복학습</td></tr>
+      <tr><td>12강</td><td>예습과 복습으로 망각 극복하기</td><td>에빙하우스, 복습 주기</td></tr>
+      <tr><td>13강</td><td>학교수업과 교과서가 우등생의 길</td><td>수업집중, 교과서 읽기</td></tr>
+      <tr><td>14강</td><td>과목별 공부방법 · 학습의 절대시간 확보</td><td>3시간 자기공부, 과목별 전략</td></tr>
+      <tr><td>15강</td><td>시험계획과 평가로 시험스트레스 날려라</td><td>시험계획표, 피드백</td></tr>
+    </table>
+  </div>
+
+  <div class="overview-card">
+    <h2>✏️ 2부 워크북</h2>
+    <div class="tag-grid">
+      <span class="tag">학습동기와 리더십 계발</span>
+      <span class="tag">플래너 활용</span>
+      <span class="tag">3분묵상 훈련</span>
+      <span class="tag">속해독서 능력향상</span>
+      <span class="tag">글 분석 능력향상</span>
+      <span class="tag">5단계 공부법 통합노트</span>
+      <span class="tag">복습노트 활용법</span>
+      <span class="tag">과목별 노트정리법</span>
+      <span class="tag">오답노트 활용법</span>
+    </div>
+  </div>
+
+</div><!-- /overview -->
+
+
+<!-- ===== 1부: 강의 과정 ===== -->
+<div class="part" id="part-part1">
+
+<div class="lecture-list">
+
+<!-- 1강 -->
+<div class="accordion" id="acc1">
+  <div class="acc-header" onclick="toggleAcc('acc1')">
+    <div class="acc-num">1</div>
+    <div>
+      <div class="acc-title">전인적 학습코칭의 원론</div>
+      <div class="acc-sub">실력이란 무엇인가 · 달란트 발견 · 능력 최대화 3원리</div>
+    </div>
+    <div class="acc-arrow">▼</div>
+  </div>
+  <div class="acc-body">
+    <div class="section-title">1. 전인적 교육관점으로 바라보기</div>
+    <p>사람의 능력을 구성하는 요소인 지력, 심력, 체력, 자기관리능력, 인간관계능력 등 기본 능력을 전면적으로 교육하여 개인의 능력을 최대로 끌어올립니다.</p>
+    <div class="highlight">
+      <strong>현실 교육의 두 가지 약점</strong><br>
+      ① 학교 성적과 실력 사이에 큰 차이가 있다.<br>
+      ② 성적 중하위권 학생은 실력을 쌓을 기회조차 갖지 못한다.
+    </div>
+
+    <div class="section-title">2. 실력이란 무엇인가</div>
+    <div class="quote">"실력은 자기에게 맡겨진 일을 바르게 잘 처리할 수 있는 능력이다."</div>
+    <p>성적은 실력을 목표로 하고 자신이 가진 달란트를 최대한 계발하면 부수적으로 따라옵니다. 최근 대기업에서 신입사원 채용 시 출신 학교를 적지 못하게 하는 이유가 바로 이것입니다.</p>
+
+    <div class="section-title">3. 원리 중심의 공부</div>
+    <div class="quote">"개헤엄은 열심히 해도 자유형을 이길 수 없다. 방법의 차이가 결과를 결정짓는다."</div>
+    <p>같은 실력이라면 수영복의 종류에 따라 메달이 결정되듯, <strong>도구와 방법의 차이가 결과를 결정</strong>합니다.</p>
+
+    <div class="section-title">4. 달란트란 무엇인가</div>
+    <ul>
+      <li>직업에 제한된 개념이 아님 — 어디에서나 자신의 달란트를 발휘할 수 있음</li>
+      <li>성취감과 연결된 개념 — 성취감을 주는 일을 선택하라</li>
+      <li>우열의 개념이 성립되지 않음 — 각자의 달란트는 모두 소중함</li>
+    </ul>
+    <div class="highlight">
+      <strong>달란트 비유 (마태복음 25장)</strong><br>
+      다섯 달란트, 두 달란트를 받은 종은 장사하여 더 남겼고 칭찬을 받았습니다. 주인이 책망한 것은 단순히 결과가 아니라 <strong>주어진 달란트를 가지고 최선을 다하지 않은 것</strong>이었습니다.
+    </div>
+
+    <div class="section-title">5. 능력 최대화 3원리</div>
+    <ol>
+      <li><strong>올바른 방법</strong>을 알아야 한다 — 학문의 원리와 특성을 배우고 가장 알맞은 학습 방법을 익혀야 함</li>
+      <li><strong>전인적 접근</strong>이 있어야 한다 — 지력, 심력, 체력, 자기관리력, 인간관계력 모두 중요</li>
+      <li><strong>구체적 커리큘럼</strong>이 있어야 한다 — 발견 → 적용 → 변화의 3단계</li>
+    </ol>
+
+    <div class="section-title">6. 진정한 리더십</div>
+    <div class="diamond-grid">
+      <div class="diamond-item"><div class="di-icon">💡</div><div class="di-title">지력</div><div class="di-desc">지식과 지혜</div></div>
+      <div class="diamond-item"><div class="di-icon">❤️</div><div class="di-title">심력</div><div class="di-desc">배려와 봉사의 마음</div></div>
+      <div class="diamond-item"><div class="di-icon">🏃</div><div class="di-title">체력</div><div class="di-desc">건강한 신체</div></div>
+    </div>
+    <p>21세기를 주도해 갈 리더는 이 세 가지를 조화롭게 갖춘 <strong>다이아몬드 칼라</strong>입니다.</p>
+  </div>
+</div>
+
+<!-- 2강 -->
+<div class="accordion" id="acc2">
+  <div class="acc-header" onclick="toggleAcc('acc2')">
+    <div class="acc-num">2</div>
+    <div>
+      <div class="acc-title">학습동기의 심력 관리</div>
+      <div class="acc-sub">삶의 목표 · 반응력과 책임감 · 정서력 · 남을 위한 삶</div>
+    </div>
+    <div class="acc-arrow">▼</div>
+  </div>
+  <div class="acc-body">
+    <div class="section-title">심력이란</div>
+    <div class="quote">"알고 있는 지식을 내 것으로 만드는 마음의 힘"</div>
+    <p>심력이 강해지면 자신의 능력을 최대한 발휘할 수 있게 됩니다. 군대를 다녀온 복학생들의 성적이 높은 이유는 혹독한 훈련을 통해 마음의 힘이 강해지기 때문입니다.</p>
+
+    <div class="section-title">1. 삶의 목표 확립</div>
+    <div class="highlight">
+      미국인 97%는 삶의 목표를 명료하게 파악하지 못한 채 살아갑니다. 반면 <strong>3%의 뚜렷한 인생 목표를 확립한 사람</strong>은 어떤 어려움도 주저앉지 않고 이길 힘을 가집니다.
+    </div>
+
+    <div class="practice">
+      <div class="practice-title">✍️ 삶의 목표 확립 실습</div>
+      <ul>
+        <li>유형의 자산 — 일생 동안 정말 갖고 싶은 것은?</li>
+        <li>무형의 자산 — 가장 중요하지만 눈에 보이지 않는 것은?</li>
+        <li>후회 없이 신나게 하고 싶은 일은?</li>
+        <li>지금 나의 가장 중요한 인생 목표 3가지를 30초 안에 적기</li>
+        <li>절대 실패하지 않는다면 꼭 하고 싶은 일 한 가지는?</li>
+      </ul>
+    </div>
+
+    <div class="section-title">2. 반응력과 책임감</div>
+    <p>실제로 반응력이 없는 사람은 책임감도 느끼기 어렵습니다. 전인교육의 심력 훈련 핵심이 바로 <strong>3분 묵상</strong>입니다.</p>
+
+    <div class="practice">
+      <div class="practice-title">✍️ 3분 묵상 3단계</div>
+      <div class="step-flow">
+        <div class="step-box">1단계<br><small>관찰</small></div>
+        <div class="step-arrow">▶</div>
+        <div class="step-box">2단계<br><small>느낀 점 적기</small></div>
+        <div class="step-arrow">▶</div>
+        <div class="step-box">3단계<br><small>적용하기</small></div>
+      </div>
+      <p style="margin-top:8px;">글을 읽으며 마음에 뭉클하게 다가온 부분에 밑줄 → 느낀 점 서술 → 일상에서 바꿀 1~2가지 결심</p>
+    </div>
+
+    <div class="section-title">3. 풍부한 정서력</div>
+    <p>상상력과 창의력은 주로 오른쪽 뇌의 활동에 의해 발현됩니다. 오른쪽 뇌를 활성화하려면 예능 활동을 통해 정서를 풍부하게 해야 합니다.</p>
+    <div class="highlight">
+      <strong>하루 15분 정서 활동</strong><br>
+      <em>적극적:</em> 악기 연주, 그림 그리기, 자연 산책<br>
+      <em>가벼운:</em> 클래식 음악 감상, 그림 감상, 자연 응시
+    </div>
+
+    <div class="section-title">4. 남을 위한 삶</div>
+    <div class="quote">"남을 위한 삶을 사는 사람은 진정한 기쁨과 함께 삶의 효율을 아는 사람이다."</div>
+    <p>자녀를 공부시킬 때 동기유발이 자신을 포함한 가정, 사회, 민족, 인류를 위한 것이 되어야 강한 책임감과 의지를 갖게 됩니다.</p>
+
+    <div class="section-title">5. 지식의 내면화</div>
+    <p>조직화되지 않은 지식은 컴퓨터에 저장되지 않고 화면에만 떠 있다가 사라지는 데이터와 같습니다. 마음의 힘을 통해 지식을 저장 시스템에 넣는 작업이 필요합니다.</p>
+  </div>
+</div>
+
+<!-- 3강 -->
+<div class="accordion" id="acc3">
+  <div class="acc-header" onclick="toggleAcc('acc3')">
+    <div class="acc-num">3</div>
+    <div>
+      <div class="acc-title">학습동기의 지력 관리</div>
+      <div class="acc-sub">정보처리력 · 속해독서 · 전체보기 · 글 분석</div>
+    </div>
+    <div class="acc-arrow">▼</div>
+  </div>
+  <div class="acc-body">
+    <div class="section-title">지력이란</div>
+    <div class="quote">"참과 거짓을 분별할 수 있는 힘"</div>
+    <p>하루에 새롭게 생산되는 정보의 양은 약 80만 건. 미래학자들은 2020년이 되면 73일마다 정보가 2배로 증가한다고 합니다. 이제는 <strong>지식의 양이 아닌, 지식을 잘 운용하는 지혜</strong>가 핵심입니다.</p>
+
+    <div class="section-title">지혜학습 5가지 방법</div>
+    <ol>
+      <li>정보처리 능력 기르기</li>
+      <li>전체를 보고 난 후에 부분을 보는 힘</li>
+      <li>추상화된 개념을 구체화시키는 능력</li>
+      <li>외국어 능력</li>
+      <li>자연세계에 대한 이해 능력</li>
+    </ol>
+
+    <div class="section-title">1. 정보처리력 — 속해 훈련</div>
+    <div class="highlight">
+      <strong>속독 vs 속해</strong><br>
+      속독 = 빠르게 읽는 능력만 키우기<br>
+      <strong>속해 = 빠르게 이해하도록 훈련</strong> — 지적 수준을 상승시키면서 빨리 이해하는 능력 계발
+    </div>
+    <ul>
+      <li>하루 5분 훈련으로 독서 능력 2배 이상 향상 가능</li>
+      <li>독서 속도와 이해력은 반비례가 아님 — 속도가 늦을수록 집중력이 오히려 떨어짐</li>
+      <li><strong>안구 훈련</strong>: 매일 3분씩 1개월 이상 훈련 → 1분에 1,200자 이상 독서 가능</li>
+    </ul>
+
+    <div class="section-title">2. 국어 공부의 핵심</div>
+    <ol>
+      <li><strong>판단력</strong>: 중요한 것과 중요하지 않은 것을 구별하는 능력</li>
+      <li><strong>결단력</strong>: 중요한 문장을 얼마나 신속하게 결정하는가</li>
+    </ol>
+    <p>이 방법은 국어뿐 아니라 사회, 과학, 수학, 영어 등 모든 과목에 적용됩니다.</p>
+
+    <div class="section-title">3. 전체보기(고공학습법)</div>
+    <div class="quote">"숲은 먼저 보고 난 후 나무를 본다."</div>
+    <p>1,000조각 퍼즐을 맞출 때 전체 그림을 먼저 보고 시작하듯, 과목 공부도 전체 흐름을 먼저 잡아야 합니다.</p>
+
+    <div class="section-title">4. 글 분석법</div>
+    <div class="practice">
+      <div class="practice-title">✍️ 글 읽기 표시 방법</div>
+      <ol>
+        <li>사선 치기 (문단 구분)</li>
+        <li>밑줄 긋기 — 읽으면서 중요 부분</li>
+        <li>☆ 하기 — 주제 찾기</li>
+        <li>중요 단어 □ 치기 (3개 선별)</li>
+        <li>이미지화로 상상하며 읽기</li>
+      </ol>
+    </div>
+
+    <div class="section-title">5. 글쓰기 단계</div>
+    <div class="step-flow">
+      <div class="step-box">초급<br><small>단어 나열</small></div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">중급<br><small>단어 가지치기</small></div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">고급<br><small>표출의 과감성</small></div>
+    </div>
+    <div class="highlight">
+      <strong>단어 가지치기</strong>: 하나의 단어를 중심으로 관련 단어 5~10개를 방사형으로 매달고, 각 단어에서 다시 5~10개씩 매달아 개념 확대 연상
+    </div>
+  </div>
+</div>
+
+<!-- 4강 -->
+<div class="accordion" id="acc4">
+  <div class="acc-header" onclick="toggleAcc('acc4')">
+    <div class="acc-num">4</div>
+    <div>
+      <div class="acc-title">학습동기의 자기관리력</div>
+      <div class="acc-sub">시간·재정·언어·태도 관리</div>
+    </div>
+    <div class="acc-arrow">▼</div>
+  </div>
+  <div class="acc-body">
+    <div class="section-title">자기관리력이란</div>
+    <div class="quote">"자신의 능력을 가치 있는 곳에 사용할 수 있는 힘"</div>
+    <p>똑같은 에너지도 어떻게 사용하느냐에 따라 결과가 완전히 달라집니다.</p>
+
+    <div class="section-title">1. 시간 관리</div>
+    <ul>
+      <li><strong>고공(高空)으로 시간 보기</strong>: 연간 → 월간 → 주간 → 일간 순서로 계획 수립</li>
+      <li><strong>자투리 시간 활용</strong>: 하루 2~6시간의 자투리 시간 중 30분만 활용해도 가치 있는 일을 새롭게 시작 가능</li>
+      <li><strong>시간 관리의 목표</strong>: 보다 많은 일이 아닌, 보다 여유 있는 삶</li>
+    </ul>
+    <div class="highlight">
+      <strong>일기 쓰기</strong>: 단순 나열이 아닌, 오늘의 삶을 반성하고 성찰하는 내용으로. 자신에게 질문을 던져 답을 끄집어내는 형식으로.
+    </div>
+
+    <div class="section-title">2. 재정 관리</div>
+    <p>적정한 돈을 투입해 효율을 극대화하는 것이 핵심입니다. 충동적 구매 금물. 필요 목록을 작성해 우선순위를 정하세요.</p>
+
+    <div class="section-title">3. 언어(말) 관리</div>
+    <div class="quote">"말 한마디로 천 냥 빚을 갚는다."</div>
+    <p>경청을 위한 4가지 조건: ① 말하는 내용이 쉬워야 함 ② 재미있어야 함 ③ 간결해야 함 ④ 깊이가 있어야 함</p>
+
+    <div class="section-title">4. 태도 관리</div>
+    <p>겸손한 사람은 개방적이기 때문에 끊임없이 성장합니다.</p>
+    <div class="highlight">
+      <strong>섬김 · 질서 · 실천</strong><br>
+      ① 섬김: 자신을 낮추며 화목을 유지<br>
+      ② 질서: 순종과 충성심<br>
+      ③ 실천: 말에 대한 책임감, 강한 행동력
+    </div>
+
+    <div class="section-title">5. 적성 찾기</div>
+    <p>적성을 찾는 가장 정확한 방법은 자신의 생활을 돌아보며 <strong>어떤 일을 했을 때 가장 성취감을 느끼는가</strong>를 알아보는 것입니다.</p>
+  </div>
+</div>
+
+<!-- 5강 -->
+<div class="accordion" id="acc5">
+  <div class="acc-header" onclick="toggleAcc('acc5')">
+    <div class="acc-num">5</div>
+    <div>
+      <div class="acc-title">학습동기의 체력 관리</div>
+      <div class="acc-sub">건강 5원칙 · 척추운동 · 관절운동 · 오관운동 · 숙면법</div>
+    </div>
+    <div class="acc-arrow">▼</div>
+  </div>
+  <div class="acc-body">
+    <div class="section-title">체력 관리의 목적</div>
+    <div class="quote">"바른 삶을 실천할 수 있는 몸의 힘"</div>
+    <p>건강을 잃는 두 가지 원인: ① 신체의 구조가 왜곡됨 ② 몸의 독소가 남아 있음</p>
+
+    <div class="section-title">건강 5가지 핵심 원칙</div>
+    <ol>
+      <li><strong>바른 자세</strong>: 척추를 곧게 세워 신경계와 내장 보호</li>
+      <li><strong>부드러운 관절</strong>: 혈액순환 개선, 유연한 몸 유지</li>
+      <li><strong>오관(눈·코·귀·혀·피부) 강화</strong>: 축농증, 비염, 감기 예방</li>
+      <li><strong>규칙적 배변 습관</strong>: 내장 운동으로 독소 제거</li>
+      <li><strong>깊은 수면</strong>: 피로 물질과 독소 순화</li>
+    </ol>
+
+    <div class="section-title">효과적 척추 운동 (매일 7회, 5분)</div>
+    <ul>
+      <li>허리 곧게 펴기</li>
+      <li>허리 뒤로 젖히기 (기지개 효과 극대화)</li>
+      <li>허리 굽혀 뻗기 (2~3주 지속 시 유연성 향상)</li>
+      <li>몸통 돌리기 (굳어진 척추 풀기)</li>
+    </ul>
+
+    <div class="section-title">숙면법 (독소 제거)</div>
+    <ul>
+      <li>발바닥 두드리기 — 두한족열(頭寒足熱)</li>
+      <li>마음에 힘 빼기</li>
+      <li>몸에 힘 빼기</li>
+    </ul>
+
+    <div class="highlight">
+      <strong>하루 건강 루틴</strong><br>
+      아침: 온몸 두드리기 → 세수하며 오관 운동<br>
+      낮: 바른 자세 유지, 쉬는 시간 관절 운동<br>
+      저녁: 체력 관련 운동<br>
+      취침 전: 내장 운동, 호흡법, 수면법
+    </div>
+  </div>
+</div>
+
+<!-- 6강 -->
+<div class="accordion" id="acc6">
+  <div class="acc-header" onclick="toggleAcc('acc6')">
+    <div class="acc-num">6</div>
+    <div>
+      <div class="acc-title">학습동기의 인간관계력</div>
+      <div class="acc-sub">나와 나 · 나와 가족 · 나와 동료 · 나와 사회</div>
+    </div>
+    <div class="acc-arrow">▼</div>
+  </div>
+  <div class="acc-body">
+    <div class="section-title">인간관계력이란</div>
+    <div class="quote">"공동체 의식을 갖고 남을 섬길 수 있는 힘"</div>
+    <div class="quote">"돈은 잃을 수 있다. 그러나 참된 실력자는 사람을 잃지 않는 것이다." — 소설 상도</div>
+
+    <div class="section-title">1. 나와 나 — 자존감</div>
+    <div class="practice">
+      <div class="practice-title">✍️ 장단점 분석표</div>
+      <p>자신이 생각하는 장점 5가지 / 단점 5가지를 구체적으로 작성하기</p>
+      <div class="highlight">
+        <strong>약점 → 장점 변환법</strong>: 약점을 뒤집어 보면 장점이 됩니다.<br>
+        <strong>장점 → 약점 방지</strong>: 열등감을 해결하지 못한 사람은 어처구니없는 우월감에 사로잡힙니다.<br>
+        → 인간의 장단점은 분리된 것이 아니라 하나의 <strong>특성</strong>으로 인정해야 합니다.
+      </div>
+    </div>
+
+    <div class="section-title">2. 나와 가족</div>
+    <p>자녀를 하나의 전면적인 인간으로 바라보기. 아이의 심력·지력·체력·자기관리력·인간관계력을 분석하고 장점을 부각시켜 단점을 보완해 주는 방향으로.</p>
+
+    <div class="section-title">3. 나와 동료</div>
+    <p>진정한 친구란 상대방의 정신적·물질적 필요에 서로 반응할 수 있는 관계입니다. '나와 나'의 관계가 정립되어야 타인의 장단점을 파악해 대인 관계를 성공적으로 이끌 수 있습니다.</p>
+
+    <div class="section-title">4. 나와 사회 — 다이아몬드 칼라</div>
+    <div class="diamond-grid">
+      <div class="diamond-item"><div class="di-icon">🧠</div><div class="di-title">지력</div><div class="di-desc">참과 거짓을 구별</div></div>
+      <div class="diamond-item"><div class="di-icon">💚</div><div class="di-title">심력</div><div class="di-desc">지식을 내면화</div></div>
+      <div class="diamond-item"><div class="di-icon">💪</div><div class="di-title">체력</div><div class="di-desc">바른 삶 실천</div></div>
+      <div class="diamond-item"><div class="di-icon">⏰</div><div class="di-title">자기관리</div><div class="di-desc">절제된 삶</div></div>
+      <div class="diamond-item"><div class="di-icon">🌍</div><div class="di-title">인간관계</div><div class="di-desc">세계를 품는 비전</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 7강 -->
+<div class="accordion" id="acc7">
+  <div class="acc-header" onclick="toggleAcc('acc7')">
+    <div class="acc-num">7</div>
+    <div>
+      <div class="acc-title">학습바인더와 상위 1%의 꿈</div>
+      <div class="acc-sub">5×4×3 시스템 · 학습패턴 5단계 · 4가지 노트</div>
+    </div>
+    <div class="acc-arrow">▼</div>
+  </div>
+  <div class="acc-body">
+    <div class="section-title">공부의 시작과 끝을 알라</div>
+    <div class="step-flow">
+      <div class="step-box">전체보기<br><small>목차·개요</small></div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">교과 읽기<br><small>이해·분석</small></div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">내용정리<br><small>노트작성</small></div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">문제풀기<br><small>오답정리</small></div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">반복심화<br><small>완전학습</small></div>
+    </div>
+
+    <div class="section-title">5×4×3 시스템</div>
+
+    <p><strong>① 학습패턴 5단계</strong></p>
+    <table class="system-table">
+      <tr><th>단계</th><th>학습 내용</th><th>도구</th></tr>
+      <tr>
+        <td class="step-label">전체보기</td>
+        <td>전체 흐름표 작성, 개요 파악, 제목 이해·질문, 중요 부분 파악</td>
+        <td>전체 흐름표</td>
+      </tr>
+      <tr>
+        <td class="step-label">교과읽기</td>
+        <td>1~2독: 내용이해 (사선·밑줄·동그라미·네모·화살표)<br>3~5독: 내용분석·점검기억</td>
+        <td>교과서</td>
+      </tr>
+      <tr>
+        <td class="step-label">내용정리</td>
+        <td>핵심 파악·작성, 제목 중심 기록, 안 보고 기억 기록<br>내용정리노트: 빠진 것 파란펜 추가</td>
+        <td>내용정리노트</td>
+      </tr>
+      <tr>
+        <td class="step-label">문제풀기</td>
+        <td>기본핵심문제 1권 (내용 안 보고 풀기)<br>심화응용문제 2~3권, 오답 ☆표(빨간펜)<br>오답노트 작성</td>
+        <td>오답노트</td>
+      </tr>
+      <tr>
+        <td class="step-label">반복&심화</td>
+        <td>단원·제목 서술형 통합논리 글쓰기<br>약점보충·반복학습·질문학습 첨삭</td>
+        <td>통합노트</td>
+      </tr>
+    </table>
+
+    <p><strong>② 4가지 학습 노트</strong></p>
+    <div class="step-flow">
+      <div class="step-box">RECEIVE<br><small>학습관리노트<br>준비·계획</small></div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">READ<br><small>수업복습노트<br>배우는 과정</small></div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">RESEARCH<br><small>내용정리노트<br>익히는 과정</small></div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">REMEMBER<br><small>오답노트<br>확인·표출</small></div>
+    </div>
+    <p style="margin-top:8px;font-size:0.82rem;color:var(--text-light);">+ REFLECT: 시련을 통해 배우는 피드백</p>
+
+    <p><strong>③ 자기 절대공부 3시간</strong></p>
+    <div class="highlight">
+      한국교육개발원 조사: 고교생 상위 10% 중 74.3%가 <strong>하루 3시간 집중 공부</strong><br>
+      방법: 30분 단위 계획 수립 → 집중력 극대화 + 마감 효과 활용
+    </div>
+
+    <div class="section-title">나만의 노트 3원칙</div>
+    <ol>
+      <li>내가 필요할 때 볼 수 있는 상태로 만들 것</li>
+      <li>통합될 것 (학교노트+프린트물+요약집을 하나로)</li>
+      <li>반복학습과 마무리 공부에 유용하게 쓰일 것</li>
+    </ol>
+  </div>
+</div>
+
+<!-- 8강 -->
+<div class="accordion" id="acc8">
+  <div class="acc-header" onclick="toggleAcc('acc8')">
+    <div class="acc-num">8</div>
+    <div>
+      <div class="acc-title">효과적인 교과 읽기법</div>
+      <div class="acc-sub">전체보기 전략 · 목차 정리 · 핵심어 뽑기</div>
+    </div>
+    <div class="acc-arrow">▼</div>
+  </div>
+  <div class="acc-body">
+    <div class="section-title">1. 부분보기보다 전체보기를 먼저</div>
+    <p>수정이 사례: 꼼꼼하게 공부하지만 시간이 많이 걸립니다. 이유는 전체 그림을 그리기 전에 너무 빨리 세부 내용을 외우려 하기 때문입니다.</p>
+    <div class="highlight">
+      <strong>전체보기 방법</strong> (길어도 5분 이내)<br>
+      큰 제목 → 소제목 → 그림·도표 → 이미 아는 내용인지 구별
+    </div>
+
+    <div class="section-title">2. 목차 정리 5단계</div>
+    <ol>
+      <li>교과서 한 단원을 독서하듯 읽기</li>
+      <li>단원의 목차를 정리 (굵은 글씨도 목차로 인식)</li>
+      <li>소목차 옆에 한 문장으로 중심 내용 압축 기록</li>
+      <li>가급적 한 단원이 한 페이지에 들어오도록 정리</li>
+      <li>정리 후 서너 번 정독 → 전체가 한눈에 들어옴</li>
+    </ol>
+
+    <div class="section-title">3. 핵심어 뽑아 연결하기</div>
+    <p>명주 사례: 사회, 국사 같은 암기 과목이 지겹다고 합니다. 해결법은 핵심어를 중심에 놓고 가지를 붙이는 방식.</p>
+    <div class="practice">
+      <div class="practice-title">✍️ 신석기 시대 생활 핵심어 예시</div>
+      <p>토기 → 유물 → 집 → 먹거리를 핵심어로 뽑고, 각각에 세부 내용을 가지처럼 붙임<br>
+      → 세부 내용이 낱개로 흩어지지 않고 핵심어를 중심으로 연상 효과</p>
+    </div>
+    <div class="quote">"구슬이 서 말이라도 꿰어야 보배" — 낱개 지식도 엮어야 필요할 때 꺼낼 수 있다.</div>
+  </div>
+</div>
+
+<!-- 9~15강 -->
+<div class="accordion" id="acc9">
+  <div class="acc-header" onclick="toggleAcc('acc9')">
+    <div class="acc-num">9</div>
+    <div>
+      <div class="acc-title">노트의 목적 — 반복학습과 기억학습</div>
+      <div class="acc-sub">4가지 노트 활용 · 통합노트 만들기</div>
+    </div>
+    <div class="acc-arrow">▼</div>
+  </div>
+  <div class="acc-body">
+    <div class="section-title">노트의 핵심 목적</div>
+    <div class="quote">"노트는 내가 필요할 때 볼 수 있는 상태로 만들어 놓는 것이다."</div>
+    <p>많은 학생들이 노트를 하지만 대부분 다시 볼 수 없는 상태로 만듭니다. 심지어 자기가 쓴 노트도 이해하지 못하는 경우도 있습니다. 이런 노트는 의미가 없습니다.</p>
+
+    <div class="section-title">통합노트 = 내가 만든 자습서</div>
+    <ul>
+      <li>학교노트 + 프린트물 + 요약집을 자유자재로 사용할 수 있는 상태로 통합</li>
+      <li>반복학습과 마무리 공부 시 유용하게 활용</li>
+      <li><strong>상위권 학생들의 공통점: 자신만의 통합 노트를 가지고 있음</strong></li>
+    </ul>
+
+    <div class="section-title">이해 → 암기 → 재배열 과정</div>
+    <div class="step-flow">
+      <div class="step-box">이해</div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">재배열<br><small>(노트)</small></div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">암기</div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">활용</div>
+    </div>
+  </div>
+</div>
+
+<div class="accordion" id="acc10">
+  <div class="acc-header" onclick="toggleAcc('acc10')">
+    <div class="acc-num">10</div>
+    <div>
+      <div class="acc-title">도식화와 연상법으로 기억력 키우기</div>
+      <div class="acc-sub">이미지화 · 마인드맵 · 개념 가지치기</div>
+    </div>
+    <div class="acc-arrow">▼</div>
+  </div>
+  <div class="acc-body">
+    <div class="section-title">이미지화의 힘</div>
+    <p>이미지화를 하면서 상상하게 되면 사고가 깊어지고 상관관계가 만들어집니다.</p>
+    <div class="highlight">
+      <strong>글 분석 이미지화 예시</strong><br>
+      1문단: 생각 → 미래 → 씨앗<br>
+      2문단: 생각 → 열쇠 → ···<br>
+      3문단: 생각 → 행복 → 결정
+    </div>
+
+    <div class="section-title">도식화 방법</div>
+    <ul>
+      <li>개념을 중심에 놓고 관련 개념을 방사형으로 연결</li>
+      <li>개념 심화 연상: 하나의 개념을 더 깊이 파고들기</li>
+      <li>개념 확대 연상: 연관 개념으로 넓혀 나가기</li>
+    </ul>
+
+    <div class="section-title">연상법 훈련</div>
+    <div class="practice">
+      <div class="practice-title">✍️ 단어 가지치기 실습</div>
+      <p>1단계: 단어 하나를 중심으로 관련 단어 5~10개 방사형으로 배치<br>
+      2단계: 매달린 단어 각각에서 다시 5~10개씩 연결<br>
+      3단계: 문장 만들기 및 글쓰기</p>
+    </div>
+  </div>
+</div>
+
+<div class="accordion" id="acc11">
+  <div class="acc-header" onclick="toggleAcc('acc11')">
+    <div class="acc-num">11</div>
+    <div>
+      <div class="acc-title">최상위권의 비밀 — 오답노트와 수첩 활용</div>
+      <div class="acc-sub">틀린 이유 파악 · 오답 반복학습</div>
+    </div>
+    <div class="acc-arrow">▼</div>
+  </div>
+  <div class="acc-body">
+    <div class="section-title">오답노트의 조건</div>
+    <p>약점이 10% 내외가 된 상태일 때 오답노트의 효과를 제대로 볼 수 있습니다.</p>
+    <div class="highlight">
+      <strong>오답노트 작성 원칙</strong><br>
+      ① 틀린 문제는 반드시 틀린 이유를 파악<br>
+      ② 개념을 정리한 후<br>
+      ③ 반복학습을 통해 완벽하게 해결
+    </div>
+
+    <div class="section-title">수첩 활용</div>
+    <ul>
+      <li>자투리 시간을 활용한 반복 복습</li>
+      <li>핵심 개념을 수첩에 정리해 언제 어디서나 복습</li>
+      <li>최상위권 학생들의 공통된 습관</li>
+    </ul>
+
+    <div class="section-title">오답 문제 처리 순서</div>
+    <div class="step-flow">
+      <div class="step-box">오답 표시<br><small>☆(빨간펜)</small></div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">원인 파악</div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">개념 정리<br><small>(오답노트)</small></div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">반복 확인</div>
+    </div>
+  </div>
+</div>
+
+<div class="accordion" id="acc12">
+  <div class="acc-header" onclick="toggleAcc('acc12')">
+    <div class="acc-num">12</div>
+    <div>
+      <div class="acc-title">예습과 복습으로 망각 극복하기</div>
+      <div class="acc-sub">에빙하우스 망각곡선 · 복습 주기 · 예습의 효과</div>
+    </div>
+    <div class="acc-arrow">▼</div>
+  </div>
+  <div class="acc-body">
+    <div class="section-title">망각과 싸우는 법</div>
+    <div class="highlight">
+      <strong>복습 최적 타이밍</strong><br>
+      배운 직후 → 24시간 후 → 1주일 후 → 1개월 후<br>
+      이 주기를 지키면 장기 기억으로 전환됩니다.
+    </div>
+
+    <div class="section-title">예습의 목적</div>
+    <ul>
+      <li>수업 전 전체 그림을 미리 그림</li>
+      <li>수업 시간에 더 깊은 이해가 가능</li>
+      <li>모르는 부분을 미리 파악해 질문 준비</li>
+    </ul>
+
+    <div class="section-title">효과적인 복습 방법</div>
+    <ul>
+      <li>당일 복습: 수업 후 당일에 노트 정리</li>
+      <li>주간 복습: 주말에 그 주 배운 내용 전체 흐름 재확인</li>
+      <li>시험 전 복습: 오답노트 중심으로 약점 집중 보완</li>
+    </ul>
+  </div>
+</div>
+
+<div class="accordion" id="acc13">
+  <div class="acc-header" onclick="toggleAcc('acc13')">
+    <div class="acc-num">13</div>
+    <div>
+      <div class="acc-title">학교수업과 교과서가 우등생의 길</div>
+      <div class="acc-sub">수업 집중 · 교과서 5번 읽기</div>
+    </div>
+    <div class="acc-arrow">▼</div>
+  </div>
+  <div class="acc-body">
+    <div class="section-title">교과서의 중요성</div>
+    <p>요즘 아이들이 교과서 읽기를 어려워하는 이유는 읽기 능력의 부족과 교과서의 중요성을 간과하기 때문입니다.</p>
+    <div class="highlight">
+      <strong>교과서 최소 5번 읽기</strong><br>
+      읽기 = 이해. 이해하지 않고 외우거나 문제를 푸는 것은 응용력 저하를 가져옵니다.
+    </div>
+
+    <div class="section-title">수업 집중의 중요성</div>
+    <ul>
+      <li>학교 수업이 가장 효율적인 학습 시간</li>
+      <li>선생님이 강조하는 부분 = 시험에 자주 나오는 부분</li>
+      <li>수업 중 질문은 학습 효율을 크게 높임</li>
+    </ul>
+  </div>
+</div>
+
+<div class="accordion" id="acc14">
+  <div class="acc-header" onclick="toggleAcc('acc14')">
+    <div class="acc-num">14</div>
+    <div>
+      <div class="acc-title">과목별 공부방법 · 학습의 절대시간</div>
+      <div class="acc-sub">3시간 자기공부 · 30분 단위 계획</div>
+    </div>
+    <div class="acc-arrow">▼</div>
+  </div>
+  <div class="acc-body">
+    <div class="section-title">학습의 절대시간 확보</div>
+    <div class="highlight">
+      상위 10% 학생의 74.3%가 하루 <strong>3시간 집중 공부</strong>.<br>
+      혼자 공부하는 시간이 많을수록 성적이 올라갑니다.
+    </div>
+
+    <div class="section-title">30분 단위 계획의 이유</div>
+    <ul>
+      <li>집중력을 가장 높일 수 있는 시간 단위</li>
+      <li>구체적 계획과 마감 효과 활용 가능</li>
+      <li>과목별로 30분씩 배분해 균형 학습</li>
+    </ul>
+
+    <div class="section-title">과목별 공부 전략</div>
+    <table class="grid-table">
+      <tr><th>과목 유형</th><th>핵심 전략</th></tr>
+      <tr><td>이해 과목 (수학·과학)</td><td>원리 이해 → 유사 문제 반복 → 응용</td></tr>
+      <tr><td>암기 과목 (사회·역사)</td><td>전체보기 → 핵심어 중심 정리 → 연상 반복</td></tr>
+      <tr><td>언어 과목 (국어·영어)</td><td>다독 + 글 분석 + 글쓰기 표현</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="accordion" id="acc15">
+  <div class="acc-header" onclick="toggleAcc('acc15')">
+    <div class="acc-num">15</div>
+    <div>
+      <div class="acc-title">시험계획과 평가로 시험스트레스 날려라</div>
+      <div class="acc-sub">시험 계획표 · 피드백 시스템</div>
+    </div>
+    <div class="acc-arrow">▼</div>
+  </div>
+  <div class="acc-body">
+    <div class="section-title">시험 계획 수립</div>
+    <p>시험 준비는 시험 날로부터 역산해 계획을 세워야 합니다.</p>
+    <div class="step-flow">
+      <div class="step-box">D-30<br><small>전체 범위 파악</small></div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">D-14<br><small>약점 집중 보완</small></div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">D-7<br><small>오답노트 반복</small></div>
+      <div class="step-arrow">▶</div>
+      <div class="step-box">D-1<br><small>전체 흐름 확인</small></div>
+    </div>
+
+    <div class="section-title">시험 후 피드백</div>
+    <div class="highlight">
+      <strong>REFLECT — 시련을 통해 배우는 피드백</strong><br>
+      ① 틀린 문제 유형 분석<br>
+      ② 공부 방법의 문제점 파악<br>
+      ③ 다음 시험 계획 수정<br>
+      ④ 강점은 유지, 약점은 보완
+    </div>
+
+    <div class="section-title">시험 스트레스 관리</div>
+    <ul>
+      <li>준비가 되어 있으면 스트레스가 줄어듦 — 계획이 해결책</li>
+      <li>목표를 점수가 아닌 실력 향상으로 설정</li>
+      <li>시험을 자신의 약점을 발견하는 기회로 인식</li>
+    </ul>
+  </div>
+</div>
+
+</div><!-- /lecture-list -->
+</div><!-- /part1 -->
+
+
+<!-- ===== 2부: 워크북 ===== -->
+<div class="part" id="part-part2">
+
+  <div class="wb-section">
+    <div class="wb-title"><span class="wn">1️⃣</span> 학습동기와 리더십 계발</div>
+    <p>자신의 학습 동기를 점검하고 리더로서의 비전을 확립합니다.</p>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">인생의 분명한 목표 3가지를 30초 안에 기록하기</div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">유형의 자산 / 무형의 자산 목록 작성하기</div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">달란트(강점) 발견 — 성취감을 느끼는 일 3가지 찾기</div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">장단점 분석표 작성 (각 5가지)</div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">다이아몬드 칼라 5요소 자기 점검</div>
+    </div>
+  </div>
+
+  <div class="wb-section">
+    <div class="wb-title"><span class="wn">2️⃣</span> 플래너 활용</div>
+    <p>연간 → 월간 → 주간 → 일간 계획을 수립하고 시간을 관리합니다.</p>
+    <div class="highlight">
+      <strong>30분 단위 하루 학습 계획표 예시</strong><br>
+      준비·계획(학습관리노트) → 수업복습 → 내용정리(과목1) → 내용정리(과목2) → 내용정리(과목3) → 영어 → 수학 → 오답노트
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">자투리 시간 목록 작성 (하루 2~6시간 찾기)</div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">주간 학습 계획표 작성</div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">우선순위 목록 정하기</div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">일기 쓰기 — 오늘의 성찰과 질문</div>
+    </div>
+  </div>
+
+  <div class="wb-section">
+    <div class="wb-title"><span class="wn">3️⃣</span> 3분 묵상 훈련</div>
+    <p>반응력과 책임감을 기르는 핵심 훈련입니다.</p>
+    <div class="practice">
+      <div class="practice-title">✍️ 3분 묵상 실습 예시 (권투선수 이야기)</div>
+      <p style="font-style:italic;color:#5d4037;">"권투 선수는 수백만 달러 대전료를 받지만, 그것은 그 일에 대한 대가뿐 아니라 일생을 통해 쌓은 훈련과 노력의 대가가 포함되어 있다."</p>
+      <ul>
+        <li>1단계: 밑줄 친 문장 → <em>_________________</em></li>
+        <li>2단계: 느낀 점 → <em>_________________</em></li>
+        <li>3단계: 적용할 점 → <em>_________________</em></li>
+      </ul>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">매일 3분 묵상 1회 완료</div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">하루 15분 정서 활동 (악기·그림·산책 중 1가지)</div>
+    </div>
+  </div>
+
+  <div class="wb-section">
+    <div class="wb-title"><span class="wn">4️⃣</span> 속해독서 능력 향상</div>
+    <p>속해 훈련으로 독서 능력을 2배 이상 향상시킵니다.</p>
+    <div class="highlight">
+      <strong>안구 훈련 목표</strong><br>
+      매일 3분 × 1개월 이상 → 1분에 10회 이상 → 분당 1,200자 이상 독서
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">안구 훈련표 3분 완료</div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">지문 읽기 — 글자 수 / 시간 / 1분당 글자 수 기록</div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">줄거리 정리 및 핵심어 찾기</div>
+    </div>
+  </div>
+
+  <div class="wb-section">
+    <div class="wb-title"><span class="wn">5️⃣</span> 글 분석 능력 향상</div>
+    <div class="practice">
+      <div class="practice-title">✍️ 글 읽기 표시 5단계</div>
+      <ol>
+        <li>사선 치기 (문단 구분)</li>
+        <li>밑줄 긋기 — 읽으면서 중요 부분</li>
+        <li>☆ 하기 — 주제 찾기</li>
+        <li>중요 단어 □ 치기 (핵심어 3개)</li>
+        <li>이미지화 — 상상하며 깊이 읽기</li>
+      </ol>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">글 분석 표시 5단계 적용해 한 지문 분석</div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">단어 가지치기 — 중심 단어 1개로 마인드맵 작성</div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">글쓰기: 초급(단어 나열) → 1분간 떠오르는 단어 기록</div>
+    </div>
+  </div>
+
+  <div class="wb-section">
+    <div class="wb-title"><span class="wn">6️⃣</span> 5단계 공부법 통합노트</div>
+
+    <p><strong>복습노트 활용법</strong></p>
+    <ul>
+      <li>수업 직후 핵심 내용을 자신의 말로 재정리</li>
+      <li>제목과 핵심어 중심으로 기록</li>
+      <li>파란 펜으로 빠진 내용 추가</li>
+    </ul>
+
+    <p style="margin-top:14px;"><strong>과목별 노트정리법</strong></p>
+    <table class="grid-table">
+      <tr><th>과목</th><th>노트정리 핵심</th></tr>
+      <tr><td>국어·영어</td><td>핵심어, 글 분석, 문장 구조 정리</td></tr>
+      <tr><td>수학·과학</td><td>개념 공식, 풀이 과정, 유사 문제 연결</td></tr>
+      <tr><td>사회·역사</td><td>목차 중심, 핵심어 연결, 흐름도</td></tr>
+    </table>
+
+    <p style="margin-top:14px;"><strong>오답노트 활용법</strong></p>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">오늘 틀린 문제 — 틀린 이유 파악해서 오답노트 기록</div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">통합노트 한 과목 정리 완료</div>
+    </div>
+    <div class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box">✓</div>
+      <div class="check-text">5×4×3 시스템으로 오늘 공부 3시간 완료</div>
+    </div>
+  </div>
+
+</div><!-- /part2 -->
+
+</main>
+
+<script>
+function showPart(id, btn) {
+  document.querySelectorAll('.part').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.hn-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('part-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function toggleAcc(id) {
+  var el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+}
+</script>
+</body>
+</html>
