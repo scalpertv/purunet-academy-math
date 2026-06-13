@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 지도자 과정 교사 전용 인터랙티브 학습 가이드 v20260613c -->
+<!-- 지도자 과정 교사 전용 인터랙티브 학습 가이드 v20260613d -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -514,9 +514,160 @@ li { font-size: 0.9rem; color: var(--text-mid); margin-bottom: 4px; }
 }
 .channel-toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+/* DUAL NAVIGATOR */
+.learning-navigator {
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.navigator-sidebar {
+  position: sticky;
+  top: 8px;
+  max-height: calc(100vh - 24px);
+  overflow: hidden;
+  border: 1px solid rgba(27,94,32,.12);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #1b5e20, #26732d);
+  box-shadow: 0 12px 30px rgba(31,84,38,.14);
+}
+.navigator-sidebar-head {
+  padding: 16px 15px 12px;
+  color: #fff;
+  border-bottom: 1px solid rgba(255,255,255,.15);
+}
+.navigator-sidebar-head span {
+  display: block;
+  color: #cde8cf;
+  font-size: .65rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.navigator-sidebar-head strong { display: block; margin-top: 2px; font-size: .95rem; }
+.navigator-sidebar-head small { display: block; margin-top: 3px; color: rgba(255,255,255,.7); font-size: .68rem; }
+.navigator-menu {
+  max-height: calc(100vh - 132px);
+  padding: 8px;
+  display: grid;
+  gap: 5px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.35) transparent;
+}
+.navigator-item {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 28px minmax(0,1fr) auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: rgba(255,255,255,.82);
+  background: rgba(255,255,255,.07);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: background .16s ease, color .16s ease, transform .16s ease;
+}
+.navigator-item:hover { color: #fff; background: rgba(255,255,255,.14); transform: translateX(2px); }
+.navigator-item.active {
+  color: var(--ivy-dark);
+  border-color: #fff;
+  background: #fff;
+  box-shadow: 0 7px 18px rgba(0,0,0,.16);
+}
+.navigator-item[hidden] { display: none; }
+.navigator-number {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #fff;
+  background: rgba(255,255,255,.16);
+  font-size: .72rem;
+  font-weight: 900;
+}
+.navigator-item.active .navigator-number { background: var(--ivy-mid); }
+.navigator-label { min-width: 0; }
+.navigator-label strong {
+  display: block;
+  overflow: hidden;
+  font-size: .75rem;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.navigator-label small {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: inherit;
+  opacity: .65;
+  font-size: .62rem;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.navigator-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.35);
+}
+.navigator-item.is-complete .navigator-status { background: #a5d6a7; box-shadow: 0 0 0 3px rgba(165,214,167,.16); }
+.navigator-item.active .navigator-status { background: var(--ivy-bright); }
+.navigator-content { min-width: 0; }
+.navigator-content-head {
+  margin-bottom: 12px;
+  padding: 11px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 7px 20px rgba(40,79,45,.06);
+}
+.navigator-content-head strong { color: var(--ivy-dark); font-size: .86rem; }
+.navigator-content-head span { color: var(--text-light); font-size: .7rem; }
+.lecture-list.navigator-panel .accordion { display: none; }
+.lecture-list.navigator-panel .accordion.navigator-selected:not([hidden]) { display: block; }
+.lecture-list.navigator-panel .accordion.navigator-selected .acc-body { display: block; }
+.lecture-list.navigator-panel .accordion.navigator-selected .acc-header { cursor: default; }
+.lecture-list.navigator-panel .accordion.navigator-selected .acc-arrow { display: none; }
+.navigator-empty {
+  display: none;
+  padding: 44px 20px;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  color: var(--text-light);
+  background: rgba(255,255,255,.7);
+  text-align: center;
+  font-size: .82rem;
+}
+.navigator-empty.show { display: block; }
+.workbook-panel .wb-section { display: none; margin-bottom: 0; }
+.workbook-panel .wb-section.navigator-selected { display: block; }
+.workbook-navigator .navigator-item {
+  grid-template-columns: 28px minmax(0,1fr);
+}
+.workbook-navigator .navigator-status { display: none; }
+.workbook-progress {
+  display: block;
+  margin-top: 3px;
+  color: inherit;
+  opacity: .7;
+  font-size: .62rem;
+}
+
 /* RESPONSIVE */
 @media (max-width: 820px) {
   .channel-dashboard { grid-template-columns: 1fr; }
+  .learning-navigator { grid-template-columns: 210px minmax(0, 1fr); gap: 12px; }
 }
 @media (max-width: 600px) {
   .page-header { padding: 18px 12px 12px; }
@@ -555,6 +706,34 @@ li { font-size: 0.9rem; color: var(--text-mid); margin-bottom: 4px; }
   .lesson-actions { flex-direction: column; }
   .lesson-nav { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
   .micro-button.complete { width: 100%; }
+  .learning-navigator { display: block; }
+  .navigator-sidebar {
+    position: static;
+    max-height: none;
+    margin-bottom: 10px;
+    border-radius: 13px;
+  }
+  .navigator-sidebar-head { padding: 11px 12px 8px; }
+  .navigator-sidebar-head small { display: none; }
+  .navigator-menu {
+    max-height: none;
+    padding: 7px;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+  }
+  .navigator-item {
+    min-width: 190px;
+    padding: 8px;
+    scroll-snap-align: start;
+  }
+  .navigator-item:hover { transform: none; }
+  .navigator-label strong { font-size: .72rem; }
+  .navigator-content-head { padding: 9px 11px; }
+  .navigator-content-head span { display: none; }
+  .workbook-navigator .navigator-item { min-width: 172px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
@@ -1497,6 +1676,8 @@ li { font-size: 0.9rem; color: var(--text-mid); margin-bottom: 4px; }
 var CHANNEL_KEY = 'ivyInstructorState';
 var channelState = loadChannelState();
 var currentCourseFilter = 'all';
+var currentLessonNumber = Math.max(1, Math.min(15, Number(channelState.lastOpened) || 1));
+var currentWorkbookSection = 1;
 var noteSaveTimers = {};
 var channelToastTimer = 0;
 var channelQuiz = [
@@ -1571,6 +1752,10 @@ function showPart(id, btn) {
 function toggleAcc(id) {
   var el = document.getElementById(id);
   if (!el) return;
+  if (el.classList.contains('navigator-selected')) {
+    el.classList.add('open');
+    return;
+  }
   var opening = !el.classList.contains('open');
   document.querySelectorAll('.accordion.open').forEach(function(item) {
     if (item !== el) item.classList.remove('open');
@@ -1590,6 +1775,7 @@ function toggleCheck(el) {
     if (checked && stateIndex < 0) channelState.workbook.push(index);
     if (!checked && stateIndex >= 0) channelState.workbook.splice(stateIndex, 1);
     saveChannelState(checked ? '실천 항목을 완료했습니다.' : '실천 항목 완료를 취소했습니다.');
+    renderWorkbookNavigatorStates();
   }
 }
 
@@ -1643,11 +1829,149 @@ function buildChannelUI() {
   document.body.insertAdjacentHTML('beforeend', '<div class="channel-toast" id="channelToast" role="status"></div>');
   augmentLessons();
   initializeWorkbookChecks();
+  buildDualNavigators();
   bindChannelEvents();
   renderQuiz();
   renderActions();
   renderChannelDashboard();
   applyLectureFilter();
+}
+
+function buildDualNavigators() {
+  var part1 = document.getElementById('part-part1');
+  var lectureList = part1.querySelector('.lecture-list');
+  var toolbar = part1.querySelector('.learning-toolbar');
+  var lectureShell = document.createElement('div');
+  lectureShell.className = 'learning-navigator lecture-navigator';
+  lectureShell.innerHTML =
+    '<aside class="navigator-sidebar">' +
+      '<div class="navigator-sidebar-head"><span>LECTURE NAVIGATOR</span><strong>15강 바로가기</strong><small>강의를 선택하면 오른쪽에서 바로 학습합니다.</small></div>' +
+      '<div class="navigator-menu" id="lessonNavigatorMenu" aria-label="15강 선택 메뉴"></div>' +
+    '</aside>' +
+    '<section class="navigator-content">' +
+      '<div class="navigator-content-head"><strong id="selectedLessonHeading">1강</strong><span>강의 본문 · 코칭 메모 · 완료 체크</span></div>' +
+      '<div class="navigator-content-slot"></div>' +
+      '<div class="navigator-empty" id="lessonNavigatorEmpty">검색 조건에 맞는 강의가 없습니다.</div>' +
+    '</section>';
+  toolbar.parentNode.insertBefore(lectureShell, toolbar);
+  var lectureSlot = lectureShell.querySelector('.navigator-content-slot');
+  lectureSlot.appendChild(toolbar);
+  lectureSlot.appendChild(lectureList);
+  lectureList.classList.add('navigator-panel');
+
+  document.querySelectorAll('.accordion').forEach(function(lesson) {
+    var number = Number(lesson.dataset.lesson);
+    var title = lesson.querySelector('.acc-title').textContent.trim();
+    var subtitle = lesson.querySelector('.acc-sub').textContent.trim();
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'navigator-item';
+    button.dataset.lessonNav = String(number);
+    button.innerHTML =
+      '<span class="navigator-number">' + number + '</span>' +
+      '<span class="navigator-label"><strong></strong><small></small></span>' +
+      '<span class="navigator-status" aria-hidden="true"></span>';
+    button.querySelector('strong').textContent = title;
+    button.querySelector('small').textContent = subtitle;
+    button.addEventListener('click', function() { selectLessonInNavigator(number, { scroll: true }); });
+    document.getElementById('lessonNavigatorMenu').appendChild(button);
+  });
+
+  var part2 = document.getElementById('part-part2');
+  var workbookSections = Array.from(part2.querySelectorAll('.wb-section'));
+  var workbookShell = document.createElement('div');
+  workbookShell.className = 'learning-navigator workbook-navigator';
+  workbookShell.innerHTML =
+    '<aside class="navigator-sidebar">' +
+      '<div class="navigator-sidebar-head"><span>WORKBOOK NAVIGATOR</span><strong>실천 워크북</strong><small>영역을 선택하고 실천 항목을 하나씩 완료하세요.</small></div>' +
+      '<div class="navigator-menu" id="workbookNavigatorMenu" aria-label="워크북 선택 메뉴"></div>' +
+    '</aside>' +
+    '<section class="navigator-content workbook-panel">' +
+      '<div class="navigator-content-head"><strong id="selectedWorkbookHeading">워크북 1</strong><span>실천 항목은 선택 즉시 자동 저장됩니다.</span></div>' +
+      '<div class="workbook-content-slot"></div>' +
+    '</section>';
+  part2.insertBefore(workbookShell, workbookSections[0]);
+  var workbookSlot = workbookShell.querySelector('.workbook-content-slot');
+  workbookSections.forEach(function(section, index) {
+    var number = index + 1;
+    var title = section.querySelector('.wb-title').textContent.trim().replace(/^[^\s]+\s*/, '');
+    section.dataset.workbookSection = String(number);
+    workbookSlot.appendChild(section);
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'navigator-item';
+    button.dataset.workbookNav = String(number);
+    button.innerHTML =
+      '<span class="navigator-number">' + number + '</span>' +
+      '<span class="navigator-label"><strong></strong><span class="workbook-progress"></span></span>';
+    button.querySelector('strong').textContent = title;
+    button.addEventListener('click', function() { selectWorkbookInNavigator(number, { scroll: true }); });
+    document.getElementById('workbookNavigatorMenu').appendChild(button);
+  });
+
+  selectLessonInNavigator(currentLessonNumber, { persist: false });
+  selectWorkbookInNavigator(currentWorkbookSection, { scroll: false });
+  renderLessonStates();
+  renderWorkbookNavigatorStates();
+}
+
+function selectLessonInNavigator(number, options) {
+  options = options || {};
+  number = Math.max(1, Math.min(15, Number(number) || 1));
+  var lesson = document.getElementById('acc' + number);
+  if (!lesson || lesson.hidden) return;
+  document.querySelectorAll('.accordion.navigator-selected').forEach(function(item) {
+    item.classList.remove('navigator-selected', 'open');
+  });
+  document.querySelectorAll('[data-lesson-nav]').forEach(function(button) {
+    button.classList.toggle('active', Number(button.dataset.lessonNav) === number);
+  });
+  lesson.classList.add('navigator-selected', 'open');
+  currentLessonNumber = number;
+  channelState.lastOpened = number;
+  var title = lesson.querySelector('.acc-title').textContent.trim();
+  document.getElementById('selectedLessonHeading').textContent = number + '강 · ' + title;
+  if (options.persist !== false) saveChannelState();
+  if (options.scroll) {
+    var activeButton = document.querySelector('[data-lesson-nav="' + number + '"]');
+    if (activeButton) activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    window.setTimeout(function() {
+      document.querySelector('.lecture-navigator').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  }
+}
+
+function selectWorkbookInNavigator(number, options) {
+  options = options || {};
+  var sections = document.querySelectorAll('[data-workbook-section]');
+  number = Math.max(1, Math.min(sections.length, Number(number) || 1));
+  sections.forEach(function(section) {
+    section.classList.toggle('navigator-selected', Number(section.dataset.workbookSection) === number);
+  });
+  document.querySelectorAll('[data-workbook-nav]').forEach(function(button) {
+    button.classList.toggle('active', Number(button.dataset.workbookNav) === number);
+  });
+  currentWorkbookSection = number;
+  var selected = document.querySelector('[data-workbook-section="' + number + '"]');
+  var title = selected.querySelector('.wb-title').textContent.trim().replace(/^[^\s]+\s*/, '');
+  document.getElementById('selectedWorkbookHeading').textContent = '워크북 ' + number + ' · ' + title;
+  if (options.scroll) {
+    var activeButton = document.querySelector('[data-workbook-nav="' + number + '"]');
+    if (activeButton) activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    window.setTimeout(function() {
+      document.querySelector('.workbook-navigator').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  }
+}
+
+function renderWorkbookNavigatorStates() {
+  document.querySelectorAll('[data-workbook-section]').forEach(function(section) {
+    var number = Number(section.dataset.workbookSection);
+    var items = Array.from(section.querySelectorAll('.check-item'));
+    var complete = items.filter(function(item) { return item.classList.contains('checked'); }).length;
+    var progress = document.querySelector('[data-workbook-nav="' + number + '"] .workbook-progress');
+    if (progress) progress.textContent = complete + ' / ' + items.length + ' 완료';
+  });
 }
 
 function augmentLessons() {
@@ -1716,6 +2040,8 @@ function renderLessonStates() {
     var button = lesson.querySelector('[data-complete-lesson]');
     if (label) label.textContent = completed ? '완료' : '학습 전';
     if (button) button.textContent = completed ? '완료 취소' : '학습 완료';
+    var navButton = document.querySelector('[data-lesson-nav="' + number + '"]');
+    if (navButton) navButton.classList.toggle('is-complete', completed);
   });
 }
 
@@ -1739,12 +2065,7 @@ function openLesson(number) {
   });
   document.getElementById('lectureSearch').value = '';
   applyLectureFilter();
-  var lesson = document.getElementById('acc' + number);
-  document.querySelectorAll('.accordion.open').forEach(function(item) { item.classList.remove('open'); });
-  lesson.classList.add('open');
-  channelState.lastOpened = number;
-  saveChannelState();
-  window.setTimeout(function() { lesson.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 80);
+  selectLessonInNavigator(number, { scroll: true });
 }
 
 function resumeLearning() {
@@ -1761,6 +2082,7 @@ function applyLectureFilter() {
   if (!input) return;
   var query = input.value.trim().toLowerCase();
   var visible = 0;
+  var visibleNumbers = [];
   document.querySelectorAll('.accordion').forEach(function(lesson) {
     var number = Number(lesson.dataset.lesson);
     var complete = channelState.completed.indexOf(number) >= 0;
@@ -1768,10 +2090,28 @@ function applyLectureFilter() {
     var matchesState = currentCourseFilter === 'all'
       || (currentCourseFilter === 'complete' && complete)
       || (currentCourseFilter === 'open' && !complete);
-    lesson.hidden = !(matchesText && matchesState);
-    if (!lesson.hidden) visible += 1;
+    var matches = matchesText && matchesState;
+    lesson.hidden = !matches;
+    var navButton = document.querySelector('[data-lesson-nav="' + number + '"]');
+    if (navButton) navButton.hidden = !matches;
+    if (matches) {
+      visible += 1;
+      visibleNumbers.push(number);
+    }
   });
   document.getElementById('lectureCount').textContent = visible + '개 강의';
+  var empty = document.getElementById('lessonNavigatorEmpty');
+  empty.classList.toggle('show', visible === 0);
+  if (visible === 0) {
+    document.querySelectorAll('.accordion.navigator-selected').forEach(function(item) {
+      item.classList.remove('navigator-selected', 'open');
+    });
+    document.querySelectorAll('[data-lesson-nav]').forEach(function(button) { button.classList.remove('active'); });
+  } else if (visibleNumbers.indexOf(currentLessonNumber) < 0) {
+    selectLessonInNavigator(visibleNumbers[0], { persist: false });
+  } else {
+    selectLessonInNavigator(currentLessonNumber, { persist: false });
+  }
 }
 
 function renderChannelDashboard() {
@@ -1859,12 +2199,15 @@ window.addEventListener('message', function(event) {
   if (event.origin !== location.origin || !event.data || event.data.type !== 'ivy-instructor-hydrate') return;
   localStorage.setItem(CHANNEL_KEY, JSON.stringify(event.data.state || {}));
   channelState = loadChannelState();
+  currentLessonNumber = Math.max(1, Math.min(15, Number(channelState.lastOpened) || 1));
   renderLessonStates();
   initializeWorkbookChecks();
+  renderWorkbookNavigatorStates();
   renderQuiz();
   renderActions();
   renderChannelDashboard();
   applyLectureFilter();
+  selectLessonInNavigator(currentLessonNumber, { persist: false });
 });
 
 buildChannelUI();
