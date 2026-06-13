@@ -99,3 +99,16 @@
 - 기능 커밋은 `f7b3c2b feat: 글분석 초급 B 교재 추가`이다.
 - Cloudflare Pages 미리보기 `https://5ccd3bbd.ivy-self-directed-learning-coach.pages.dev`와 운영 `https://ivy-self-directed-learning-coach.pages.dev/#analysis`에 배포했다.
 - 미리보기와 운영 재검증에서 HTTP 200, A 51개, B 52개, B 52번 본문·분석 시작, B 데이터 파일 HTTP 200, 모바일 문서 너비 390px, 페이지 오류 0건을 확인했다.
+
+## 글분석 초급 C PDF 교재 반영
+
+- 대상 PDF는 106쪽이며 4쪽부터 104쪽까지 짝수 쪽에 본문 51개, 다음 홀수 쪽에 마인드맵·서술형 활동지가 배치되어 있다.
+- PDF에 한글 텍스트 레이어가 있어 PyMuPDF로 본문을 추출하고, 머리말과 구조도 표는 제외한다.
+- 초급 B와 같은 줄 끝 공백 기반 정제 규칙을 적용하고 고유 ID는 `beginner-c-01` 형식을 사용한다.
+- 기존 저장 구조의 `sourceLevel`에 `C`를 저장해 A·B와 번호가 겹쳐도 진도와 기록을 분리한다.
+- `analysis-beginner-c.js`에 51개 지문, 초급 단계, PDF 쪽 번호, 공백 제외 글자 수를 저장했다.
+- 원본 화면과 대조해 깨진 온도 기호 두 곳을 `℃`로, 중점 기호를 `·`로, 중복 마침표를 하나로 보정했다.
+- 글분석 화면에 초급 C 탭을 추가하고 기존 단계 판별을 `beginner-{단계}-번호` 형식 전체에 대응하도록 일반화했다.
+- 로컬 Playwright에서 A 51개, B 52개, C 51개, C 51번 본문·분석 시작, `sourceLevel: C` 저장과 교재별 진도 분리를 확인했다.
+- 390×844 모바일 화면에서 문서 너비가 390px로 유지되었고 페이지 오류는 0건이었다.
+- A·B·C 총 154개 지문의 ID·번호·본문·글자 수 무결성 검사, 데이터와 인라인 JavaScript 문법 검사, 대상 파일 `git diff --check`가 통과했다.

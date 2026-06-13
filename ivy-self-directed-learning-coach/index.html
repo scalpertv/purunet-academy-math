@@ -643,6 +643,7 @@ label:first-child { margin-top: 0; }
 }
 .analysis-workbook-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 7px;
   margin: 10px 0 2px;
 }
@@ -2284,6 +2285,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
             <div class="analysis-workbook-tabs" role="tablist" aria-label="글분석 교재 선택">
               <button class="analysis-workbook-tab active" type="button" role="tab" aria-selected="true" data-analysis-workbook-level="A" onclick="selectAnalysisWorkbookLevel('A')">초급 A</button>
               <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="B" onclick="selectAnalysisWorkbookLevel('B')">초급 B</button>
+              <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="C" onclick="selectAnalysisWorkbookLevel('C')">초급 C</button>
             </div>
           </div>
           <div class="analysis-progress">
@@ -3022,6 +3024,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 
 <script src="analysis-beginner-a.js"></script>
 <script src="analysis-beginner-b.js"></script>
+<script src="analysis-beginner-c.js"></script>
 <script>
 // ── 유틸 ──
 function toast(msg) {
@@ -3523,7 +3526,8 @@ let keywords = [];
 let currentAnalysisId = null;
 const analysisWorkbookSets = {
   A: Array.isArray(window.IVY_BEGINNER_A_PASSAGES) ? window.IVY_BEGINNER_A_PASSAGES : [],
-  B: Array.isArray(window.IVY_BEGINNER_B_PASSAGES) ? window.IVY_BEGINNER_B_PASSAGES : []
+  B: Array.isArray(window.IVY_BEGINNER_B_PASSAGES) ? window.IVY_BEGINNER_B_PASSAGES : [],
+  C: Array.isArray(window.IVY_BEGINNER_C_PASSAGES) ? window.IVY_BEGINNER_C_PASSAGES : []
 };
 let selectedAnalysisWorkbookLevel = 'A';
 let analysisWorkbookPassages = analysisWorkbookSets[selectedAnalysisWorkbookLevel];
@@ -3545,7 +3549,8 @@ function getAnalysisSourceById(id) {
 
 function getAnalysisItemLevel(item) {
   if (item && item.sourceLevel) return item.sourceLevel;
-  return item && String(item.sourceId || '').startsWith('beginner-b-') ? 'B' : 'A';
+  const match = String(item && item.sourceId || '').match(/^beginner-([a-z])-/);
+  return match ? match[1].toUpperCase() : 'A';
 }
 
 function selectAnalysisWorkbookLevel(level) {
