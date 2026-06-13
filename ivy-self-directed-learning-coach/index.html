@@ -641,6 +641,28 @@ label:first-child { margin-top: 0; }
 .analysis-passage-btn.complete.active {
   outline: 3px solid rgba(67,160,71,.22);
 }
+.analysis-workbook-tabs {
+  display: flex;
+  gap: 7px;
+  margin: 10px 0 2px;
+}
+.analysis-workbook-tab {
+  padding: 7px 13px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text-mid);
+  font: inherit;
+  font-size: .76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.analysis-workbook-tab:hover,
+.analysis-workbook-tab.active {
+  border-color: var(--ivy-mid);
+  color: #fff;
+  background: var(--ivy-mid);
+}
 .analysis-passage-reader {
   padding: 16px;
   border: 1px solid rgba(46,125,50,.12);
@@ -2257,8 +2279,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
       <div class="analysis-workbook">
         <div class="analysis-workbook-head">
           <div>
-            <div class="card-title"><span>📘</span> 글분석 초급 A 교재</div>
-            <p>51개 지문을 차례로 분석하거나 원하는 번호부터 시작할 수 있어요.</p>
+            <div class="card-title" id="analysisWorkbookTitle"><span>📘</span> 글분석 초급 A 교재</div>
+            <p id="analysisWorkbookDescription">51개 지문을 차례로 분석하거나 원하는 번호부터 시작할 수 있어요.</p>
+            <div class="analysis-workbook-tabs" role="tablist" aria-label="글분석 교재 선택">
+              <button class="analysis-workbook-tab active" type="button" role="tab" aria-selected="true" data-analysis-workbook-level="A" onclick="selectAnalysisWorkbookLevel('A')">초급 A</button>
+              <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="B" onclick="selectAnalysisWorkbookLevel('B')">초급 B</button>
+            </div>
           </div>
           <div class="analysis-progress">
             <strong id="analysisWorkbookProgress">0 / 51 완료</strong>
@@ -2995,6 +3021,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 </div>
 
 <script src="analysis-beginner-a.js"></script>
+<script src="analysis-beginner-b.js"></script>
 <script>
 // ── 유틸 ──
 function toast(msg) {
@@ -3494,9 +3521,12 @@ function updateWeeklyFeedback(field, value) {
 // ══════════════════════════════════
 let keywords = [];
 let currentAnalysisId = null;
-const analysisWorkbookPassages = Array.isArray(window.IVY_BEGINNER_A_PASSAGES)
-  ? window.IVY_BEGINNER_A_PASSAGES
-  : [];
+const analysisWorkbookSets = {
+  A: Array.isArray(window.IVY_BEGINNER_A_PASSAGES) ? window.IVY_BEGINNER_A_PASSAGES : [],
+  B: Array.isArray(window.IVY_BEGINNER_B_PASSAGES) ? window.IVY_BEGINNER_B_PASSAGES : []
+};
+let selectedAnalysisWorkbookLevel = 'A';
+let analysisWorkbookPassages = analysisWorkbookSets[selectedAnalysisWorkbookLevel];
 let selectedAnalysisPassageNumber = 1;
 let activeAnalysisSourceId = null;
 let analysisCurrentStep = 1;
@@ -3507,6 +3537,31 @@ let analysisMindmap = { center: '', branches: [] };
 
 function getAnalysisPassage(number) {
   return analysisWorkbookPassages.find(item => item.number === number) || null;
+}
+
+function getAnalysisSourceById(id) {
+  return Object.values(analysisWorkbookSets).flat().find(item => item.id === id) || null;
+}
+
+function getAnalysisItemLevel(item) {
+  if (item && item.sourceLevel) return item.sourceLevel;
+  return item && String(item.sourceId || '').startsWith('beginner-b-') ? 'B' : 'A';
+}
+
+function selectAnalysisWorkbookLevel(level) {
+  if (!analysisWorkbookSets[level] || level === selectedAnalysisWorkbookLevel) return;
+  selectedAnalysisWorkbookLevel = level;
+  analysisWorkbookPassages = analysisWorkbookSets[level];
+  selectedAnalysisPassageNumber = 1;
+  activeAnalysisSourceId = null;
+  analysisAnnotations = { words: {}, sentences: {} };
+  document.querySelectorAll('[data-analysis-workbook-level]').forEach(button => {
+    const active = button.dataset.analysisWorkbookLevel === level;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+  });
+  renderAnalysisWorkbook();
+  updateAnalysisLearningProgress();
 }
 
 function showAnalysisStep(step) {
@@ -3630,9 +3685,17 @@ function updateAnalysisAnnotationStatus() {
 function renderAnalysisWorkbook() {
   const menu = document.getElementById('analysisPassageMenu');
   if (!menu || analysisWorkbookPassages.length === 0) return;
+  const level = selectedAnalysisWorkbookLevel;
+  const levelIds = new Set(analysisWorkbookPassages.map(item => item.id));
   const completedIds = new Set(
-    load('analyses', []).filter(item => item.sourceId).map(item => item.sourceId)
+    load('analyses', [])
+      .filter(item => item.sourceId && levelIds.has(item.sourceId))
+      .map(item => item.sourceId)
   );
+  document.getElementById('analysisWorkbookTitle').innerHTML =
+    `<span>📘</span> 글분석 초급 ${level} 교재`;
+  document.getElementById('analysisWorkbookDescription').textContent =
+    `${analysisWorkbookPassages.length}개 지문을 차례로 분석하거나 원하는 번호부터 시작할 수 있어요.`;
   menu.innerHTML = '';
   analysisWorkbookPassages.forEach(item => {
     const button = document.createElement('button');
@@ -3641,7 +3704,7 @@ function renderAnalysisWorkbook() {
     if (completedIds.has(item.id)) button.classList.add('complete');
     if (item.number === selectedAnalysisPassageNumber) button.classList.add('active');
     button.textContent = String(item.number).padStart(2, '0');
-    button.setAttribute('aria-label', `글분석 초급 A ${item.number}번 지문`);
+    button.setAttribute('aria-label', `글분석 초급 ${level} ${item.number}번 지문`);
     button.addEventListener('click', () => selectAnalysisPassage(item.number));
     menu.appendChild(button);
   });
@@ -3665,7 +3728,7 @@ function selectAnalysisPassage(number, options) {
     ? JSON.parse(JSON.stringify(saved.annotations))
     : { words: {}, sentences: {} };
   document.getElementById('analysisPassageHeading').textContent =
-    `초급 A ${number}번 지문 · ${passage.charCount}자`;
+    `초급 ${selectedAnalysisWorkbookLevel} ${number}번 지문 · ${passage.charCount}자`;
   renderInteractiveAnalysisPassage(passage);
   if (!options || options.updateButtons !== false) {
     document.querySelectorAll('.analysis-passage-btn').forEach((button, index) => {
@@ -3702,10 +3765,10 @@ function startWorkbookAnalysis() {
   text.value = passage.text;
   text.dispatchEvent(new Event('input'));
   document.getElementById('analysisSourceState').textContent =
-    `📘 글분석 초급 A ${passage.number}번 지문 분석 중`;
+    `📘 글분석 초급 ${selectedAnalysisWorkbookLevel} ${passage.number}번 지문 분석 중`;
   showAnalysisStep(2);
   document.getElementById('analysisTitle').focus({ preventScroll: true });
-  toast(`📘 초급 A ${passage.number}번 지문을 불러왔습니다.`);
+  toast(`📘 초급 ${selectedAnalysisWorkbookLevel} ${passage.number}번 지문을 불러왔습니다.`);
 }
 
 function selectAnalysisChoice(inputId, value, button) {
@@ -4025,7 +4088,7 @@ function saveAnalysis() {
   const title = document.getElementById('analysisTitle').value.trim();
   if (!title) { toast('❗ 글 제목을 입력하세요.'); return; }
   const list = load('analyses', []);
-  const source = analysisWorkbookPassages.find(item => item.id === activeAnalysisSourceId);
+  const source = getAnalysisSourceById(activeAnalysisSourceId);
   const item = {
     id: currentAnalysisId || Date.now(),
     title,
@@ -4047,6 +4110,7 @@ function saveAnalysis() {
     selfChecks: getAnalysisSelfChecks(),
     completion: getAnalysisCompletion().total,
     sourceId: source ? source.id : null,
+    sourceLevel: source ? (source.level || selectedAnalysisWorkbookLevel) : null,
     sourceNumber: source ? source.number : null,
     date: new Date().toLocaleDateString('ko-KR')
   };
@@ -4092,7 +4156,7 @@ function renderAnalysisList() {
   cont.innerHTML = list.map(a => `
     <div class="analysis-item" onclick="viewAnalysis(${a.id})">
       <div class="analysis-item-title">${a.title}</div>
-      <div class="analysis-item-meta">📅 ${a.date}${a.sourceNumber ? ` · 초급 A ${a.sourceNumber}번` : ''}${a.completion ? ` · 완성도 ${a.completion}%` : ''} · 키워드: ${(a.keywords || []).slice(0,3).join(', ')}${(a.keywords || []).length>3?'...':''}</div>
+      <div class="analysis-item-meta">📅 ${a.date}${a.sourceNumber ? ` · 초급 ${getAnalysisItemLevel(a)} ${a.sourceNumber}번` : ''}${a.completion ? ` · 완성도 ${a.completion}%` : ''} · 키워드: ${(a.keywords || []).slice(0,3).join(', ')}${(a.keywords || []).length>3?'...':''}</div>
     </div>`).join('');
 }
 
@@ -4104,7 +4168,7 @@ function viewAnalysis(id) {
   document.getElementById('analysisViewTitle').textContent = '🔍 ' + item.title;
   document.getElementById('analysisViewContent').innerHTML = `
     <div style="margin-bottom:10px;"><strong>📅 날짜:</strong> ${item.date}</div>
-    ${item.sourceNumber ? `<div style="margin-bottom:8px;"><strong>📘 교재:</strong> 글분석 초급 A ${item.sourceNumber}번</div>` : ''}
+    ${item.sourceNumber ? `<div style="margin-bottom:8px;"><strong>📘 교재:</strong> 글분석 초급 ${getAnalysisItemLevel(item)} ${item.sourceNumber}번</div>` : ''}
     ${item.completion ? `<div style="margin-bottom:8px;"><strong>📈 학습 완성도:</strong> ${item.completion}%</div>` : ''}
     <div style="margin-bottom:8px;"><strong>🏷️ 키워드:</strong> ${(item.keywords || []).map(k => `<span class="chip" style="display:inline-flex;margin:2px;">${k}</span>`).join('')}</div>
     <div style="margin-bottom:8px;"><strong>🎯 목적·구조:</strong> ${[item.purpose,item.textStructure].filter(Boolean).join(' · ') || '-'}</div>
