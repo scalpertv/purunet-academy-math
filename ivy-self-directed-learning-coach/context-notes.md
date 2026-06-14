@@ -148,3 +148,18 @@
 - 기능 커밋은 `cc73f59 feat: 글분석 중급 A 교재 추가`이다.
 - Cloudflare Pages 미리보기 `https://442636b8.ivy-self-directed-learning-coach.pages.dev`와 운영 `https://ivy-self-directed-learning-coach.pages.dev/#analysis`에 `v20260614a`를 배포했다.
 - 미리보기와 운영 재검증에서 HTTP 200, 중급 A 데이터 파일 52,256바이트, 지문 51개, 51번 본문·분석 시작·저장, 초급 A와 중급 A의 진도 분리, 모바일 문서 너비 390px, 페이지 오류 0건을 확인했다.
+
+## 글분석 중급 B PDF 교재 반영
+
+- 요청 대상은 `담쟁이 학습코칭 교재/자기주도 글분석력/글분석중급B.pdf`와 운영 `#analysis` 화면이다.
+- 대상 PDF는 104쪽이며 4쪽부터 102쪽까지 짝수 쪽에 본문 50개, 다음 홀수 쪽에 마인드맵·서술형 활동지가 배치되어 있다. 104쪽은 뒤표지이다.
+- PDF에 한글 텍스트 레이어가 있어 PyMuPDF로 본문을 직접 추출한다.
+- 일부 본문 쪽에는 `학습능력 (글분석 중급-B), 담쟁이학습코칭` 머리말이 두 번 추출되므로 모든 반복 머리말과 구조도 표를 제거한다.
+- PDF 줄바꿈에서 마침표 뒤 다음 문장이 붙는 경우에는 문장 경계에만 공백을 보완하고, 낱말 중간 줄바꿈은 기존 줄 끝 공백 규칙으로 연결한다.
+- 중급 B는 `intermediate-b` 키와 `intermediate-b-01` 형식의 고유 ID를 사용해 기존 교재의 진도·저장 기록과 분리한다.
+- 중급 B 25번과 50번은 PDF 내부에서 같은 우리나라 지역 구분 지문이 반복 수록되어 있다. 원본 교재 구성이므로 두 번호를 모두 별도 진도로 유지한다.
+- `analysis-intermediate-b.js`에 50개 지문, `intermediate-b` 단계, PDF 쪽 번호와 공백 제외 글자 수를 저장했다.
+- 로컬 Playwright에서 교재 탭 6개, 중급 B 지문 50개, 50번 본문·분석 시작, `sourceLevel: intermediate-b` 저장, 초급 A·중급 A·중급 B 진도 분리를 확인했다.
+- 390×844 모바일 화면에서 가로 넘침이 없었고 페이지 오류는 0건이었다.
+- PDF 50개 본문 재추출 대조, 데이터 ID·번호·쪽·글자 수 무결성 검사, 데이터 파일과 인라인 JavaScript 문법 검사, 대상 파일 `git diff --check`가 통과했다.
+- 프로젝트 루트에 `package.json`이 없어 `npm run lint`, `npm run verify`, `npm run onefile`은 모두 `ENOENT`로 실행할 수 없었다.
