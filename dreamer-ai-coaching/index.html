@@ -1,0 +1,186 @@
+<!-- 꿈쟁이 AI 코칭의 진단·과정·상담 랜딩페이지를 제공한다. -->
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>꿈쟁이 AI 코칭 × 5차원 AI 학습코칭</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Pretendard','ui-sans-serif','system-ui','Apple SD Gothic Neo','Noto Sans KR','sans-serif'] },
+          colors: {
+            navy: '#111827', ink: '#0f172a', violet: '#6d5dfc', sky: '#24a6ff', mint: '#25d6a2', peach: '#ffb86b', rose: '#ff6b9a'
+          },
+          boxShadow: { glow: '0 30px 90px rgba(45, 120, 255, .28)', soft: '0 18px 60px rgba(15,23,42,.12)' }
+        }
+      }
+    }
+  </script>
+  <style>
+    html{scroll-behavior:smooth} .glass{background:rgba(255,255,255,.74);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.62)}
+    .gradient-text{background:linear-gradient(90deg,#315eff,#7c3aed,#00b894);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .orb{filter:blur(36px);opacity:.55}.card-hover{transition:.25s ease}.card-hover:hover{transform:translateY(-6px)}
+    .path-dot:before{content:"";position:absolute;left:22px;top:50px;bottom:-35px;width:2px;background:linear-gradient(#8b5cf6,#38bdf8)}
+    .path-dot:last-child:before{display:none}.mi-bar{height:10px;border-radius:999px;background:linear-gradient(90deg,#6d5dfc,#24a6ff,#25d6a2)}
+  </style>
+</head>
+<body class="bg-slate-50 text-ink font-sans overflow-x-hidden">
+  <div class="fixed inset-0 -z-10 overflow-hidden">
+    <div class="orb absolute -top-24 -left-20 w-96 h-96 rounded-full bg-sky"></div>
+    <div class="orb absolute top-52 -right-20 w-[34rem] h-[34rem] rounded-full bg-violet"></div>
+    <div class="orb absolute bottom-10 left-1/4 w-96 h-96 rounded-full bg-mint"></div>
+  </div>
+
+  <header class="sticky top-0 z-50 border-b border-white/50 bg-white/70 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between">
+      <a href="#top" class="flex items-center gap-3">
+        <span class="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet to-sky grid place-items-center text-white font-black">5D</span>
+        <span class="font-black tracking-tight text-lg">꿈쟁이 AI 코칭</span>
+      </a>
+      <nav class="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-600">
+        <a href="#diagnosis" class="hover:text-violet">AI 진단</a><a href="#five" class="hover:text-violet">5차원 루틴</a><a href="#classes" class="hover:text-violet">연령별 과정</a><a href="#dashboard" class="hover:text-violet">성장 리포트</a><a href="#contact" class="hover:text-violet">상담 신청</a>
+      </nav>
+      <a href="#contact" class="rounded-full bg-ink text-white px-5 py-2.5 text-sm font-bold shadow-soft">무료 진단 예약</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="relative max-w-7xl mx-auto px-5 pt-16 pb-20 lg:pt-24">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <div class="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-soft text-sm font-bold text-violet mb-6">5차원 전면교육 × 다중지능 진단 × AI 학습코칭</div>
+          <h1 class="text-4xl md:text-6xl font-black leading-tight tracking-tight">유아부터 고등까지<br><span class="gradient-text">AI가 매일 코칭하는</span><br>자기주도 학습 페이지</h1>
+          <p class="mt-6 text-lg text-slate-600 leading-8">꿈쟁이 AI 코칭의 맞춤 학습 흐름을 5차원 전면교육의 지적·정서·신체·자기관리·관계 역량으로 확장하고, 다중지능 진단과 AI 학습 루틴을 연결한 프리미엄 학습코칭 랜딩페이지입니다.</p>
+          <div class="mt-8 flex flex-col sm:flex-row gap-3">
+            <a href="#diagnosis" class="rounded-2xl bg-gradient-to-r from-violet to-sky text-white px-7 py-4 font-black shadow-glow text-center">AI 학습 진단 시작</a>
+            <a href="#classes" class="rounded-2xl bg-white px-7 py-4 font-black shadow-soft text-center">연령별 과정 보기</a>
+          </div>
+          <div class="mt-8 grid grid-cols-3 gap-3 max-w-xl">
+            <div class="glass rounded-3xl p-4"><b class="text-2xl">5D</b><p class="text-xs text-slate-500 mt-1">전면 성장</p></div>
+            <div class="glass rounded-3xl p-4"><b class="text-2xl">8 MI</b><p class="text-xs text-slate-500 mt-1">다중지능</p></div>
+            <div class="glass rounded-3xl p-4"><b class="text-2xl">1:1</b><p class="text-xs text-slate-500 mt-1">AI 코칭</p></div>
+          </div>
+        </div>
+        <div class="relative">
+          <div class="glass rounded-[2rem] p-5 shadow-glow">
+            <div class="rounded-[1.5rem] bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-6 text-white overflow-hidden relative">
+              <div class="absolute right-0 top-0 w-52 h-52 bg-sky/30 rounded-full blur-3xl"></div>
+              <div class="relative">
+                <div class="flex items-center justify-between"><span class="text-sm text-slate-300">오늘의 AI 코칭</span><span class="text-xs bg-white/15 px-3 py-1 rounded-full">LIVE</span></div>
+                <h2 class="mt-5 text-3xl font-black">태훈 학생 성장 리포트</h2>
+                <p class="text-slate-300 mt-2">언어지능·논리수학지능 강점 / 자기관리 루틴 보강 추천</p>
+                <div class="mt-7 grid grid-cols-5 gap-2">
+                  <div class="h-28 rounded-2xl bg-white/10 p-3 flex flex-col justify-end"><div class="h-[78%] rounded-xl bg-sky"></div><span class="text-xs mt-2">지적</span></div>
+                  <div class="h-28 rounded-2xl bg-white/10 p-3 flex flex-col justify-end"><div class="h-[64%] rounded-xl bg-rose"></div><span class="text-xs mt-2">정서</span></div>
+                  <div class="h-28 rounded-2xl bg-white/10 p-3 flex flex-col justify-end"><div class="h-[58%] rounded-xl bg-peach"></div><span class="text-xs mt-2">신체</span></div>
+                  <div class="h-28 rounded-2xl bg-white/10 p-3 flex flex-col justify-end"><div class="h-[70%] rounded-xl bg-violet"></div><span class="text-xs mt-2">관리</span></div>
+                  <div class="h-28 rounded-2xl bg-white/10 p-3 flex flex-col justify-end"><div class="h-[72%] rounded-xl bg-mint"></div><span class="text-xs mt-2">관계</span></div>
+                </div>
+                <div class="mt-6 bg-white text-ink rounded-3xl p-4">
+                  <p class="text-sm font-bold">AI 추천 루틴</p>
+                  <p class="text-sm text-slate-600 mt-1">① 그림책 속해독서 15분 → ② 감정카드 묵상 3분 → ③ 수학 개념 마인드맵 1장</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="diagnosis" class="max-w-7xl mx-auto px-5 py-16">
+      <div class="text-center max-w-3xl mx-auto"><span class="text-violet font-black">AI 진단 시스템</span><h2 class="text-3xl md:text-5xl font-black mt-3">연령별 다중지능 + 5차원 학습진단</h2><p class="mt-5 text-slate-600 leading-7">검사 결과를 점수로 끝내지 않고, 개인별 맞춤 학습 콘텐츠와 5단계 일일 루틴으로 바로 연결합니다.</p></div>
+      <div class="mt-10 grid lg:grid-cols-3 gap-5">
+        <div class="lg:col-span-2 glass rounded-[2rem] p-6 shadow-soft">
+          <div class="flex flex-wrap gap-2 mb-5" id="ageTabs">
+            <button data-age="유아" class="age-tab rounded-full px-4 py-2 bg-ink text-white font-bold">유아반</button><button data-age="초등" class="age-tab rounded-full px-4 py-2 bg-white font-bold">초등반</button><button data-age="중등" class="age-tab rounded-full px-4 py-2 bg-white font-bold">중등반</button><button data-age="고등" class="age-tab rounded-full px-4 py-2 bg-white font-bold">고등반</button>
+          </div>
+          <div class="grid md:grid-cols-2 gap-4" id="questionBox"></div>
+          <button id="calcBtn" class="mt-6 w-full rounded-2xl bg-gradient-to-r from-violet to-sky text-white py-4 font-black">AI 진단 결과 보기</button>
+        </div>
+        <div class="glass rounded-[2rem] p-6 shadow-soft">
+          <h3 class="text-2xl font-black">진단 결과</h3><p class="text-sm text-slate-500 mt-2">문항을 체크하면 강점지능과 추천 코칭이 표시됩니다.</p>
+          <div id="resultBox" class="mt-6 space-y-4"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="five" class="max-w-7xl mx-auto px-5 py-16">
+      <div class="grid lg:grid-cols-2 gap-10 items-start">
+        <div><span class="text-violet font-black">5차원 AI 루틴</span><h2 class="text-3xl md:text-5xl font-black mt-3">매일 60~90분, 공부 습관을 자동 설계</h2><p class="mt-5 text-slate-600 leading-7">학습 플래너, 3분 묵상, 속해독서, 글분석, 마인드맵을 하나의 사이클로 묶어 학생의 전면 성장을 관리합니다.</p></div>
+        <div class="space-y-5">
+          <div class="relative path-dot pl-16"><span class="absolute left-0 top-0 w-12 h-12 rounded-2xl bg-violet text-white grid place-items-center font-black">1</span><h3 class="font-black text-xl">학습 플래너</h3><p class="text-slate-600 mt-1">오늘 목표, 시간 배분, 우선순위, 완료 체크</p></div>
+          <div class="relative path-dot pl-16"><span class="absolute left-0 top-0 w-12 h-12 rounded-2xl bg-rose text-white grid place-items-center font-black">2</span><h3 class="font-black text-xl">3분 묵상</h3><p class="text-slate-600 mt-1">감사·회상·수용·다짐·호흡으로 학습 준비</p></div>
+          <div class="relative path-dot pl-16"><span class="absolute left-0 top-0 w-12 h-12 rounded-2xl bg-sky text-white grid place-items-center font-black">3</span><h3 class="font-black text-xl">속해독서</h3><p class="text-slate-600 mt-1">제목 훑기, 핵심어 찾기, 3줄 요약</p></div>
+          <div class="relative path-dot pl-16"><span class="absolute left-0 top-0 w-12 h-12 rounded-2xl bg-peach text-white grid place-items-center font-black">4</span><h3 class="font-black text-xl">글분석</h3><p class="text-slate-600 mt-1">문단 요약, 주장·근거, 사실·의견 구분</p></div>
+          <div class="relative path-dot pl-16"><span class="absolute left-0 top-0 w-12 h-12 rounded-2xl bg-mint text-white grid place-items-center font-black">5</span><h3 class="font-black text-xl">마인드맵</h3><p class="text-slate-600 mt-1">개념 연결, 오답 구조화, 발표 훈련</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="classes" class="max-w-7xl mx-auto px-5 py-16">
+      <div class="text-center max-w-3xl mx-auto"><span class="text-violet font-black">연령별 고도화 과정</span><h2 class="text-3xl md:text-5xl font-black mt-3">유아반부터 고등 자기주도학습까지</h2></div>
+      <div class="mt-10 grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <article class="card-hover glass rounded-[2rem] p-6 shadow-soft"><div class="text-4xl">🌱</div><h3 class="mt-5 text-2xl font-black">유아반</h3><p class="text-slate-600 mt-3">한글·수감각·파닉스·그림책을 감정카드와 놀이형 마인드맵으로 연결합니다.</p><ul class="mt-4 text-sm text-slate-600 space-y-2"><li>• 그림책 1권 + 이야기 순서 카드</li><li>• 숫자·패턴 놀이</li><li>• 감정 색깔 3분 루틴</li></ul></article>
+        <article class="card-hover glass rounded-[2rem] p-6 shadow-soft"><div class="text-4xl">📘</div><h3 class="mt-5 text-2xl font-black">초등반</h3><p class="text-slate-600 mt-3">국어·수학·영어 기초를 개인별 교과 수준에 맞춰 매일 플래너로 관리합니다.</p><ul class="mt-4 text-sm text-slate-600 space-y-2"><li>• SMART 목표 기초</li><li>• 문장제 속해독서</li><li>• 오답 마인드맵</li></ul></article>
+        <article class="card-hover glass rounded-[2rem] p-6 shadow-soft"><div class="text-4xl">🧭</div><h3 class="mt-5 text-2xl font-black">중등반</h3><p class="text-slate-600 mt-3">내신 대비, 독해력, 서술형 답안, 자기관리 루틴을 AI가 주간 단위로 코칭합니다.</p><ul class="mt-4 text-sm text-slate-600 space-y-2"><li>• SQ3R 독서법</li><li>• 논증 글분석</li><li>• 시험 D-Day 계획</li></ul></article>
+        <article class="card-hover glass rounded-[2rem] p-6 shadow-soft"><div class="text-4xl">🚀</div><h3 class="mt-5 text-2xl font-black">고등반</h3><p class="text-slate-600 mt-3">수능형 독해, 고교학점제, 진로 포트폴리오를 압축 마인드맵으로 관리합니다.</p><ul class="mt-4 text-sm text-slate-600 space-y-2"><li>• 수능 지문 분석</li><li>• 진로·학점제 플래너</li><li>• 면접 개념맵</li></ul></article>
+      </div>
+    </section>
+
+    <section id="dashboard" class="max-w-7xl mx-auto px-5 py-16">
+      <div class="glass rounded-[2.5rem] p-6 md:p-10 shadow-glow bg-white/80">
+        <div class="grid lg:grid-cols-2 gap-10 items-center">
+          <div><span class="text-violet font-black">학부모·교사용 대시보드</span><h2 class="text-3xl md:text-5xl font-black mt-3">점수보다 성장 과정을 보여주는 리포트</h2><p class="mt-5 text-slate-600 leading-7">출석, 학습량, 오답 원인, 감정 상태, 신체 루틴, 관계 역량까지 한 화면에서 확인합니다.</p></div>
+          <div class="bg-slate-950 rounded-[2rem] p-5 text-white">
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-white/10 rounded-3xl p-4"><p class="text-slate-300 text-sm">이번 주 달성률</p><b class="text-3xl">86%</b></div>
+              <div class="bg-white/10 rounded-3xl p-4"><p class="text-slate-300 text-sm">연속 학습</p><b class="text-3xl">14일</b></div>
+              <div class="bg-white/10 rounded-3xl p-4"><p class="text-slate-300 text-sm">독서 완료</p><b class="text-3xl">5권</b></div>
+              <div class="bg-white/10 rounded-3xl p-4"><p class="text-slate-300 text-sm">오답 개선</p><b class="text-3xl">+24%</b></div>
+            </div>
+            <div class="mt-5 bg-white rounded-3xl p-5 text-ink"><h3 class="font-black">AI 학부모 코멘트</h3><p class="text-sm text-slate-600 mt-2">이번 주는 수학 문장제 조건 찾기에서 개선이 큽니다. 다음 주에는 신체 루틴과 수면 체크를 함께 관리하면 집중도 상승이 예상됩니다.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="max-w-7xl mx-auto px-5 py-16 pb-24">
+      <div class="rounded-[2.5rem] bg-gradient-to-br from-indigo-700 via-violet to-sky p-8 md:p-12 text-white shadow-glow">
+        <div class="grid lg:grid-cols-2 gap-10 items-center">
+          <div><h2 class="text-3xl md:text-5xl font-black">무료 5차원 AI 학습진단 신청</h2><p class="mt-5 text-white/80 leading-7">유아·초등·중등·고등 학생의 현재 학습 습관과 강점지능을 진단하고, 맞춤형 5차원 학습 루틴을 제안합니다.</p></div>
+          <form class="bg-white text-ink rounded-[2rem] p-5 grid gap-3" onsubmit="event.preventDefault(); alert('상담 신청 예시 화면입니다. 실제 운영 시 Google Form, Supabase, 카카오 상담으로 연결하세요.');">
+            <input class="rounded-2xl border border-slate-200 px-4 py-3" placeholder="학생 이름" required>
+            <select class="rounded-2xl border border-slate-200 px-4 py-3"><option>유아반</option><option>초등반</option><option>중등반</option><option>고등반</option></select>
+            <input class="rounded-2xl border border-slate-200 px-4 py-3" placeholder="학부모 연락처" required>
+            <textarea class="rounded-2xl border border-slate-200 px-4 py-3" rows="3" placeholder="현재 고민: 독해력, 수학 오답, 영어 파닉스, 자기관리 등"></textarea>
+            <button class="rounded-2xl bg-ink text-white py-4 font-black">상담 신청하기</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-200 py-8 text-center text-sm text-slate-500">© 2026 Dreamer AI Coaching. Cloudflare Pages Ready.</footer>
+
+  <script>
+    const banks={
+      '유아':['그림책을 보고 주인공과 사건을 잘 말해요|언어','블록·퍼즐·패턴 놀이를 좋아해요|논리수학','노래와 리듬에 맞춰 잘 따라해요|음악','그림 그리기와 색칠을 좋아해요|공간','몸으로 표현하고 움직이는 활동을 좋아해요|신체운동','친구와 함께 놀이하는 것을 좋아해요|대인관계','내 감정을 색깔이나 표정으로 말할 수 있어요|자기이해','동물·식물·자연 관찰을 좋아해요|자연탐구'],
+      '초등':['글을 읽고 핵심 내용을 잘 찾습니다|언어','수학 규칙과 문제 해결을 좋아합니다|논리수학','영어 챈트·노래를 잘 기억합니다|음악','도형·지도·그림 자료를 잘 이해합니다|공간','손으로 만들거나 실험하는 활동을 좋아합니다|신체운동','모둠 활동에서 설명하고 도와줍니다|대인관계','스스로 목표를 세우고 점검하려고 합니다|자기이해','과학·환경·생물 주제에 관심이 많습니다|자연탐구'],
+      '중등':['비문학·문학 지문을 분석하는 데 강점이 있습니다|언어','수학 개념을 구조화하고 증명 과정을 이해합니다|논리수학','음성·리듬·패턴으로 암기할 때 효과가 큽니다|음악','그래프·도식·마인드맵으로 정리할 때 이해가 빠릅니다|공간','실험·제작·활동형 과제에서 집중력이 높습니다|신체운동','토론·발표·협력 과제에서 역할을 잘 수행합니다|대인관계','오답 원인과 공부 습관을 스스로 돌아봅니다|자기이해','생태·기술·사회문제 등 탐구 주제에 관심이 있습니다|자연탐구'],
+      '고등':['수능형 지문과 논술형 글의 구조를 분석할 수 있습니다|언어','수학·과학 개념을 추론하고 모델링하는 힘이 있습니다|논리수학','음성 자료와 리듬 기반 반복 학습이 기억에 도움 됩니다|음악','복잡한 개념을 도식·표·마인드맵으로 압축합니다|공간','컨디션·운동·자세 관리가 학습 효율과 연결됩니다|신체운동','팀 프로젝트와 면접 상황에서 소통 역량을 발휘합니다|대인관계','진로 목표와 오늘 학습을 연결해 계획합니다|자기이해','환경·생명·기술·사회 변화에 대한 탐구력이 있습니다|자연탐구']
+    };
+    const coaching={언어:'속해독서·글분석·독서논술 코칭 추천',논리수학:'수학 개념맵·오답 원인 분석 추천',음악:'챈트·리듬 암기·소리내어 읽기 추천',공간:'마인드맵·도식화·시각 노트 추천',신체운동:'짧은 활동 루틴·실험형 학습 추천',대인관계:'토론·발표·협력 프로젝트 추천',자기이해:'플래너·3분 묵상·메타인지 코칭 추천',자연탐구:'과학 탐구·관찰일지·프로젝트 학습 추천'};
+    let current='유아';
+    function render(){
+      const box=document.getElementById('questionBox'); box.innerHTML='';
+      banks[current].forEach((q,i)=>{const [t,k]=q.split('|');box.insertAdjacentHTML('beforeend',`<label class="rounded-3xl bg-white p-4 shadow-sm border border-slate-100 flex gap-3 items-start"><input type="checkbox" data-k="${k}" class="mt-1 w-5 h-5 accent-indigo-600"><span><b class="text-sm text-violet">${k}</b><p class="font-bold mt-1">${t}</p></span></label>`)});
+    }
+    document.querySelectorAll('.age-tab').forEach(b=>b.onclick=()=>{current=b.dataset.age;document.querySelectorAll('.age-tab').forEach(x=>x.className='age-tab rounded-full px-4 py-2 bg-white font-bold');b.className='age-tab rounded-full px-4 py-2 bg-ink text-white font-bold';render();});
+    document.getElementById('calcBtn').onclick=()=>{const scores={};document.querySelectorAll('#questionBox input').forEach(i=>{if(i.checked)scores[i.dataset.k]=(scores[i.dataset.k]||0)+1});const keys=Object.keys(coaching);const sorted=keys.map(k=>[k,scores[k]||0]).sort((a,b)=>b[1]-a[1]);const top=sorted.filter(x=>x[1]>0).slice(0,3);const res=document.getElementById('resultBox');if(!top.length){res.innerHTML='<p class="text-slate-500">먼저 해당되는 문항을 체크하세요.</p>';return}res.innerHTML=`<div class="rounded-3xl bg-indigo-50 p-4"><p class="text-sm text-slate-500">${current} 강점지능 TOP</p><h4 class="text-2xl font-black mt-1">${top.map(x=>x[0]).join(' · ')}</h4></div>`+sorted.map(([k,v])=>`<div><div class="flex justify-between text-sm font-bold"><span>${k}</span><span>${v}</span></div><div class="mt-1 bg-slate-200 rounded-full"><div class="mi-bar" style="width:${Math.max(8,v*100)}%"></div></div></div>`).join('')+`<div class="rounded-3xl bg-slate-900 text-white p-4"><b>AI 추천 코칭</b><p class="text-sm text-white/80 mt-2">${top.map(x=>coaching[x[0]]).join(' → ')}</p></div>`};
+    render();
+  </script>
+</body>
+</html>
