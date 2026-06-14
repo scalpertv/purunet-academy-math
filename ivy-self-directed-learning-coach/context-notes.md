@@ -223,3 +223,6 @@
 - 기존 학습 기록을 잃지 않도록 `IVY_*` 데이터 변수, `ivy-*` localStorage 키, `ivy_user_data` D1 테이블과 API 경로는 호환용 내부 식별자로 유지한다.
 - 기존 `ivy-self-directed-learning-coach.pages.dev` 프로젝트는 데이터 이전 안전성을 위해 삭제하지 않고 새 주소를 운영 기준으로 사용한다.
 - 로컬 데스크톱 1280×900과 모바일 390×844에서 새 브랜드, 글분석 교재 탭 11개, 지도자 과정, 문서 너비 일치와 페이지 오류 0건을 확인했다.
+- Cloudflare Pages 프리뷰 `https://5572a37c.dreamer-ai-self-directed-learning-coach.pages.dev`와 운영 주소에 배포했다.
+- 운영 푸르넷 아카데미에서 메뉴 문구와 링크, `/#planner` iframe 주소, iframe 제목·헤더, 학생 세션 전달과 페이지 오류 0건을 확인했다.
+- Pages 직접 업로드의 기존 Functions 라우팅 문제로 `/api/load`와 `/api/save`는 여전히 SPA 문서를 반환한다. 이번 주소·브랜드 이전은 브라우저 저장과 아카데미 세션 연결을 기준으로 검증했다.
