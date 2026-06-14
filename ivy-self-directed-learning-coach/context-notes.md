@@ -215,3 +215,11 @@
 - 고급 B p104 지문은 고급 A p28과 동일한 동물 기관 지문이다. 교재 원본 구성을 유지한다.
 - `getAnalysisItemWorkbookLabel` 함수에 `/^advanced-([a-z])-/` 정규식 분기를 추가해 "고급 X" 라벨이 표시되도록 했다.
 - 신규 스크립트 태그에 캐시 버스팅 버전 `?v=20260614e`를 적용했다.
+
+## 꿈쟁이 자기주도 학습 코칭 브랜드·주소 이전
+
+- 새 운영 프로젝트와 주소는 `dreamer-ai-self-directed-learning-coach`, `https://dreamer-ai-self-directed-learning-coach.pages.dev`이다.
+- 사용자에게 보이는 `담쟁이 자기주도 학습 코칭`과 `담쟁이 학습 루틴` 명칭은 각각 `꿈쟁이 자기주도 학습 코칭`, `꿈쟁이 학습 루틴`으로 변경한다.
+- 기존 학습 기록을 잃지 않도록 `IVY_*` 데이터 변수, `ivy-*` localStorage 키, `ivy_user_data` D1 테이블과 API 경로는 호환용 내부 식별자로 유지한다.
+- 기존 `ivy-self-directed-learning-coach.pages.dev` 프로젝트는 데이터 이전 안전성을 위해 삭제하지 않고 새 주소를 운영 기준으로 사용한다.
+- 로컬 데스크톱 1280×900과 모바일 390×844에서 새 브랜드, 글분석 교재 탭 11개, 지도자 과정, 문서 너비 일치와 페이지 오류 0건을 확인했다.

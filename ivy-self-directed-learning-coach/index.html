@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<!-- 담쟁이 자기주도 학습코칭 사이트 메인 진입점 v20260614e -->
+<!-- 꿈쟁이 자기주도 학습 코칭 사이트 메인 진입점 v20260614f -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>담쟁이 자기주도 학습코칭</title>
+<title>꿈쟁이 자기주도 학습 코칭</title>
 <style>
 :root {
   --ivy-dark: #1b5e20;
@@ -2027,7 +2027,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
         <div class="logo-circle">🌿</div>
         <div class="header-titles">
           <span class="header-kicker">SELF-DIRECTED LEARNING STUDIO</span>
-          <h1>담쟁이 자기주도 학습코칭</h1>
+          <h1>꿈쟁이 자기주도 학습 코칭</h1>
           <p>계획하고, 이해하고, 기록하며 스스로 성장하는 학습 공간</p>
         </div>
       </div>
@@ -2804,7 +2804,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
       <div class="section-icon">📚</div>
       <div>
         <h2>지도자 과정</h2>
-        <p>교사 전용 — 담쟁이 자기주도 학습코칭 지도자 과정 전체 내용</p>
+        <p>교사 전용 — 꿈쟁이 자기주도 학습 코칭 지도자 과정 전체 내용</p>
       </div>
     </div>
     <div class="instructor-frame">
@@ -2817,7 +2817,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     <div class="section-header">
       <div class="section-icon">🌿</div>
       <div>
-        <h2>담쟁이 학습 루틴</h2>
+        <h2>꿈쟁이 학습 루틴</h2>
         <p>상위 1%의 꿈, 학습무기를 준비하라 — 1강. 학습바인더와 상위 1%</p>
       </div>
     </div>
@@ -2987,7 +2987,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 </main>
 
 <footer>
-  🌿 담쟁이 자기주도 학습코칭 — 모든 데이터는 이 브라우저에만 저장됩니다.
+  🌟 꿈쟁이 자기주도 학습 코칭 — 모든 데이터는 이 브라우저에만 저장됩니다.
 </footer>
 
 <div id="toast"></div>
@@ -3068,7 +3068,7 @@ function save(key, val) {
 
 // ── TAB 전환 ──
 const panelMeta = {
-  routine: ['담쟁이 학습 루틴', '공부의 시작과 끝을 이해하고 나만의 학습 패턴을 만드세요.'],
+  routine: ['꿈쟁이 학습 루틴', '공부의 시작과 끝을 이해하고 나만의 학습 패턴을 만드세요.'],
   planner: ['자기주도 플래너', '꿈과 월간 목표를 주간·일일 계획으로 연결하고 실행을 피드백하세요.'],
   analysis: ['자기주도 글분석', '핵심어와 중심 내용을 찾아 읽은 글을 내 지식으로 바꾸세요.'],
   reading: ['자기주도 속해독서', '읽기 속도와 이해도를 함께 확인하며 집중 독서를 훈련하세요.'],
@@ -4388,7 +4388,24 @@ function _initAcademyAuth() {
   // 팝업에서 돌아오는 postMessage 수신
   window.addEventListener('message', function(e) {
     if (e.origin !== _academyOrigin) return;
-    if (!e.data || e.data.type !== 'purunet-auth-popup') return;
+    if (!e.data) return;
+    if (e.data.type === 'PURUNET_ACADEMY_SESSION' && e.data.user && e.data.user.id !== 'guest') {
+      var panelAccount = {
+        id: String(e.data.user.id),
+        name: String(e.data.user.name || '학습자'),
+        username: String(e.data.user.username || e.data.user.id),
+        role: e.data.user.role === 'teacher' ? 'teacher' : 'student'
+      };
+      _ivySession = { account: panelAccount, role: panelAccount.role };
+      _saveIvySession(panelAccount);
+      _renderAuthBar();
+      _cloudLoad();
+      if (e.source && e.source.postMessage) {
+        e.source.postMessage({ type: 'FIVECORE_READY' }, _academyOrigin);
+      }
+      return;
+    }
+    if (e.data.type !== 'purunet-auth-popup') return;
     if (e.data.session && e.data.session.account && e.data.session.account.id !== 'guest') {
       _ivySession = e.data.session;
       _saveIvySession(e.data.session.account);
@@ -4399,6 +4416,9 @@ function _initAcademyAuth() {
       _renderAuthBar();
     }
   });
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'FIVECORE_READY' }, _academyOrigin);
+  }
 }
 
 // 첫 상호작용 시 푸르넷 아카데미 세션 자동 확인 (팝업은 사용자 제스처 컨텍스트에서만 허용됨)

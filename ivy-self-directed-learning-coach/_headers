@@ -1,0 +1,9 @@
+/*.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  Content-Security-Policy: frame-ancestors 'self' https://purunet-academy.pages.dev https://*.purunet-academy.pages.dev
+  X-Content-Type-Options: nosniff
+
+/
+  Cache-Control: no-cache, no-store, must-revalidate
+  Content-Security-Policy: frame-ancestors 'self' https://purunet-academy.pages.dev https://*.purunet-academy.pages.dev
+  X-Content-Type-Options: nosniff
