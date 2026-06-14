@@ -2291,6 +2291,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
               <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="intermediate-b" onclick="selectAnalysisWorkbookLevel('intermediate-b')">중급 B</button>
               <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="intermediate-c" onclick="selectAnalysisWorkbookLevel('intermediate-c')">중급 C</button>
               <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="intermediate-d" onclick="selectAnalysisWorkbookLevel('intermediate-d')">중급 D</button>
+              <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="advanced-a" onclick="selectAnalysisWorkbookLevel('advanced-a')">고급 A</button>
+              <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="advanced-b" onclick="selectAnalysisWorkbookLevel('advanced-b')">고급 B</button>
+              <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="advanced-c" onclick="selectAnalysisWorkbookLevel('advanced-c')">고급 C</button>
             </div>
           </div>
           <div class="analysis-progress">
@@ -3035,6 +3038,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 <script src="analysis-intermediate-b.js?v=20260614d"></script>
 <script src="analysis-intermediate-c.js?v=20260614d"></script>
 <script src="analysis-intermediate-d.js?v=20260614d"></script>
+<script src="analysis-advanced-a.js?v=20260614e"></script>
+<script src="analysis-advanced-b.js?v=20260614e"></script>
+<script src="analysis-advanced-c.js?v=20260614e"></script>
 <script>
 // ── 유틸 ──
 function toast(msg) {
@@ -3542,7 +3548,10 @@ const analysisWorkbookSets = {
   'intermediate-a': Array.isArray(window.IVY_INTERMEDIATE_A_PASSAGES) ? window.IVY_INTERMEDIATE_A_PASSAGES : [],
   'intermediate-b': Array.isArray(window.IVY_INTERMEDIATE_B_PASSAGES) ? window.IVY_INTERMEDIATE_B_PASSAGES : [],
   'intermediate-c': Array.isArray(window.IVY_INTERMEDIATE_C_PASSAGES) ? window.IVY_INTERMEDIATE_C_PASSAGES : [],
-  'intermediate-d': Array.isArray(window.IVY_INTERMEDIATE_D_PASSAGES) ? window.IVY_INTERMEDIATE_D_PASSAGES : []
+  'intermediate-d': Array.isArray(window.IVY_INTERMEDIATE_D_PASSAGES) ? window.IVY_INTERMEDIATE_D_PASSAGES : [],
+  'advanced-a': Array.isArray(window.IVY_ADVANCED_A_PASSAGES) ? window.IVY_ADVANCED_A_PASSAGES : [],
+  'advanced-b': Array.isArray(window.IVY_ADVANCED_B_PASSAGES) ? window.IVY_ADVANCED_B_PASSAGES : [],
+  'advanced-c': Array.isArray(window.IVY_ADVANCED_C_PASSAGES) ? window.IVY_ADVANCED_C_PASSAGES : []
 };
 const analysisWorkbookLabels = {
   A: '초급 A',
@@ -3552,7 +3561,10 @@ const analysisWorkbookLabels = {
   'intermediate-a': '중급 A',
   'intermediate-b': '중급 B',
   'intermediate-c': '중급 C',
-  'intermediate-d': '중급 D'
+  'intermediate-d': '중급 D',
+  'advanced-a': '고급 A',
+  'advanced-b': '고급 B',
+  'advanced-c': '고급 C'
 };
 let selectedAnalysisWorkbookLevel = 'A';
 let analysisWorkbookPassages = analysisWorkbookSets[selectedAnalysisWorkbookLevel];
@@ -3583,6 +3595,8 @@ function getAnalysisItemWorkbookLabel(item) {
   if (beginnerMatch) return `초급 ${beginnerMatch[1].toUpperCase()}`;
   const intermediateMatch = sourceId.match(/^intermediate-([a-z])-/);
   if (intermediateMatch) return `중급 ${intermediateMatch[1].toUpperCase()}`;
+  const advancedMatch = sourceId.match(/^advanced-([a-z])-/);
+  if (advancedMatch) return `고급 ${advancedMatch[1].toUpperCase()}`;
   return '초급 A';
 }
 
