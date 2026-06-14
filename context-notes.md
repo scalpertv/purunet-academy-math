@@ -1744,3 +1744,15 @@
 - 결과 파일은 `푸르넷_5학년_6월_개념북.pdf`이며 크기는 50,786,843바이트다.
 - PyMuPDF 재열기에서 127페이지, 암호화 없음, 첫·64·127페이지 이미지 포함과 정상 렌더링을 확인했다.
 - SHA-256은 `44306394541b303b092c1ed813c69c75040aa3d8ee3a3abc43f677fe438fbaed`이다.
+
+## 구글 번역 추가 이전 최신 성공 버전 복구 (2026-06-14)
+- 사용자가 원하는 복구 기준은 구글 번역 기능을 넣기 직전까지 완성된 최신 기능을 유지하면서 번역 작업만 제거하는 것이다.
+- `academy-portal`의 마지막 커밋은 `21b0694`이며, 이후 교재 듀얼 답안·OCR·아이비 인증 관련 정상 작업이 미커밋 상태로 남아 있다. 전체 reset은 이 최신 작업을 잃게 하므로 사용하지 않는다.
+- 번역 작업은 다수 HTML에 `js/gt-bar.js`를 넣고 UTF-8 BOM을 추가했으며, `index.html`에는 손상된 `js/i18n.js`를 연결했다. `js/app.js`의 `window.AcademyApp` 노출도 이 번역 모듈의 재렌더를 위한 변경이다.
+- 복구는 번역 관련 줄과 파일, BOM만 정밀 제거하고 나머지 미커밋 기능은 보존하는 방식으로 진행한다.
+- 아카데미, 5차원, 아이비, 유치원 사이트에서 `gt-bar`와 `i18n` 참조를 제거하고 손상된 번역 파일을 삭제했다. 번역 일괄 저장으로 생긴 tracked HTML 대량 변경은 사라졌고 최신 교재·OCR·아이비 연동 변경만 남았다.
+- 검증은 아카데미 `npm run build`, 관련 JS `node --check`, 5차원 `npm run build`, 유치원 `npm run check`와 `npm run smoke`, 아이비 교재 JS 4개의 `node --check`가 통과했다.
+- 5차원 `npm run lint`는 이번 복구와 무관한 기존 오류 16개와 경고 4개로 실패했다. TypeScript와 Vite production build는 정상 통과했다.
+- 운영 배포 프리뷰는 아카데미 `https://90df97a7.purunet-academy.pages.dev`, 5차원 `https://171b371b.fivecore-self-directed-learning.pages.dev`, 아이비 `https://a699ca02.ivy-self-directed-learning-coach.pages.dev`, 유치원 `https://110f7e12.little-purunet.pages.dev`이다.
+- 운영 URL의 아카데미 홈·교재·전자북·독서논술, 5차원 홈·글분석, 아이비 홈, 유치원 홈이 HTTP 200으로 응답했다. HTML에서 번역 스크립트 참조와 유니코드 대체문자가 검출되지 않았고 한국어 본문도 확인했다.
+- IDE에서 열려 있던 `푸르넷 교재 전자북(26.06.12).md`는 UTF-8 바이트와 한국어 1,353자를 확인해 파일 자체는 손상되지 않은 상태임을 확인했다.
