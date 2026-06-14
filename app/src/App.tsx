@@ -2404,7 +2404,7 @@ export default function App() {
   }, [canViewAllStudentLearningData, refreshMaintenanceStatus]);
 
   useEffect(() => {
-    document.title = '푸르넷 집중 연산반';
+    document.title = '꿈쟁이 집중 연산반';
   }, [activeTeacherName]);
 
   const openRosterMenu = useCallback((menu: RosterMenu) => {
@@ -3525,7 +3525,7 @@ export default function App() {
   };
 
   const emailStudentReport = (studentName: string, report: StudentDailyCounselReport) => {
-    const subject = encodeURIComponent(`[푸르넷수학 전자북] ${studentName} ${report.dateLabel} 학습 진단서와 상담서`);
+    const subject = encodeURIComponent(`[꿈쟁이 수학 전자북] ${studentName} ${report.dateLabel} 학습 진단서와 상담서`);
     const body = encodeURIComponent(report.combinedText);
     window.open(`mailto:?subject=${subject}&body=${body}`, "_blank", "noopener,noreferrer");
     setAuthMessage("이메일 작성 창을 열었습니다.");
@@ -3639,7 +3639,7 @@ export default function App() {
     return (
       <main className="app auth-gate">
         <div className="auth-gate-box">
-          <h1>푸르넷 집중 연산반</h1>
+          <h1>꿈쟁이 집중 연산반</h1>
           <p className="auth-gate-loading">{gateLoading ? (gateMessage || '로그인 처리 중...') : '로딩 중...'}</p>
         </div>
       </main>
@@ -3650,7 +3650,7 @@ export default function App() {
     return (
       <main className="app auth-gate">
         <div className="auth-gate-box">
-          <h1>푸르넷 집중 연산반</h1>
+          <h1>꿈쟁이 집중 연산반</h1>
           <p className="auth-gate-subtitle">학원 또는 유치원 아이디로 로그인하세요.</p>
           {gateMessage && <p className="auth-gate-message">{gateMessage}</p>}
           <form className="auth-gate-form" onSubmit={(e) => { void applyGateLogin(e); }}>
@@ -3682,7 +3682,7 @@ export default function App() {
               {gateLoading ? '로그인 중...' : '로그인'}
             </button>
           </form>
-          <p className="auth-gate-hint">푸르넷 학원(purunet-academy.pages.dev) 또는 리틀 푸르넷(little-purunet.pages.dev) 계정으로 로그인하세요.</p>
+          <p className="auth-gate-hint">꿈쟁이 AI 아카데미(dreamer-ai-academy.pages.dev) 또는 꿈쟁이 리틀 AI(little-dreamer-ai.pages.dev) 계정으로 로그인하세요.</p>
         </div>
       </main>
     );
@@ -3741,7 +3741,7 @@ export default function App() {
         <header className="reader-top">
           <div>
             <span className="eyebrow">{activeTeacherName} · {activeClassName} · {activeCourseScopeLabel} · {activeLearningLabel}</span>
-            <h1>푸르넷 집중 연산반</h1>
+            <h1>꿈쟁이 집중 연산반</h1>
           </div>
           <div className="reader-actions">
             {adminLoggedIn && (

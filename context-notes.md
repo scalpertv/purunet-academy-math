@@ -1756,3 +1756,11 @@
 - 운영 배포 프리뷰는 아카데미 `https://90df97a7.purunet-academy.pages.dev`, 5차원 `https://171b371b.fivecore-self-directed-learning.pages.dev`, 아이비 `https://a699ca02.ivy-self-directed-learning-coach.pages.dev`, 유치원 `https://110f7e12.little-purunet.pages.dev`이다.
 - 운영 URL의 아카데미 홈·교재·전자북·독서논술, 5차원 홈·글분석, 아이비 홈, 유치원 홈이 HTTP 200으로 응답했다. HTML에서 번역 스크립트 참조와 유니코드 대체문자가 검출되지 않았고 한국어 본문도 확인했다.
 - IDE에서 열려 있던 `푸르넷 교재 전자북(26.06.12).md`는 UTF-8 바이트와 한국어 1,353자를 확인해 파일 자체는 손상되지 않은 상태임을 확인했다.
+
+## 꿈쟁이 AI 브랜드와 Pages 주소 이전 (2026-06-14)
+- 새 운영 주소는 `https://dreamer-ai-academy.pages.dev`, `https://little-dreamer-ai.pages.dev`이며 기존 두 주소는 삭제하지 않고 꿈쟁이 화면을 제공하는 호환 미러로 유지한다.
+- 수학 전자북, 5차원 자기주도학습, 꿈쟁이 자기주도 학습 코칭의 활성 링크와 화면 문구를 새 아카데미 주소와 꿈쟁이 브랜드로 변경했다.
+- 내부 D1 데이터베이스 이름, 앱 ID, localStorage 키는 기존 계정과 학습 기록 호환을 위해 변경하지 않았다.
+- 아카데미 빌드, 리틀 `check`·`smoke`, 수학 전자북 `verify`·`onefile`, 5차원 production build, 자기주도 코칭 정적 검사가 통과했다.
+- 수학 전자북 lint는 기존 오류 12건, 5차원 lint는 기존 오류 16건과 경고 4건으로 실패했으며 이번 브랜드 변경과 직접 관련된 오류는 없었다.
+- 새 주소와 호환 주소의 HTTP 200, 새 브랜드 표시, 상호 링크, 연결 사이트의 새 아카데미 URL을 확인했다.

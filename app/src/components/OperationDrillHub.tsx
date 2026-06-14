@@ -200,7 +200,7 @@ export default function OperationDrillHub({ units, onStart, onPrint, onPrintAnsw
             <div className="drill-logo">
               <span className="drill-logo-icon">⚡</span>
               <div>
-                <strong>푸르넷 집중 연산반</strong>
+                <strong>꿈쟁이 집중 연산반</strong>
                 <small>뇌과학 기반 초등 1~6학년 연산 훈련</small>
               </div>
             </div>
@@ -208,9 +208,9 @@ export default function OperationDrillHub({ units, onStart, onPrint, onPrintAnsw
           <div className="drill-header-right">
             <span className="drill-tip-badge">{tip.icon} {tip.text}</span>
             <a
-              href="https://purunet-academy.pages.dev"
+              href="https://dreamer-ai-academy.pages.dev"
               className="drill-home-btn"
-              title="푸르넷 아카데미 홈으로"
+              title="꿈쟁이 AI 아카데미 홈으로"
             >
               🏠 학원 홈
             </a>

@@ -4,7 +4,7 @@
   "version": "1.0.1",
   "type": "module",
   "main": "electron/main.cjs",
-  "description": "푸르넷수학 전자북 Windows 앱",
+  "description": "꿈쟁이 수학 전자북 Windows 앱",
   "author": "강태훈샘",
   "scripts": {
     "dev": "vite",
@@ -30,7 +30,7 @@
   },
   "build": {
     "appId": "kr.co.prunet.math.ebook",
-    "productName": "푸르넷수학 전자북",
+    "productName": "꿈쟁이 수학 전자북",
     "directories": {
       "output": "release"
     },
@@ -58,7 +58,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "푸르넷수학 전자북"
+      "shortcutName": "꿈쟁이 수학 전자북"
     }
   },
   "devDependencies": {

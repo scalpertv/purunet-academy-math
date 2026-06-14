@@ -1,4 +1,4 @@
-// 푸르넷 아카데미 계정으로 로그인하는 모달
+// 꿈쟁이 AI 아카데미 계정으로 로그인하는 모달
 import { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 
@@ -31,7 +31,7 @@ export function LoginModal() {
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-lg font-bold text-gray-800">푸르넷 아카데미 로그인</h2>
+            <h2 className="text-lg font-bold text-gray-800">꿈쟁이 AI 아카데미 로그인</h2>
             <p className="text-xs text-gray-500 mt-0.5">저장 기능을 사용하려면 로그인이 필요합니다.</p>
           </div>
           <button
@@ -83,12 +83,12 @@ export function LoginModal() {
 
         <p className="text-center text-xs text-gray-400 mt-4">
           <a
-            href="https://purunet-academy.pages.dev"
+            href="https://dreamer-ai-academy.pages.dev"
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-500 underline"
           >
-            푸르넷 아카데미
+            꿈쟁이 AI 아카데미
           </a>
           에서 계정을 만들 수 있습니다.
         </p>

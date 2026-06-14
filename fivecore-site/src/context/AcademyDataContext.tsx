@@ -1,4 +1,4 @@
-// 푸르넷 아카데미에서 로그인한 학생의 학습 진도·계획표·복습노트 데이터를 양방향 동기화하는 Context
+// 꿈쟁이 AI 아카데미에서 로그인한 학생의 학습 진도·계획표·복습노트 데이터를 양방향 동기화하는 Context
 import {
   createContext,
   useContext,
@@ -11,7 +11,7 @@ import { useAuth, type AcademyUser } from '../auth/AuthContext'
 import { type WeekSchedule } from '../data/schedule'
 import { type ReviewNote } from '../data/reviewNote'
 
-const ACADEMY_BASE = 'https://purunet-academy.pages.dev'
+const ACADEMY_BASE = 'https://dreamer-ai-academy.pages.dev'
 const ACADEMY_ORIGIN = ACADEMY_BASE
 const LEARNING_DATA_URL = `${ACADEMY_BASE}/api/fivecore-learning-data`
 const SCHEDULE_SYNC_URL = `${ACADEMY_BASE}/api/fivecore-schedule`

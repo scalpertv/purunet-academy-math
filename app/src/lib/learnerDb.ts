@@ -508,7 +508,7 @@ function buildSecurityAlert(input: {
   createdAt: string;
 }): LearningSecurityAlert {
   const message = buildSecurityMessage(input);
-  const subject = `[푸르넷수학 전자북] ${securityEventLabel(input.eventType)} ${input.severity === "auto-blocked" ? "자동 제한" : "감시"} 알림`;
+  const subject = `[꿈쟁이 수학 전자북] ${securityEventLabel(input.eventType)} ${input.severity === "auto-blocked" ? "자동 제한" : "감시"} 알림`;
   const body = [
     message,
     "",

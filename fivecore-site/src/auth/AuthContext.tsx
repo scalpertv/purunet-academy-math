@@ -1,10 +1,10 @@
-// 푸르넷 아카데미 로그인 상태를 관리하는 Auth Context
+// 꿈쟁이 AI 아카데미 로그인 상태를 관리하는 Auth Context
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react'
 
 const AUTH_KEY = 'fivecore-auth-v1'
-const ACADEMY_AUTH_URL = 'https://purunet-academy.pages.dev/api/fivecore-auth'
-const ACADEMY_BRIDGE_URL = 'https://purunet-academy.pages.dev/auth-bridge.html'
-const ACADEMY_ORIGIN = 'https://purunet-academy.pages.dev'
+const ACADEMY_AUTH_URL = 'https://dreamer-ai-academy.pages.dev/api/fivecore-auth'
+const ACADEMY_BRIDGE_URL = 'https://dreamer-ai-academy.pages.dev/auth-bridge.html'
+const ACADEMY_ORIGIN = 'https://dreamer-ai-academy.pages.dev'
 
 export interface AcademyUser {
   id: string

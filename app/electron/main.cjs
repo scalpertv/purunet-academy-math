@@ -14,7 +14,7 @@ function createWindow() {
     height: 860,
     minWidth: 960,
     minHeight: 680,
-    title: '푸르넷수학 전자북',
+    title: '꿈쟁이 수학 전자북',
     backgroundColor: '#f6fbfb',
     webPreferences: {
       contextIsolation: true,
