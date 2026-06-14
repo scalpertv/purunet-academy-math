@@ -170,6 +170,29 @@
 - Cloudflare Pages 미리보기 `https://b86c2d6e.ivy-self-directed-learning-coach.pages.dev`와 운영 `https://ivy-self-directed-learning-coach.pages.dev/#analysis`에 `v20260614b`를 배포했다.
 - 미리보기와 운영 재검증에서 HTTP 200, 중급 B 데이터 파일 53,278바이트, 지문 50개, 50번 본문·분석 시작·저장, 기존 교재와 중급 B의 진도 분리, 모바일 문서 너비 390px, 페이지 오류 0건을 확인했다.
 
+## 글분석 중급 D PDF 교재 반영
+
+- 요청 대상은 `담쟁이 학습코칭 교재/자기주도 글분석력/글분석중급D.pdf`와 운영 `#analysis` 화면이다.
+- 대상 PDF는 82쪽이며 4쪽부터 80쪽까지 짝수 쪽에 본문 39개, 다음 홀수 쪽에 마인드맵·서술형 활동지가 배치되어 있다. 82쪽은 뒤표지이다.
+- PDF 헤더는 `학습능력 (글분석 중-A), 담쟁이학습코칭`으로 오표기되어 있으나, 파일명과 교재 순서를 기준으로 중급 D로 등록한다.
+- PDF에 한글 텍스트 레이어가 있어 PyMuPDF blocks 모드로 본문을 직접 추출하고 머리말과 구조도 표를 제외한다.
+- 31~39번 지문은 중급 C의 확산·암석·화산·토양·탄성·지진 지문과 완전히 일치한다. 교재 구성으로 판단해 제거하지 않고 별도 진도로 유지한다.
+- 11·12번, 14·15번, 32·33번 지문은 PDF 내부에서 동일 지문이 연속 수록되어 있다. 원본 교재 구성을 그대로 유지한다.
+- `analysis-intermediate-d.js`에 39개 지문, `intermediate-d` 단계, PDF 쪽 번호와 공백 제외 글자 수를 저장했다.
+- 글분석 화면에 중급 D 탭을 추가하고 기존 단계 판별 정규식 `/^intermediate-([a-z])-/`이 `intermediate-d`를 자동 처리해 "중급 D" 라벨이 정상 표시된다.
+- 데이터 파일 문법 검사, 39개 ID·번호·본문 무결성 검사가 통과했다.
+- 기능 커밋은 `713cae3 feat: 글분석 중급 D 교재 추가`이다.
+- Cloudflare Pages 배포 후 운영 검증 예정.
+
+## 5차원 자기주도학습 링크 수정 (purunet-academy.pages.dev)
+
+- 원인: `fivecore-panel.js`의 `FIVECORE_ORIGIN`이 `https://fivecore-self-directed-learning.pages.dev`(미배포 사이트)를 참조하고 있었다.
+- `views.js`의 직접 링크 `href`도 같은 미배포 URL을 참조하고 있었다.
+- 수정: `FIVECORE_ORIGIN`을 `https://ivy-self-directed-learning-coach.pages.dev`로 교체하고, 탭 경로를 ivy 사이트의 해시 라우팅(`/#planner`, `/#review`, `/#analysis`)에 맞게 수정했다.
+- 탭 수를 5개에서 3개(플래너·복습·글분석)로 줄여 ivy 사이트에 없는 `schedule`·`mindmap` 경로를 제거했다.
+- `views.js` 단축 버튼 클릭 핸들러도 새 경로로 일치시켰다.
+- academy-portal 서브모듈 커밋 `44c3bfc`, 부모 레포 포인터 업데이트 `f5b5dd2`.
+
 ## 글분석 중급 C PDF 교재 반영
 
 - 요청 대상은 `담쟁이 학습코칭 교재/자기주도 글분석력/글분석중급C.pdf`와 운영 `#analysis` 화면이다.
