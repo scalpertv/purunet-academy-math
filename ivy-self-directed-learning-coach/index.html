@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<!-- 담쟁이 자기주도 학습코칭 사이트 메인 진입점 v20260613e -->
+<!-- 담쟁이 자기주도 학습코칭 사이트 메인 진입점 v20260614a -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2287,6 +2287,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
               <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="B" onclick="selectAnalysisWorkbookLevel('B')">초급 B</button>
               <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="C" onclick="selectAnalysisWorkbookLevel('C')">초급 C</button>
               <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="D" onclick="selectAnalysisWorkbookLevel('D')">초급 D</button>
+              <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="intermediate-a" onclick="selectAnalysisWorkbookLevel('intermediate-a')">중급 A</button>
             </div>
           </div>
           <div class="analysis-progress">
@@ -3027,6 +3028,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 <script src="analysis-beginner-b.js"></script>
 <script src="analysis-beginner-c.js"></script>
 <script src="analysis-beginner-d.js"></script>
+<script src="analysis-intermediate-a.js"></script>
 <script>
 // ── 유틸 ──
 function toast(msg) {
@@ -3530,7 +3532,15 @@ const analysisWorkbookSets = {
   A: Array.isArray(window.IVY_BEGINNER_A_PASSAGES) ? window.IVY_BEGINNER_A_PASSAGES : [],
   B: Array.isArray(window.IVY_BEGINNER_B_PASSAGES) ? window.IVY_BEGINNER_B_PASSAGES : [],
   C: Array.isArray(window.IVY_BEGINNER_C_PASSAGES) ? window.IVY_BEGINNER_C_PASSAGES : [],
-  D: Array.isArray(window.IVY_BEGINNER_D_PASSAGES) ? window.IVY_BEGINNER_D_PASSAGES : []
+  D: Array.isArray(window.IVY_BEGINNER_D_PASSAGES) ? window.IVY_BEGINNER_D_PASSAGES : [],
+  'intermediate-a': Array.isArray(window.IVY_INTERMEDIATE_A_PASSAGES) ? window.IVY_INTERMEDIATE_A_PASSAGES : []
+};
+const analysisWorkbookLabels = {
+  A: '초급 A',
+  B: '초급 B',
+  C: '초급 C',
+  D: '초급 D',
+  'intermediate-a': '중급 A'
 };
 let selectedAnalysisWorkbookLevel = 'A';
 let analysisWorkbookPassages = analysisWorkbookSets[selectedAnalysisWorkbookLevel];
@@ -3550,10 +3560,18 @@ function getAnalysisSourceById(id) {
   return Object.values(analysisWorkbookSets).flat().find(item => item.id === id) || null;
 }
 
-function getAnalysisItemLevel(item) {
-  if (item && item.sourceLevel) return item.sourceLevel;
-  const match = String(item && item.sourceId || '').match(/^beginner-([a-z])-/);
-  return match ? match[1].toUpperCase() : 'A';
+function getAnalysisWorkbookLabel(level) {
+  return analysisWorkbookLabels[level] || `초급 ${level}`;
+}
+
+function getAnalysisItemWorkbookLabel(item) {
+  if (item && item.sourceLevel) return getAnalysisWorkbookLabel(item.sourceLevel);
+  const sourceId = String(item && item.sourceId || '');
+  const beginnerMatch = sourceId.match(/^beginner-([a-z])-/);
+  if (beginnerMatch) return `초급 ${beginnerMatch[1].toUpperCase()}`;
+  const intermediateMatch = sourceId.match(/^intermediate-([a-z])-/);
+  if (intermediateMatch) return `중급 ${intermediateMatch[1].toUpperCase()}`;
+  return '초급 A';
 }
 
 function selectAnalysisWorkbookLevel(level) {
@@ -3694,6 +3712,7 @@ function renderAnalysisWorkbook() {
   const menu = document.getElementById('analysisPassageMenu');
   if (!menu || analysisWorkbookPassages.length === 0) return;
   const level = selectedAnalysisWorkbookLevel;
+  const workbookLabel = getAnalysisWorkbookLabel(level);
   const levelIds = new Set(analysisWorkbookPassages.map(item => item.id));
   const completedIds = new Set(
     load('analyses', [])
@@ -3701,7 +3720,7 @@ function renderAnalysisWorkbook() {
       .map(item => item.sourceId)
   );
   document.getElementById('analysisWorkbookTitle').innerHTML =
-    `<span>📘</span> 글분석 초급 ${level} 교재`;
+    `<span>📘</span> 글분석 ${workbookLabel} 교재`;
   document.getElementById('analysisWorkbookDescription').textContent =
     `${analysisWorkbookPassages.length}개 지문을 차례로 분석하거나 원하는 번호부터 시작할 수 있어요.`;
   menu.innerHTML = '';
@@ -3712,7 +3731,7 @@ function renderAnalysisWorkbook() {
     if (completedIds.has(item.id)) button.classList.add('complete');
     if (item.number === selectedAnalysisPassageNumber) button.classList.add('active');
     button.textContent = String(item.number).padStart(2, '0');
-    button.setAttribute('aria-label', `글분석 초급 ${level} ${item.number}번 지문`);
+    button.setAttribute('aria-label', `글분석 ${workbookLabel} ${item.number}번 지문`);
     button.addEventListener('click', () => selectAnalysisPassage(item.number));
     menu.appendChild(button);
   });
@@ -3735,8 +3754,9 @@ function selectAnalysisPassage(number, options) {
   analysisAnnotations = saved && saved.annotations
     ? JSON.parse(JSON.stringify(saved.annotations))
     : { words: {}, sentences: {} };
+  const workbookLabel = getAnalysisWorkbookLabel(selectedAnalysisWorkbookLevel);
   document.getElementById('analysisPassageHeading').textContent =
-    `초급 ${selectedAnalysisWorkbookLevel} ${number}번 지문 · ${passage.charCount}자`;
+    `${workbookLabel} ${number}번 지문 · ${passage.charCount}자`;
   renderInteractiveAnalysisPassage(passage);
   if (!options || options.updateButtons !== false) {
     document.querySelectorAll('.analysis-passage-btn').forEach((button, index) => {
@@ -3772,11 +3792,12 @@ function startWorkbookAnalysis() {
   const text = document.getElementById('analysisText');
   text.value = passage.text;
   text.dispatchEvent(new Event('input'));
+  const workbookLabel = getAnalysisWorkbookLabel(selectedAnalysisWorkbookLevel);
   document.getElementById('analysisSourceState').textContent =
-    `📘 글분석 초급 ${selectedAnalysisWorkbookLevel} ${passage.number}번 지문 분석 중`;
+    `📘 글분석 ${workbookLabel} ${passage.number}번 지문 분석 중`;
   showAnalysisStep(2);
   document.getElementById('analysisTitle').focus({ preventScroll: true });
-  toast(`📘 초급 ${selectedAnalysisWorkbookLevel} ${passage.number}번 지문을 불러왔습니다.`);
+  toast(`📘 ${workbookLabel} ${passage.number}번 지문을 불러왔습니다.`);
 }
 
 function selectAnalysisChoice(inputId, value, button) {
@@ -4164,7 +4185,7 @@ function renderAnalysisList() {
   cont.innerHTML = list.map(a => `
     <div class="analysis-item" onclick="viewAnalysis(${a.id})">
       <div class="analysis-item-title">${a.title}</div>
-      <div class="analysis-item-meta">📅 ${a.date}${a.sourceNumber ? ` · 초급 ${getAnalysisItemLevel(a)} ${a.sourceNumber}번` : ''}${a.completion ? ` · 완성도 ${a.completion}%` : ''} · 키워드: ${(a.keywords || []).slice(0,3).join(', ')}${(a.keywords || []).length>3?'...':''}</div>
+      <div class="analysis-item-meta">📅 ${a.date}${a.sourceNumber ? ` · ${getAnalysisItemWorkbookLabel(a)} ${a.sourceNumber}번` : ''}${a.completion ? ` · 완성도 ${a.completion}%` : ''} · 키워드: ${(a.keywords || []).slice(0,3).join(', ')}${(a.keywords || []).length>3?'...':''}</div>
     </div>`).join('');
 }
 
@@ -4176,7 +4197,7 @@ function viewAnalysis(id) {
   document.getElementById('analysisViewTitle').textContent = '🔍 ' + item.title;
   document.getElementById('analysisViewContent').innerHTML = `
     <div style="margin-bottom:10px;"><strong>📅 날짜:</strong> ${item.date}</div>
-    ${item.sourceNumber ? `<div style="margin-bottom:8px;"><strong>📘 교재:</strong> 글분석 초급 ${getAnalysisItemLevel(item)} ${item.sourceNumber}번</div>` : ''}
+    ${item.sourceNumber ? `<div style="margin-bottom:8px;"><strong>📘 교재:</strong> 글분석 ${getAnalysisItemWorkbookLabel(item)} ${item.sourceNumber}번</div>` : ''}
     ${item.completion ? `<div style="margin-bottom:8px;"><strong>📈 학습 완성도:</strong> ${item.completion}%</div>` : ''}
     <div style="margin-bottom:8px;"><strong>🏷️ 키워드:</strong> ${(item.keywords || []).map(k => `<span class="chip" style="display:inline-flex;margin:2px;">${k}</span>`).join('')}</div>
     <div style="margin-bottom:8px;"><strong>🎯 목적·구조:</strong> ${[item.purpose,item.textStructure].filter(Boolean).join(' · ') || '-'}</div>

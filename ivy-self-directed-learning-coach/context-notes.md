@@ -131,3 +131,17 @@
 - 기능 커밋은 `44a4434 feat: 글분석 초급 D 교재 추가`이다.
 - Cloudflare Pages 미리보기 `https://af598771.ivy-self-directed-learning-coach.pages.dev`와 운영 `https://ivy-self-directed-learning-coach.pages.dev/#analysis`에 배포했다.
 - 미리보기와 운영 재검증에서 HTTP 200, A 51개, B 52개, C 51개, D 51개, D 51번 본문·분석 시작, D 데이터 파일 HTTP 200, 모바일 문서 너비 390px, 페이지 오류 0건을 확인했다.
+
+## 글분석 중급 A PDF 교재 반영
+
+- 요청 대상은 `담쟁이 학습코칭 교재/자기주도 글분석력/글분석중급A.pdf`와 운영 `#analysis` 화면이다.
+- 대상 PDF는 106쪽이며 4쪽부터 104쪽까지 짝수 쪽에 본문 51개, 다음 홀수 쪽에 마인드맵·서술형 활동지가 배치되어 있다.
+- PDF에 한글 텍스트 레이어가 있어 PyMuPDF로 본문을 직접 추출하고 머리말과 구조도 표는 제외한다.
+- 기존 초급 교재는 `A`부터 `D`까지의 키를 사용하므로 중급 A는 `intermediate-a` 키와 `intermediate-a-01` 형식의 고유 ID를 사용해 초급 A의 진도·저장 기록과 분리한다.
+- 화면에 표시할 교재명은 데이터별 `label`로 관리해 기존 `초급 A` 고정 문구를 `초급 A` 또는 `중급 A`로 정확히 표시한다.
+- 중급 A의 일부 지문은 초급 B·D에 수록된 지문과 정확히 일치한다. 원본 PDF의 재수록 구성으로 판단해 제거하지 않고 중급 A의 별도 학습 순서와 진도로 유지한다.
+- `analysis-intermediate-a.js`에 51개 지문, `intermediate-a` 단계, PDF 쪽 번호와 공백 제외 글자 수를 저장했다. 머리말과 구조도 표는 본문에서 제외했다.
+- 로컬 Playwright에서 교재 탭 5개, 중급 A 지문 51개, 51번 본문·분석 시작, `sourceLevel: intermediate-a` 저장, 초급 A 0/51·중급 A 1/51 진도 분리를 확인했다.
+- 390×844 모바일 화면에서 문서 너비가 390px로 유지되어 가로 넘침이 없었고 페이지 오류는 0건이었다.
+- PDF 51개 본문 재추출 대조, 데이터 ID·번호·쪽·글자 수 무결성 검사, 데이터 파일과 인라인 JavaScript 문법 검사, 대상 파일 `git diff --check`가 통과했다.
+- 프로젝트 루트에 `package.json`이 없어 `npm run lint`, `npm run verify`, `npm run onefile`은 모두 `ENOENT`로 실행할 수 없었다.
