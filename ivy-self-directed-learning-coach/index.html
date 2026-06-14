@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<!-- 담쟁이 자기주도 학습코칭 사이트 메인 진입점 v20260614b -->
+<!-- 담쟁이 자기주도 학습코칭 사이트 메인 진입점 v20260614c -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2289,6 +2289,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
               <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="D" onclick="selectAnalysisWorkbookLevel('D')">초급 D</button>
               <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="intermediate-a" onclick="selectAnalysisWorkbookLevel('intermediate-a')">중급 A</button>
               <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="intermediate-b" onclick="selectAnalysisWorkbookLevel('intermediate-b')">중급 B</button>
+              <button class="analysis-workbook-tab" type="button" role="tab" aria-selected="false" data-analysis-workbook-level="intermediate-c" onclick="selectAnalysisWorkbookLevel('intermediate-c')">중급 C</button>
             </div>
           </div>
           <div class="analysis-progress">
@@ -3031,6 +3032,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 <script src="analysis-beginner-d.js"></script>
 <script src="analysis-intermediate-a.js"></script>
 <script src="analysis-intermediate-b.js"></script>
+<script src="analysis-intermediate-c.js"></script>
 <script>
 // ── 유틸 ──
 function toast(msg) {
@@ -3536,7 +3538,8 @@ const analysisWorkbookSets = {
   C: Array.isArray(window.IVY_BEGINNER_C_PASSAGES) ? window.IVY_BEGINNER_C_PASSAGES : [],
   D: Array.isArray(window.IVY_BEGINNER_D_PASSAGES) ? window.IVY_BEGINNER_D_PASSAGES : [],
   'intermediate-a': Array.isArray(window.IVY_INTERMEDIATE_A_PASSAGES) ? window.IVY_INTERMEDIATE_A_PASSAGES : [],
-  'intermediate-b': Array.isArray(window.IVY_INTERMEDIATE_B_PASSAGES) ? window.IVY_INTERMEDIATE_B_PASSAGES : []
+  'intermediate-b': Array.isArray(window.IVY_INTERMEDIATE_B_PASSAGES) ? window.IVY_INTERMEDIATE_B_PASSAGES : [],
+  'intermediate-c': Array.isArray(window.IVY_INTERMEDIATE_C_PASSAGES) ? window.IVY_INTERMEDIATE_C_PASSAGES : []
 };
 const analysisWorkbookLabels = {
   A: '초급 A',
@@ -3544,7 +3547,8 @@ const analysisWorkbookLabels = {
   C: '초급 C',
   D: '초급 D',
   'intermediate-a': '중급 A',
-  'intermediate-b': '중급 B'
+  'intermediate-b': '중급 B',
+  'intermediate-c': '중급 C'
 };
 let selectedAnalysisWorkbookLevel = 'A';
 let analysisWorkbookPassages = analysisWorkbookSets[selectedAnalysisWorkbookLevel];

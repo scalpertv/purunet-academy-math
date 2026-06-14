@@ -166,3 +166,15 @@
 - 기능 커밋은 `ed07884 feat: 글분석 중급 B 교재 추가`이다.
 - Cloudflare Pages 미리보기 `https://b86c2d6e.ivy-self-directed-learning-coach.pages.dev`와 운영 `https://ivy-self-directed-learning-coach.pages.dev/#analysis`에 `v20260614b`를 배포했다.
 - 미리보기와 운영 재검증에서 HTTP 200, 중급 B 데이터 파일 53,278바이트, 지문 50개, 50번 본문·분석 시작·저장, 기존 교재와 중급 B의 진도 분리, 모바일 문서 너비 390px, 페이지 오류 0건을 확인했다.
+
+## 글분석 중급 C PDF 교재 반영
+
+- 요청 대상은 `담쟁이 학습코칭 교재/자기주도 글분석력/글분석중급C.pdf`와 운영 `#analysis` 화면이다.
+- 대상 PDF는 104쪽이며 4쪽부터 102쪽까지 짝수 쪽에 본문 50개, 다음 홀수 쪽에 마인드맵·서술형 활동지가 배치되어 있다. 104쪽은 뒤표지이다.
+- PDF에 한글 텍스트 레이어가 있어 PyMuPDF로 본문을 직접 추출하고 머리말과 구조도 표를 제외한다.
+- 중급 C는 `intermediate-c` 키와 `intermediate-c-01` 형식의 고유 ID를 사용해 기존 교재의 진도·저장 기록과 분리한다.
+- 원문 기준 완전 중복은 9·50번, 11·48번, 43·44번이며 10·49번은 첫 문장의 `줄기 세포`/`줄기세포` 띄어쓰기만 다르다. 교재 순서와 표기를 그대로 유지한다.
+- 로컬 Playwright에서 교재 탭 7개, 중급 C 지문 50개, 50번 본문·분석 시작, `sourceLevel: intermediate-c` 저장, 초급 A·중급 B·중급 C 진도 분리를 확인했다.
+- 390×844 모바일 화면에서 가로 넘침이 없었고 페이지 오류는 0건이었다.
+- PDF 50개 본문 재추출 대조, 데이터 ID·번호·쪽·글자 수 무결성 검사, 데이터 파일과 인라인 JavaScript 문법 검사, 대상 파일 `git diff --check`가 통과했다.
+- 프로젝트 루트에 `package.json`이 없어 `npm run lint`, `npm run verify`, `npm run onefile`은 모두 `ENOENT`로 실행할 수 없었다.
