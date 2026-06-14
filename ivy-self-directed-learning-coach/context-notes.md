@@ -145,3 +145,6 @@
 - 390×844 모바일 화면에서 문서 너비가 390px로 유지되어 가로 넘침이 없었고 페이지 오류는 0건이었다.
 - PDF 51개 본문 재추출 대조, 데이터 ID·번호·쪽·글자 수 무결성 검사, 데이터 파일과 인라인 JavaScript 문법 검사, 대상 파일 `git diff --check`가 통과했다.
 - 프로젝트 루트에 `package.json`이 없어 `npm run lint`, `npm run verify`, `npm run onefile`은 모두 `ENOENT`로 실행할 수 없었다.
+- 기능 커밋은 `cc73f59 feat: 글분석 중급 A 교재 추가`이다.
+- Cloudflare Pages 미리보기 `https://442636b8.ivy-self-directed-learning-coach.pages.dev`와 운영 `https://ivy-self-directed-learning-coach.pages.dev/#analysis`에 `v20260614a`를 배포했다.
+- 미리보기와 운영 재검증에서 HTTP 200, 중급 A 데이터 파일 52,256바이트, 지문 51개, 51번 본문·분석 시작·저장, 초급 A와 중급 A의 진도 분리, 모바일 문서 너비 390px, 페이지 오류 0건을 확인했다.
