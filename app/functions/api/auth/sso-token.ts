@@ -14,9 +14,9 @@ interface Env {
 }
 
 const ALLOWED_ORIGINS = [
-  'https://dreamer-ai-academy.pages.dev',
+  'https://dreamer-ai-coaching.pages.dev',
   'https://little-dreamer-ai.pages.dev',
-  'https://purunet-academy.pages.dev',
+  'https://dreamer-ai-coaching.pages.dev',
   'https://little-purunet.pages.dev',
 ];
 const TOKEN_TTL_MS = 5 * 60 * 1000;

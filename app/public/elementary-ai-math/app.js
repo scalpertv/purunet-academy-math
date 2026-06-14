@@ -19,7 +19,7 @@ const app = {
 
 const $ = id => document.getElementById(id);
 
-const ACADEMY_API = "https://dreamer-ai-academy.pages.dev/api";
+const ACADEMY_API = "https://dreamer-ai-coaching.pages.dev/api";
 const ACADEMY_ACCOUNT_KEY = "purunet-elementary-ai-account-v1";
 let academyAccount = readStoredJson(ACADEMY_ACCOUNT_KEY, null);
 let academyHeartbeat = null;
